@@ -1,22 +1,17 @@
 <template>
-  <div class="container" id="cont">
+  <div class="w-screen">
     <div class="nav">
-      <div class="logo_content">
-        <div class="logo">
-          <img class="material-icons ml-3"/>
-        </div>
-      </div>
-      <ul class="nav_list border">
-        <li>
-          <router-link to="/users">
-            <span>User</span>
-          </router-link>
-        </li>
-        <li>
-          <router-link to ="/">
+      <ul class="bg-red-500">
+        <router-link to ="/">
+          <li>
             <span>Home</span>
-          </router-link>
-        </li>
+          </li>
+        </router-link>
+        <router-link to="/users">
+          <li>
+            <span>User</span>
+          </li>
+        </router-link>
       </ul>
     </div>
   </div>
