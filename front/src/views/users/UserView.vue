@@ -1,20 +1,17 @@
 <template>
-  <div class="px-6 pb-4 pt-7 w-full h-full">
+  <div class="px-6 pb-4 pt-7 w-4/5">
     <div class="overflow-auto rounded-xl">
       <table class="min-w-full">
         <thead class="bg-gray-800 text-white">
-          <tr>
-            <th class="text-left py-3 px-4 uppercase font-semibold text-sm">
+          <tr class="rounded-xl">
+            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-1/3">
               Imię
             </th>
-            <th class="text-left py-3 px-4 uppercase font-semibold text-sm">
+            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-1/3">
               Nazwisko
             </th>
-            <th class="text-left py-3 px-4 uppercase font-semibold text-sm">
+            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-1/3">
               E-mail
-            </th>
-            <th class="text-center py-3 px-4 uppercase font-semibold text-sm">
-              Akcje
             </th>
           </tr>
         </thead>
@@ -28,8 +25,6 @@
             </td>
             <td class="text-left py-2 px-4">
               {{ user.email }}
-            </td>
-            <td class="text-center py-2 px-4 w-36">
             </td>
           </tr>
         </tbody>

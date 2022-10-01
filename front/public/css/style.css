@@ -5,10 +5,17 @@ li {
     padding-top: 1rem;
     padding-bottom: 1rem;
     margin: auto;
+    border-bottom-left-radius: 0.75rem;
+    border-bottom-right-radius: 0.75rem;
+    border-width: 2px;
+    border-color: rgb(239, 68, 68);
 }
 
 .router-link-active li {
-    background-color: rgb(167, 167, 167);
+    background: rgb(239, 68, 68);
+    background: linear-gradient(90deg, rgba(239, 68, 68, 1) 0%, rgba(239, 63, 63, 1) 20%, rgba(239, 33, 33, 1) 50%, rgba(239, 63, 63, 1) 80%, rgba(239, 68, 68, 1) 100%);
+    border-width: 2px;
+    border-color: rgb(236, 117, 117);
 }
 
 li:hover {
@@ -17,4 +24,12 @@ li:hover {
 
 .router-link-active {
     color: white;
+}
+
+html {
+    height: 100%;
+}
+
+#app {
+    background-color: rgb(228, 184, 126);
 }

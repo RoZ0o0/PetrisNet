@@ -1,6 +1,8 @@
 <template>
-  <navigation-bar/>
-  <router-view/>
+  <div id="app" class="flex flex-col h-screen items-center">
+    <navigation-bar/>
+    <router-view/>
+  </div>
 </template>
 
 <script lang="ts">
@@ -19,7 +21,4 @@ export default {
 @import url("../public/css/tailwind.css");
 @import url("../public/css/style.css");
 
-#app {
-
-}
 </style>
