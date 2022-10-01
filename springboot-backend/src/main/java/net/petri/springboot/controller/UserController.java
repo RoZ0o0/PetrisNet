@@ -2,25 +2,35 @@ package net.petri.springboot.controller;
 
 import java.util.List;
 import net.petri.springboot.entity.User;
+import net.petri.springboot.model.VM.UserVM;
 import net.petri.springboot.repository.UserRepository;
+import net.petri.springboot.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin
 @RestController
-@RequestMapping({"/api"})
+@RequestMapping({"/api/users"})
 public class UserController {
-    @Autowired
-    private UserRepository userRepository;
+    private final UserService userService;
 
-    public UserController() {
+    @Autowired
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
-    @GetMapping({"/users"})
-    public List<User> fetchUsers() {
-        return this.userRepository.findAll();
+    @GetMapping()
+    public List<UserVM> fetchUsers() {
+        return userService.getAll();
+    }
+
+    @GetMapping("/{id}")
+    public UserVM find(@PathVariable Long id) {
+        return userService.find(id);
+    }
+
+    @RequestMapping({"/email"})
+    public UserVM getUserByEmail(@RequestParam String email) {
+        return userService.findByEmail(email);
     }
 }
