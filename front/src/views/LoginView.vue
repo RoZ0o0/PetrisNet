@@ -58,6 +58,7 @@
 
         <hr />
       </div>
+      <p id="err" class="text-center hidden"></p>
     </div>
   </div>
 </template>
@@ -77,10 +78,15 @@ export default defineComponent({
   methods: {
     async login(): Promise<void> {
       try {
-        await UserServices.findByEmail(this.result.email);
+        if (await UserServices.findByEmail(this.result.email)) {
+          this.$router.push('users');
+        }
       } catch (e) {
       }
-      this.$router.push('users');
+      document.getElementById('err')?.classList.remove('hidden');
+      document.getElementById('err')?.replaceChildren(document.createTextNode('Niepoprawne dane logowania'));
+      this.result.email = '';
+      this.result.password = '';
     }
   }
 });
