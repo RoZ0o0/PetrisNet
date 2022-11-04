@@ -1,9 +1,11 @@
 package net.petri.springboot.service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import net.petri.springboot.entity.User;
 import net.petri.springboot.mapper.UserMapper;
+import net.petri.springboot.model.FM.UserFM;
 import net.petri.springboot.model.VM.UserVM;
 import net.petri.springboot.repository.UserRepository;
 import org.springframework.http.HttpStatus;
@@ -50,6 +52,21 @@ public record UserService(UserRepository userRepository,
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
         entity = optionalUser.get();
+
+        return userMapper.mapToVM(entity);
+    }
+
+    public UserVM login(UserFM user) {
+        Optional<User> optionalUser = userRepository.findByEmail(user.getEmail());
+        User entity;
+        if(optionalUser.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        entity = optionalUser.get();
+
+        if(!Objects.equals(user.getPassword(), entity.getPassword())){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
 
         return userMapper.mapToVM(entity);
     }

@@ -1,4 +1,4 @@
-li {
+.navbar li {
     display: inline-block;
     padding-left: 2rem;
     padding-right: 2rem;
@@ -18,7 +18,7 @@ li {
     border-color: rgb(236, 117, 117);
 }
 
-li:hover {
+.navbar li:hover {
     background-color: rgb(196, 86, 86);
 }
 

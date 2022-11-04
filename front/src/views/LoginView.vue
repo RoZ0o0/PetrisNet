@@ -67,7 +67,6 @@
 import { Vue } from 'vue-class-component';
 import { defineComponent } from 'vue';
 import LoginServices, { ILogin } from '../services/LoginService';
-import UserServices from '@/services/UserService';
 
 export default defineComponent({
   data() {
@@ -78,7 +77,7 @@ export default defineComponent({
   methods: {
     async login(): Promise<void> {
       try {
-        if (await UserServices.findByEmail(this.result.email)) {
+        if (await LoginServices.login(this.result)) {
           this.$router.push('users');
         }
       } catch (e) {

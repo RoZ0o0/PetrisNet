@@ -1,6 +1,6 @@
 <template>
   <div id="app" class="flex flex-col h-screen items-center">
-    <navigation-bar/>
+    <navigation-bar :key="$route.fullPath"/>
     <router-view/>
   </div>
 </template>
