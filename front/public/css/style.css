@@ -33,3 +33,11 @@ html {
 #app {
     background-color: rgb(228, 184, 126);
 }
+
+.petri-nav button {
+    background-color: grey;
+}
+
+.petri-nav button:hover {
+    background-color: white;
+}

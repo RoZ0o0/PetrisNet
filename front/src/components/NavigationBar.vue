@@ -12,13 +12,18 @@
             <span>Użytkownicy</span>
           </li>
         </router-link>
+        <router-link to="/creator">
+          <li>
+            <span>Kreator</span>
+          </li>
+        </router-link>
         <router-link to="/login">
           <li v-if="!this.result.role" class="float-right">
-            <span>Login</span>
+            <span>Zaloguj</span>
           </li>
         </router-link>
         <li v-if="this.result.role" v-on:click="logout()" class="float-right">
-          <span>Logout</span>
+          <span>Wyloguj</span>
         </li>
       </ul>
     </div>
@@ -42,7 +47,11 @@ export default defineComponent({
   name: 'NavigationBar',
   methods: {
     async getData(): Promise<IUser> {
-      return await LoginServices.fetch();
+      if (localStorage.getItem('mail') != null) {
+        return await LoginServices.fetch();
+      } else {
+        return this.result;
+      }
     },
 
     logout(): void {
