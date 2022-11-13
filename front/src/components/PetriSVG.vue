@@ -11,7 +11,7 @@
       </button>
     </div>
     <div class="ml-4 items-center petri-nav">
-      <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center" @onclick="addPlace()">
+      <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center" v-on:click="addPlace">
         <CircleIcon class="inline-block align-middle" />
         <span class="inline-block align-middle">Place</span>
       </button>
@@ -30,16 +30,9 @@
     </div>
   </div>
   <div class="mx-8 my-4 border-2 border-black rounded-xl h-4/5">
-    <svg id="svgArea" ref="box" class="bg-gray-300 rounded-xl box" height="100%" width="100%" preserveAspectRatio="slice" xmlns="http://www.w3.org/2000/svg">
-      <circle
-        class="element"
-        :cx="element.x"
-        :cy="element.y"
-        r="40" stroke="deeppink"
-        stroke-width="2"
-        fill="#ffe6ee"
-        @mousedown="startDrag()"
-        @mouseup="endDrag()" />
+    <svg ref="box" class="bg-gray-300 rounded-xl box" height="100%" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <component v-for="(child, index) in children" :key="index" :is="child"></component>
+      <circle class="element" :cx="element.x" :cy="element.y" r="40" stroke="deeppink" stroke-width="2" fill="#ffe6ee" v-on:mousedown="startDrag" v-on:mouseup="endDrag" />
     </svg>
   </div>
   <div class="flex w-full h-16 items-center justify-center">
@@ -62,7 +55,6 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import 'jquery';
 import CircleIcon from 'vue-material-design-icons/CircleOutline.vue';
 import SquareIcon from 'vue-material-design-icons/SquareOutline.vue';
 import RemoveIcon from 'vue-material-design-icons/Close.vue';
@@ -72,6 +64,21 @@ import StopIcon from 'vue-material-design-icons/Stop.vue';
 import ImportIcon from 'vue-material-design-icons/ArrowBottomRight.vue';
 import ExportIcon from 'vue-material-design-icons/ArrowTopRight.vue';
 import SaveIcon from 'vue-material-design-icons/ContentSaveAll.vue';
+
+const Circle = {
+  template: `
+    <circle class="element" :cx="element.x" :cy="element.y" r="40" stroke="deeppink" stroke-width="2" fill="#ffe6ee" v-on:mousedown="startDrag" v-on:mouseup="endDrag" />
+  `,
+
+  data() {
+    return {
+      element: {
+        x: 100,
+        y: 100
+      }
+    };
+  }
+};
 
 export default defineComponent({
   name: 'PetriSVG',
@@ -91,7 +98,9 @@ export default defineComponent({
       element: {
         x: 100,
         y: 100
-      }
+      },
+
+      children: [] as any
     };
   },
 
@@ -117,7 +126,7 @@ export default defineComponent({
     },
 
     addPlace() {
-      const svgcos = $('#svgArea').html();
+      this.children.push(Circle);
     }
   }
 });
