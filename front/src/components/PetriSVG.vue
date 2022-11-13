@@ -11,7 +11,7 @@
       </button>
     </div>
     <div class="ml-4 items-center petri-nav">
-      <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center">
+      <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center" @onclick="addPlace()">
         <CircleIcon class="inline-block align-middle" />
         <span class="inline-block align-middle">Place</span>
       </button>
@@ -29,19 +29,49 @@
       </button>
     </div>
   </div>
-  <svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="50" cy="50" r="40" stroke="deeppink" stroke-width="2" fill="#ffe6ee" />
-  </svg>
+  <div class="mx-8 my-4 border-2 border-black rounded-xl h-4/5">
+    <svg id="svgArea" ref="box" class="bg-gray-300 rounded-xl box" height="100%" width="100%" preserveAspectRatio="slice" xmlns="http://www.w3.org/2000/svg">
+      <circle
+        class="element"
+        :cx="element.x"
+        :cy="element.y"
+        r="40" stroke="deeppink"
+        stroke-width="2"
+        fill="#ffe6ee"
+        @mousedown="startDrag()"
+        @mouseup="endDrag()" />
+    </svg>
+  </div>
+  <div class="flex w-full h-16 items-center justify-center">
+    <div class="items-center petri-nav">
+      <button class="border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center">
+        <ImportIcon class="inline-block align-middle" />
+        <span class="inline-block align-middle">Import</span>
+      </button>
+      <button class="ml-4 border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center">
+        <ExportIcon class="inline-block align-middle" />
+        <span class="inline-block align-middle">Export</span>
+      </button>
+      <button v-if="test()" class="ml-4 border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center">
+        <SaveIcon class="inline-block align-middle" />
+        <span class="inline-block align-middle">Save</span>
+      </button>
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
+import 'jquery';
 import CircleIcon from 'vue-material-design-icons/CircleOutline.vue';
 import SquareIcon from 'vue-material-design-icons/SquareOutline.vue';
 import RemoveIcon from 'vue-material-design-icons/Close.vue';
 import ClearIcon from 'vue-material-design-icons/CloseCircleOutline.vue';
 import RunIcon from 'vue-material-design-icons/Play.vue';
 import StopIcon from 'vue-material-design-icons/Stop.vue';
+import ImportIcon from 'vue-material-design-icons/ArrowBottomRight.vue';
+import ExportIcon from 'vue-material-design-icons/ArrowTopRight.vue';
+import SaveIcon from 'vue-material-design-icons/ContentSaveAll.vue';
 
 export default defineComponent({
   name: 'PetriSVG',
@@ -51,7 +81,44 @@ export default defineComponent({
     RemoveIcon,
     ClearIcon,
     RunIcon,
-    StopIcon
+    StopIcon,
+    ImportIcon,
+    ExportIcon,
+    SaveIcon
+  },
+  data() {
+    return {
+      element: {
+        x: 100,
+        y: 100
+      }
+    };
+  },
+
+  methods: {
+    test() {
+      if (localStorage.getItem('mail') != null) {
+        return true;
+      }
+      return false;
+    },
+
+    startDrag() {
+      (this.$refs.box as any).addEventListener('mousemove', this.drag);
+    },
+
+    drag(event: MouseEvent) {
+      this.element.x = event.offsetX;
+      this.element.y = event.offsetY;
+    },
+
+    endDrag() {
+      (this.$refs.box as any).removeEventListener('mousemove', this.drag);
+    },
+
+    addPlace() {
+      const svgcos = $('#svgArea').html();
+    }
   }
 });
 </script>

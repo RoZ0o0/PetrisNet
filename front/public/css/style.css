@@ -35,9 +35,17 @@ html {
 }
 
 .petri-nav button {
-    background-color: grey;
+    background-color: rgb(165, 165, 165);
 }
 
 .petri-nav button:hover {
     background-color: white;
+}
+
+.draggable {
+    cursor: move;
+}
+
+.static {
+    cursor: not-allowed;
 }
