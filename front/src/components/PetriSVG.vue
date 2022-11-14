@@ -31,8 +31,7 @@
   </div>
   <div class="mx-8 my-4 border-2 border-black rounded-xl h-4/5">
     <svg ref="box" class="bg-gray-300 rounded-xl box" height="100%" width="100%" xmlns="http://www.w3.org/2000/svg">
-      <component v-for="(child, index) in children" :key="index" :is="child"></component>
-      <circle class="element" :cx="element.x" :cy="element.y" r="40" stroke="deeppink" stroke-width="2" fill="#ffe6ee" v-on:mousedown="startDrag" v-on:mouseup="endDrag" />
+      <component v-for="(child, index) in children" :key="index" :is="child" @start-drag="startDrag" @end-drag="endDrag"></component>
     </svg>
   </div>
   <div class="flex w-full h-16 items-center justify-center">
@@ -54,7 +53,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, markRaw } from 'vue';
 import CircleIcon from 'vue-material-design-icons/CircleOutline.vue';
 import SquareIcon from 'vue-material-design-icons/SquareOutline.vue';
 import RemoveIcon from 'vue-material-design-icons/Close.vue';
@@ -67,7 +66,7 @@ import SaveIcon from 'vue-material-design-icons/ContentSaveAll.vue';
 
 const Circle = {
   template: `
-    <circle class="element" :cx="element.x" :cy="element.y" r="40" stroke="deeppink" stroke-width="2" fill="#ffe6ee" v-on:mousedown="startDrag" v-on:mouseup="endDrag" />
+    <circle class="element" :cx="element.x" :cy="element.y" r="40" stroke="deeppink" stroke-width="2" fill="#ffe6ee" @mousedown="$emit('start-drag')" @mouseup="$emit('end-drag')"/>
   `,
 
   data() {
@@ -117,6 +116,7 @@ export default defineComponent({
     },
 
     drag(event: MouseEvent) {
+      console.log('jd');
       this.element.x = event.offsetX;
       this.element.y = event.offsetY;
     },
