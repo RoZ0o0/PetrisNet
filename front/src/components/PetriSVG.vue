@@ -31,7 +31,7 @@
   </div>
   <div class="mx-8 my-4 border-2 border-black rounded-xl h-4/5">
     <svg ref="box" class="bg-gray-300 rounded-xl box" height="100%" width="100%" xmlns="http://www.w3.org/2000/svg">
-      <component v-for="(child, index) in children" :key="index" :is="child" @start-drag="startDrag" @end-drag="endDrag"></component>
+      <component v-for="(child, index) in children" :key="index" :is="child" :x="this.element.cx" :y="this.element.cy" @start-drag="startDrag" @end-drag="endDrag"></component>
     </svg>
   </div>
   <div class="flex w-full h-16 items-center justify-center">
@@ -54,6 +54,7 @@
 
 <script lang="ts">
 import { defineComponent, markRaw } from 'vue';
+import { createStore } from 'vuex';
 import CircleIcon from 'vue-material-design-icons/CircleOutline.vue';
 import SquareIcon from 'vue-material-design-icons/SquareOutline.vue';
 import RemoveIcon from 'vue-material-design-icons/Close.vue';
@@ -64,12 +65,15 @@ import ImportIcon from 'vue-material-design-icons/ArrowBottomRight.vue';
 import ExportIcon from 'vue-material-design-icons/ArrowTopRight.vue';
 import SaveIcon from 'vue-material-design-icons/ContentSaveAll.vue';
 
-const Circle = {
+const Circle = markRaw({
   template: `
-    <circle class="element" :cx="element.x" :cy="element.y" r="40" stroke="deeppink" stroke-width="2" fill="#ffe6ee" @mousedown="$emit('start-drag')" @mouseup="$emit('end-drag')"/>
+    <circle class="element" :cx="x" :cy="y" r="40" stroke="deeppink" stroke-width="2" fill="#ffe6ee" @mousedown="$emit('start-drag')" @mouseup="$emit('end-drag')"/>
   `,
+  props: ['x', 'y']
+});
 
-  data() {
+const store = createStore({
+  state() {
     return {
       element: {
         x: 100,
@@ -77,7 +81,7 @@ const Circle = {
       }
     };
   }
-};
+});
 
 export default defineComponent({
   name: 'PetriSVG',
@@ -95,10 +99,9 @@ export default defineComponent({
   data() {
     return {
       element: {
-        x: 100,
-        y: 100
+        cx: store.state.element.x,
+        cy: store.state.element.y
       },
-
       children: [] as any
     };
   },
@@ -116,9 +119,9 @@ export default defineComponent({
     },
 
     drag(event: MouseEvent) {
-      console.log('jd');
-      this.element.x = event.offsetX;
-      this.element.y = event.offsetY;
+      console.log(store.state.element.x);
+      store.state.element.x = event.offsetX;
+      store.state.element.y = event.offsetY;
     },
 
     endDrag() {
