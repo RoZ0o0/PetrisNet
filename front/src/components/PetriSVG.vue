@@ -31,7 +31,7 @@
   </div>
   <div class="mx-8 my-4 border-2 border-black rounded-xl h-4/5">
     <svg ref="box" class="bg-gray-300 rounded-xl box" height="100%" width="100%" xmlns="http://www.w3.org/2000/svg">
-      <component v-for="(child, index) in children" :key="index" :is="child" :x="this.element.cx" :y="this.element.cy" @start-drag="startDrag" @end-drag="endDrag"></component>
+      <component v-for="(child, index) in children" :key="index" :is="child" :cx="this.element.x" :cy="this.element.y" @start-drag="startDrag" @end-drag="endDrag"></component>
     </svg>
   </div>
   <div class="flex w-full h-16 items-center justify-center">
@@ -54,7 +54,6 @@
 
 <script lang="ts">
 import { defineComponent, markRaw } from 'vue';
-import { createStore } from 'vuex';
 import CircleIcon from 'vue-material-design-icons/CircleOutline.vue';
 import SquareIcon from 'vue-material-design-icons/SquareOutline.vue';
 import RemoveIcon from 'vue-material-design-icons/Close.vue';
@@ -67,20 +66,8 @@ import SaveIcon from 'vue-material-design-icons/ContentSaveAll.vue';
 
 const Circle = markRaw({
   template: `
-    <circle class="element" :cx="x" :cy="y" r="40" stroke="deeppink" stroke-width="2" fill="#ffe6ee" @mousedown="$emit('start-drag')" @mouseup="$emit('end-drag')"/>
-  `,
-  props: ['x', 'y']
-});
-
-const store = createStore({
-  state() {
-    return {
-      element: {
-        x: 100,
-        y: 100
-      }
-    };
-  }
+    <circle class="element" r="40" stroke="deeppink" stroke-width="2" fill="#ffe6ee" @mousedown="$emit('start-drag')" @mouseup="$emit('end-drag')"/>
+  `
 });
 
 export default defineComponent({
@@ -99,8 +86,8 @@ export default defineComponent({
   data() {
     return {
       element: {
-        cx: store.state.element.x,
-        cy: store.state.element.y
+        x: 100,
+        y: 100
       },
       children: [] as any
     };
@@ -119,9 +106,8 @@ export default defineComponent({
     },
 
     drag(event: MouseEvent) {
-      console.log(store.state.element.x);
-      store.state.element.x = event.offsetX;
-      store.state.element.y = event.offsetY;
+      this.element.x = event.offsetX;
+      this.element.y = event.offsetY;
     },
 
     endDrag() {
