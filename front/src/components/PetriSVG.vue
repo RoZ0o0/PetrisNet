@@ -15,7 +15,7 @@
         <CircleIcon class="inline-block align-middle" />
         <span class="inline-block align-middle">Place</span>
       </button>
-      <button class="border-2 border-black border-l-0 p-2 items-center">
+      <button class="border-2 border-black border-l-0 p-2 items-center" v-on:click="addTransition">
         <SquareIcon class="inline-block align-middle" />
         <span class="inline-block align-middle">Transition</span>
       </button>
@@ -31,7 +31,11 @@
   </div>
   <div class="mx-8 my-4 border-2 border-black rounded-xl h-4/5">
     <svg ref="box" class="bg-gray-300 rounded-xl box" height="100%" width="100%" xmlns="http://www.w3.org/2000/svg">
-      <component v-for="(child, index) in children" :key="index" :is="child" :cx="this.element.x" :cy="this.element.y" @start-drag="startDrag" @end-drag="endDrag"></component>
+      <template v-for="(child, index) in children" :key="index">
+        <component v-if="child.template.substring(0, 2) == '<c'" :id='this.elements[index+1].name' :is="child"
+          :cx="this.elements[index+1].x" :cy="this.elements[index+1].y"
+          @start-drag="startDrag" @end-drag="endDrag"></component>
+      </template>
     </svg>
   </div>
   <div class="flex w-full h-16 items-center justify-center">
@@ -70,6 +74,12 @@ const Circle = markRaw({
   `
 });
 
+const Square = markRaw({
+  template: `
+    <rect class="element" width="30" height="60" stroke="rgb(0,0,0)" stroke-width="2" fill="rgb(0,0,255)" @mousedown="$emit('start-drag')" @mouseup="$emit('end-drag')"/>
+  `
+});
+
 export default defineComponent({
   name: 'PetriSVG',
   components: {
@@ -86,10 +96,20 @@ export default defineComponent({
   data() {
     return {
       element: {
+        name: '',
         x: 100,
         y: 100
       },
-      children: [] as any
+      elements: [
+        {
+          name: '',
+          x: 100,
+          y: 100
+        }
+      ],
+      children: [] as any,
+      place_counter: 0,
+      transition_counter: 0
     };
   },
 
@@ -105,9 +125,13 @@ export default defineComponent({
       (this.$refs.box as any).addEventListener('mousemove', this.drag);
     },
 
-    drag(event: MouseEvent) {
-      this.element.x = event.offsetX;
-      this.element.y = event.offsetY;
+    drag(event: any) {
+      try {
+        this.elements[(event.target.id.substring(1, 2) as number)].x = event.offsetX;
+        this.elements[(event.target.id.substring(1, 2) as number)].y = event.offsetY;
+      } catch (error) {
+
+      }
     },
 
     endDrag() {
@@ -115,7 +139,15 @@ export default defineComponent({
     },
 
     addPlace() {
+      this.place_counter++;
+      this.elements.push({ name: 'P' + this.place_counter, x: this.element.x, y: this.element.y });
       this.children.push(Circle);
+    },
+
+    addTransition() {
+      this.transition_counter++;
+      this.elements.push({ name: 'T' + this.transition_counter, x: this.element.x, y: this.element.y });
+      this.children.push(Square);
     }
   }
 });
