@@ -711,12 +711,6 @@ video {
   overflow: auto;
 }
 
-.truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .rounded-xl {
   border-radius: 0.75rem;
 }

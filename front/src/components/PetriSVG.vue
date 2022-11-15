@@ -19,11 +19,11 @@
         <SquareIcon class="inline-block align-middle" />
         <span class="inline-block align-middle">Transition</span>
       </button>
-      <button class="border-2 border-black border-l-0 border-r-0 p-2 items-center">
+      <button class="border-2 border-black border-l-0 border-r-0 p-2 items-center" v-on:click="deleteElement">
         <RemoveIcon class="inline-block align-middle" />
         <span class="inline-block align-middle">Remove</span>
       </button>
-      <button class="border-2 border-black rounded-br-xl rounded-tr-xl p-2 items-center">
+      <button class="border-2 border-black rounded-br-xl rounded-tr-xl p-2 items-center" v-on:click="clear">
         <ClearIcon class="inline-block align-middle" />
         <span class="inline-block align-middle">Clear</span>
       </button>
@@ -31,10 +31,15 @@
   </div>
   <div class="mx-8 my-4 border-2 border-black rounded-xl h-4/5">
     <svg ref="box" class="bg-gray-300 rounded-xl box" height="100%" width="100%" xmlns="http://www.w3.org/2000/svg">
-      <template v-for="(child, index) in children" :key="index">
-        <component v-if="child.template.substring(0, 2) == '<c'" :id='this.elements[index+1].name' :is="child"
+      <template v-for="(child, index) in children" :key="child.name">
+        <component v-if='this.elements[index+1].name.substring(1,2) == "C"' :id='this.elements[index+1].name' :is="child"
           :cx="this.elements[index+1].x" :cy="this.elements[index+1].y"
-          @start-drag="startDrag" @end-drag="endDrag"></component>
+          @start-drag="startDrag(index+1)" @end-drag="endDrag"></component>
+
+        <component v-if='this.elements[index+1].name.substring(1,2) == "T"' :id='this.elements[index+1].name' :is="child"
+          :x="this.elements[index+1].x" :y="this.elements[index+1].y"
+          :width="this.transition_width" :height="this.transition_height"
+          @start-drag="startDrag(index+1)" @end-drag="endDrag"></component>
       </template>
     </svg>
   </div>
@@ -76,7 +81,7 @@ const Circle = markRaw({
 
 const Square = markRaw({
   template: `
-    <rect class="element" width="30" height="60" stroke="rgb(0,0,0)" stroke-width="2" fill="rgb(0,0,255)" @mousedown="$emit('start-drag')" @mouseup="$emit('end-drag')"/>
+    <rect class="element" stroke="rgb(0,0,0)" stroke-width="2" fill="rgb(0,0,255)" @mousedown="$emit('start-drag')" @mouseup="$emit('end-drag')"/>
   `
 });
 
@@ -107,9 +112,11 @@ export default defineComponent({
           y: 100
         }
       ],
+      current_target: '',
+      transition_width: 30,
+      transition_height: 60,
       children: [] as any,
-      place_counter: 0,
-      transition_counter: 0
+      counter: 0
     };
   },
 
@@ -121,14 +128,21 @@ export default defineComponent({
       return false;
     },
 
-    startDrag() {
+    startDrag(index: string) {
+      this.current_target = index;
       (this.$refs.box as any).addEventListener('mousemove', this.drag);
     },
 
     drag(event: any) {
+      const idx = parseInt(this.current_target);
       try {
-        this.elements[(event.target.id.substring(1, 2) as number)].x = event.offsetX;
-        this.elements[(event.target.id.substring(1, 2) as number)].y = event.offsetY;
+        if (event.target.id.substring(1, 2) === 'T') {
+          this.elements[idx].x = event.offsetX - 15;
+          this.elements[idx].y = event.offsetY - 30;
+        } else {
+          this.elements[idx].x = event.offsetX;
+          this.elements[idx].y = event.offsetY;
+        }
       } catch (error) {
 
       }
@@ -139,15 +153,26 @@ export default defineComponent({
     },
 
     addPlace() {
-      this.place_counter++;
-      this.elements.push({ name: 'P' + this.place_counter, x: this.element.x, y: this.element.y });
+      this.counter++;
+      this.elements.push({ name: 'EC' + this.counter, x: this.element.x, y: this.element.y });
       this.children.push(Circle);
     },
 
     addTransition() {
-      this.transition_counter++;
-      this.elements.push({ name: 'T' + this.transition_counter, x: this.element.x, y: this.element.y });
+      this.counter++;
+      this.elements.push({ name: 'ET' + this.counter, x: this.element.x, y: this.element.y });
       this.children.push(Square);
+    },
+
+    deleteElement() {
+      const index = parseInt(this.current_target);
+      this.children.splice(index - 1, 1);
+      this.elements.splice(index, 1);
+    },
+
+    clear() {
+      this.children.splice(0);
+      this.elements = [{ name: '', x: 100, y: 100 }];
     }
   }
 });
