@@ -1,5 +1,4 @@
 import axios, { AxiosResponse } from 'axios';
-import { ILogin } from './LoginService';
 
 export default class UserServices {
   public static getBlankUserTemplate(): IUser {

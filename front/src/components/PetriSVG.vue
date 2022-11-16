@@ -49,7 +49,7 @@
         <ImportIcon class="inline-block align-middle" />
         <span class="inline-block align-middle">Import</span>
       </button>
-      <button class="ml-4 border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center">
+      <button class="ml-4 border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center" v-on:click="exportNet">
         <ExportIcon class="inline-block align-middle" />
         <span class="inline-block align-middle">Export</span>
       </button>
@@ -173,6 +173,20 @@ export default defineComponent({
     clear() {
       this.children.splice(0);
       this.elements = [{ name: '', x: 100, y: 100 }];
+    },
+
+    exportNet() {
+      const data = JSON.stringify(this.elements.slice(1));
+      const blob = new Blob([data], { type: 'text/plain' });
+      const anchor = document.createElement('a');
+      anchor.download = 'PetriNet_import.txt';
+      anchor.href = window.URL.createObjectURL(blob);
+      anchor.dataset.downloadurl = ['text/plain', anchor.download, anchor.href].join(':');
+      anchor.click();
+    },
+
+    importNet() {
+      return true;
     }
   }
 });
