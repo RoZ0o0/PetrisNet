@@ -45,10 +45,11 @@
   </div>
   <div class="flex w-full h-16 items-center justify-center">
     <div class="items-center petri-nav">
-      <button class="border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center">
+      <button class="border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center" v-on:click="importNet">
         <ImportIcon class="inline-block align-middle" />
         <span class="inline-block align-middle">Import</span>
       </button>
+      <input ref='import' type='file' class='hidden' @change='importNetChanged'>
       <button class="ml-4 border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center" v-on:click="exportNet">
         <ExportIcon class="inline-block align-middle" />
         <span class="inline-block align-middle">Export</span>
@@ -116,7 +117,10 @@ export default defineComponent({
       transition_width: 30,
       transition_height: 60,
       children: [] as any,
-      counter: 0
+      counter: 0,
+      dest: null as any,
+      selecting: false,
+      selectedFile: null
     };
   },
 
@@ -136,7 +140,7 @@ export default defineComponent({
     drag(event: any) {
       const idx = parseInt(this.current_target);
       try {
-        if (event.target.id.substring(1, 2) === 'T') {
+        if (event.target.nodeName === 'rect') {
           this.elements[idx].x = event.offsetX - 15;
           this.elements[idx].y = event.offsetY - 30;
         } else {
@@ -173,6 +177,7 @@ export default defineComponent({
     clear() {
       this.children.splice(0);
       this.elements = [{ name: '', x: 100, y: 100 }];
+      this.counter = 0;
     },
 
     exportNet() {
@@ -186,7 +191,47 @@ export default defineComponent({
     },
 
     importNet() {
-      return true;
+      this.selecting = true;
+
+      window.addEventListener('focus', () => {
+        this.selecting = false;
+      }, { once: true });
+
+      (this.$refs.import as any).click();
+    },
+
+    importNetChanged(e: any) {
+      this.selectedFile = e.target.files[0];
+      const reader = new FileReader();
+      if ((this.selectedFile as any).name.includes('.txt')) {
+        reader.onload = (res) => {
+          this.dest = res.target?.result;
+          this.clear();
+          try {
+            for (let i = 0; i < JSON.parse(this.dest).length; i++) {
+              const objectType = JSON.parse(this.dest)[i].name.substring(1, 2);
+              if (objectType === 'C') {
+                this.counter++;
+                this.children.push(Circle);
+              } else if (objectType === 'T') {
+                this.counter++;
+                this.children.push(Square);
+              } else {
+                console.log('Zły plik');
+                break;
+              }
+              this.elements.push(JSON.parse(this.dest)[i]);
+            }
+          } catch (e) {
+            console.log('Zły plik');
+          }
+        };
+        if (this.selectedFile != null) {
+          reader.readAsText(this.selectedFile);
+        }
+      } else {
+        console.log('zly plik');
+      }
     }
   }
 });
