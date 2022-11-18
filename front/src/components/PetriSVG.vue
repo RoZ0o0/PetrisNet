@@ -34,12 +34,19 @@
       <template v-for="(child, index) in children" :key="child.name">
         <component v-if='this.elements[index+1].name.substring(1,2) == "C"' :id='this.elements[index+1].name' :is="child"
           :cx="this.elements[index+1].x" :cy="this.elements[index+1].y"
-          @start-drag="startDrag(index+1)" @end-drag="endDrag"></component>
+          @start-drag="startDrag(index+1)" @end-drag="endDrag" @end-con-drag="endConnectionDrag" @mouseover="setHoveredID(index+1)" @mouseleave="setHoveredID(0)">
+        </component>
 
         <component v-if='this.elements[index+1].name.substring(1,2) == "T"' :id='this.elements[index+1].name' :is="child"
           :x="this.elements[index+1].x" :y="this.elements[index+1].y"
           :width="this.transition_width" :height="this.transition_height"
-          @start-drag="startDrag(index+1)" @end-drag="endDrag"></component>
+          @start-drag="startDrag(index+1)" @end-drag="endDrag(); endConnectionDrag()" @mouseover="setHoveredID(index+1)" @mouseleave="setHoveredID(0)">
+        </component>
+
+        <component v-if='this.elements[index+1].name.substring(1,2) == "A"' :id='this.elements[index+1].name' :is="child"
+          :x1="this.elements[1].x" :y1="this.elements[1].y" :x2="this.elements[2].x" :y2="this.elements[2].y"
+          @end-drag="endConnectionDrag">
+        </component>
       </template>
     </svg>
   </div>
@@ -86,6 +93,12 @@ const Square = markRaw({
   `
 });
 
+const Connection = markRaw({
+  template: `
+    <line class="element" stroke="rgb(0,0,0)" stroke-width="2" fill="rgb(0,0,255)" @mouseup="$emit('end-drag')"/>
+  `
+});
+
 export default defineComponent({
   name: 'PetriSVG',
   components: {
@@ -110,10 +123,14 @@ export default defineComponent({
         {
           name: '',
           x: 100,
-          y: 100
+          y: 100,
+          x2: 0,
+          y2: 0
         }
       ],
-      current_target: '',
+      ctrl_pressed: false,
+      current_target: 0,
+      hovered_target: 0,
       transition_width: 30,
       transition_height: 60,
       children: [] as any,
@@ -124,6 +141,17 @@ export default defineComponent({
     };
   },
 
+  mounted() {
+    window.addEventListener('keydown', (e) => {
+      if (e.ctrlKey) {
+        this.ctrl_pressed = true;
+      }
+    });
+    window.addEventListener('keyup', (e) => {
+      this.ctrl_pressed = false;
+    });
+  },
+
   methods: {
     test() {
       if (localStorage.getItem('mail') != null) {
@@ -132,13 +160,31 @@ export default defineComponent({
       return false;
     },
 
-    startDrag(index: string) {
+    setHoveredID(index: number) {
+      console.log(index);
+      this.hovered_target = index;
+    },
+
+    startDrag(index: number) {
       this.current_target = index;
-      (this.$refs.box as any).addEventListener('mousemove', this.drag);
+      if (this.ctrl_pressed) {
+        this.addConnection();
+        (this.$refs.box as any).addEventListener('mousemove', this.connection_drag);
+      } else {
+        (this.$refs.box as any).addEventListener('mousemove', this.drag);
+      }
+    },
+
+    connection_drag(event: any) {
+      try {
+        this.elements[this.elements.length - 1].x2 = event.offsetX;
+        this.elements[this.elements.length - 1].y2 = event.offsetY;
+      } catch (error) {
+      }
     },
 
     drag(event: any) {
-      const idx = parseInt(this.current_target);
+      const idx = this.current_target;
       try {
         if (event.target.nodeName === 'rect') {
           this.elements[idx].x = event.offsetX - 15;
@@ -156,27 +202,51 @@ export default defineComponent({
       (this.$refs.box as any).removeEventListener('mousemove', this.drag);
     },
 
+    endConnectionDrag() {
+      (this.$refs.box as any).removeEventListener('mousemove', this.drag);
+      (this.$refs.box as any).removeEventListener('mousemove', this.connection_drag);
+      // if (this.hovered_target === 0) {
+      //   this.children.splice(-1, 1);
+      //   this.elements.splice(-1, 1);
+      //   this.counter--;
+      // } else {
+      this.elements[this.elements.length - 1].x2 = this.elements[2].x;
+      this.elements[this.elements.length - 1].y2 = this.elements[2].y;
+      // }
+    },
+
+    // updateConnection() {
+
+    // },
+
     addPlace() {
       this.counter++;
-      this.elements.push({ name: 'EC' + this.counter, x: this.element.x, y: this.element.y });
+      this.elements.push({ name: 'EC' + this.counter, x: this.element.x, y: this.element.y, x2: 0, y2: 0 });
       this.children.push(Circle);
     },
 
     addTransition() {
       this.counter++;
-      this.elements.push({ name: 'ET' + this.counter, x: this.element.x, y: this.element.y });
+      this.elements.push({ name: 'ET' + this.counter, x: this.element.x, y: this.element.y, x2: 0, y2: 0 });
       this.children.push(Square);
     },
 
+    addConnection() {
+      const target = this.current_target;
+      this.counter++;
+      this.elements.push({ name: 'EA' + this.counter, x: this.elements[target].x, y: this.elements[target].y, x2: this.elements[target].x, y2: this.elements[target].y });
+      this.children.push(Connection);
+    },
+
     deleteElement() {
-      const index = parseInt(this.current_target);
+      const index = this.current_target;
       this.children.splice(index - 1, 1);
       this.elements.splice(index, 1);
     },
 
     clear() {
       this.children.splice(0);
-      this.elements = [{ name: '', x: 100, y: 100 }];
+      this.elements = [{ name: '', x: 100, y: 100, x2: 0, y2: 0 }];
       this.counter = 0;
     },
 
