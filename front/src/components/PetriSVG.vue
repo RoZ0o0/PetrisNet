@@ -40,12 +40,11 @@
         <component v-if='this.elements[index+1].name.substring(1,2) == "T"' :id='this.elements[index+1].name' :is="child"
           :x="this.elements[index+1].x" :y="this.elements[index+1].y"
           :width="this.transition_width" :height="this.transition_height"
-          @start-drag="startDrag(index+1)" @end-drag="endDrag(); endConnectionDrag()" @mouseover="setHoveredID(index+1)" @mouseleave="setHoveredID(0)">
+          @start-drag="startDrag(index+1)" @end-drag="endDrag()" @mouseover="setHoveredID(index+1)" @mouseleave="setHoveredID(0)">
         </component>
 
         <component v-if='this.elements[index+1].name.substring(1,2) == "A"' :id='this.elements[index+1].name' :is="child"
-          :x1="this.elements[findFirstConnection(this.elements[index+1].name)].x + offset(this.elements[findFirstConnection(this.elements[index+1].name)].x, this.elements[this.elements.length - 1].x2)" :y1="this.elements[findFirstConnection(this.elements[index+1].name)].y" :x2="this.elements[3].x2 + offset(this.elements[3].x2, this.elements[current_target].x)" :y2="this.elements[3].y2"
-          @end-drag="endConnectionDrag">
+          :x1="this.elements[findFirstConnection(this.elements[index+1].name)].x + offset(this.elements[findFirstConnection(this.elements[index+1].name)].x, this.elements[this.elements.length - 1].x2)" :y1="this.elements[findFirstConnection(this.elements[index+1].name)].y" :x2="this.elements[findSecondConnection(this.elements[index+1].name)].x + offset(this.elements[findSecondConnection(this.elements[index+1].name)].x, this.elements[findFirstConnection(this.elements[index+1].name)].x)" :y2="this.elements[findSecondConnection(this.elements[index+1].name)].y">
         </component>
       </template>
     </svg>
@@ -95,7 +94,7 @@ const Square = markRaw({
 
 const Connection = markRaw({
   template: `
-    <line class="element" stroke="rgb(0,0,0)" stroke-width="2" fill="rgb(0,0,255)" @mouseup="$emit('end-drag')"/>
+    <line class="element" stroke="rgb(0,0,0)" stroke-width="2" fill="rgb(0,0,255)"/>
   `
 });
 
@@ -190,8 +189,8 @@ export default defineComponent({
 
     connection_drag(event: any) {
       try {
-        this.elements[this.elements.length - 1].x2 = event.offsetX - 5;
-        this.elements[this.elements.length - 1].y2 = event.offsetY - 5;
+        this.elements[this.elements.length - 1].x = event.offsetX - 5;
+        this.elements[this.elements.length - 1].y = event.offsetY - 5;
       } catch (error) {
       }
     },
@@ -216,29 +215,24 @@ export default defineComponent({
       if (this.connection_edit) {
         (this.$refs.box as any).removeEventListener('mousemove', this.drag);
         (this.$refs.box as any).removeEventListener('mousemove', this.connection_drag);
-        if (this.hovered_target === 0) {
+        if (this.hovered_target === 0 || this.hovered_target === this.current_target) {
           this.children.splice(-1, 1);
           this.elements.splice(-1, 1);
+          this.connections.splice(-1, 1);
           this.counter--;
         } else {
           this.elements[this.elements.length - 1].x2 = this.elements[this.hovered_target].x;
           this.elements[this.elements.length - 1].y2 = this.elements[this.hovered_target].y;
+          this.elements[this.elements.length - 1].x = this.elements[this.current_target].x;
+          this.elements[this.elements.length - 1].y = this.elements[this.current_target].y;
           this.connections[this.connections.length - 1].ST = this.hovered_target;
-          // console.log(this.connections);
           document.getElementById(this.current_connection)?.removeEventListener('mousemove', this.connection_drag);
         }
         this.current_connection = '';
         this.connection_edit = false;
+        console.log(this.elements);
       }
     },
-
-    endConnectionDrag() {
-      return 1;
-    },
-
-    // updateConnection() {
-
-    // },
 
     addPlace() {
       this.counter++;
@@ -256,7 +250,7 @@ export default defineComponent({
       const target = this.current_target;
       this.counter++;
       this.elements.push({ name: 'EA' + this.counter, x: this.elements[target].x, y: this.elements[target].y, x2: this.elements[target].x, y2: this.elements[target].y });
-      this.connections.push({ name: 'EA' + this.counter, FT: target });
+      this.connections.push({ name: 'EA' + this.counter, FT: target, ST: 0 });
       this.children.push(Connection);
     },
 
@@ -274,15 +268,17 @@ export default defineComponent({
       let secondElement = 0;
       for (let i = 0; i < this.connections.length; i++) {
         if (this.connections[i].name === index) {
-          secondElement = this.connections[i].ST;
+          if (this.connections[i].ST === 0) {
+            secondElement = (this.elements.length - 1);
+          } else {
+            secondElement = this.connections[i].ST;
+          }
         }
       }
 
-      if (secondElement === undefined) {
+      if (secondElement < 1) {
         secondElement = this.elements.length - 1;
       }
-
-      console.log(secondElement);
 
       return secondElement;
     },
@@ -295,6 +291,7 @@ export default defineComponent({
 
     clear() {
       this.children.splice(0);
+      this.connections.splice(0);
       this.elements = [{ name: '', x: 100, y: 100, x2: 0, y2: 0 }];
       this.counter = 0;
     },
