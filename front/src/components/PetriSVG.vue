@@ -34,7 +34,7 @@
       <template v-for="(child, index) in children" :key="child.name">
         <component v-if='this.elements[index+1].name.substring(1,2) == "C"' :id='this.elements[index+1].name' :is="child"
           :cx="this.elements[index+1].x" :cy="this.elements[index+1].y"
-          @start-drag="startDrag(index+1)" @end-drag="endDrag" @end-con-drag="endConnectionDrag" @mouseover="setHoveredID(index+1)" @mouseleave="setHoveredID(0)">
+          @start-drag="startDrag(index+1)" @end-drag="endDrag" @mouseover="setHoveredID(index+1)" @mouseleave="setHoveredID(0)">
         </component>
 
         <component v-if='this.elements[index+1].name.substring(1,2) == "T"' :id='this.elements[index+1].name' :is="child"
@@ -44,7 +44,7 @@
         </component>
 
         <component v-if='this.elements[index+1].name.substring(1,2) == "A"' :id='this.elements[index+1].name' :is="child"
-          :x1="this.elements[1].x" :y1="this.elements[1].y" :x2="this.elements[2].x" :y2="this.elements[2].y"
+          :x1="this.elements[findFirstConnection(this.elements[index+1].name)].x + offset(this.elements[findFirstConnection(this.elements[index+1].name)].x, this.elements[this.elements.length - 1].x2)" :y1="this.elements[findFirstConnection(this.elements[index+1].name)].y" :x2="this.elements[3].x2 + offset(this.elements[3].x2, this.elements[current_target].x)" :y2="this.elements[3].y2"
           @end-drag="endConnectionDrag">
         </component>
       </template>
@@ -128,6 +128,9 @@ export default defineComponent({
           y2: 0
         }
       ],
+      connections: [] as any,
+      connection_edit: false,
+      current_connection: '',
       ctrl_pressed: false,
       current_target: 0,
       hovered_target: 0,
@@ -161,7 +164,7 @@ export default defineComponent({
     },
 
     setHoveredID(index: number) {
-      console.log(index);
+      // console.log(index);
       this.hovered_target = index;
     },
 
@@ -169,16 +172,26 @@ export default defineComponent({
       this.current_target = index;
       if (this.ctrl_pressed) {
         this.addConnection();
+        this.current_connection = this.elements[this.elements.length - 1].name;
+        this.connection_edit = true;
         (this.$refs.box as any).addEventListener('mousemove', this.connection_drag);
       } else {
         (this.$refs.box as any).addEventListener('mousemove', this.drag);
       }
     },
 
+    offset(offset1: number, offset2: number) {
+      if (offset1 > offset2) {
+        return -5;
+      } else {
+        return 5;
+      }
+    },
+
     connection_drag(event: any) {
       try {
-        this.elements[this.elements.length - 1].x2 = event.offsetX;
-        this.elements[this.elements.length - 1].y2 = event.offsetY;
+        this.elements[this.elements.length - 1].x2 = event.offsetX - 5;
+        this.elements[this.elements.length - 1].y2 = event.offsetY - 5;
       } catch (error) {
       }
     },
@@ -200,19 +213,27 @@ export default defineComponent({
 
     endDrag() {
       (this.$refs.box as any).removeEventListener('mousemove', this.drag);
+      if (this.connection_edit) {
+        (this.$refs.box as any).removeEventListener('mousemove', this.drag);
+        (this.$refs.box as any).removeEventListener('mousemove', this.connection_drag);
+        if (this.hovered_target === 0) {
+          this.children.splice(-1, 1);
+          this.elements.splice(-1, 1);
+          this.counter--;
+        } else {
+          this.elements[this.elements.length - 1].x2 = this.elements[this.hovered_target].x;
+          this.elements[this.elements.length - 1].y2 = this.elements[this.hovered_target].y;
+          this.connections[this.connections.length - 1].ST = this.hovered_target;
+          // console.log(this.connections);
+          document.getElementById(this.current_connection)?.removeEventListener('mousemove', this.connection_drag);
+        }
+        this.current_connection = '';
+        this.connection_edit = false;
+      }
     },
 
     endConnectionDrag() {
-      (this.$refs.box as any).removeEventListener('mousemove', this.drag);
-      (this.$refs.box as any).removeEventListener('mousemove', this.connection_drag);
-      // if (this.hovered_target === 0) {
-      //   this.children.splice(-1, 1);
-      //   this.elements.splice(-1, 1);
-      //   this.counter--;
-      // } else {
-      this.elements[this.elements.length - 1].x2 = this.elements[2].x;
-      this.elements[this.elements.length - 1].y2 = this.elements[2].y;
-      // }
+      return 1;
     },
 
     // updateConnection() {
@@ -235,7 +256,35 @@ export default defineComponent({
       const target = this.current_target;
       this.counter++;
       this.elements.push({ name: 'EA' + this.counter, x: this.elements[target].x, y: this.elements[target].y, x2: this.elements[target].x, y2: this.elements[target].y });
+      this.connections.push({ name: 'EA' + this.counter, FT: target });
       this.children.push(Connection);
+    },
+
+    findFirstConnection(index: string) {
+      let firstElement;
+      for (let i = 0; i < this.connections.length; i++) {
+        if (this.connections[i].name === index) {
+          firstElement = this.connections[i].FT;
+        }
+      }
+      return firstElement;
+    },
+
+    findSecondConnection(index: string) {
+      let secondElement = 0;
+      for (let i = 0; i < this.connections.length; i++) {
+        if (this.connections[i].name === index) {
+          secondElement = this.connections[i].ST;
+        }
+      }
+
+      if (secondElement === undefined) {
+        secondElement = this.elements.length - 1;
+      }
+
+      console.log(secondElement);
+
+      return secondElement;
     },
 
     deleteElement() {
