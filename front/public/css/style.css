@@ -49,3 +49,7 @@ html {
 .static {
     cursor: not-allowed;
 }
+
+.petri-nav input {
+    padding: 0.30rem;
+}

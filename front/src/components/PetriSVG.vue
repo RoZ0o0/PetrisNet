@@ -1,32 +1,44 @@
+<!-- eslint-disable vue/no-v-text-v-html-on-component -->
 <template>
-  <div class="flex w-full h-16 items-center justify-center">
-    <div class="items-center petri-nav">
-      <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center">
-        <RunIcon class="inline-block align-middle" />
-        <span class="inline-block align-middle">Run</span>
-      </button>
-      <button class="border-2 border-black border-l-0 rounded-br-xl rounded-tr-xl p-2 items-center">
-        <StopIcon class="inline-block align-middle" />
-        <span class="inline-block align-middle">Stop</span>
-      </button>
-    </div>
-    <div class="ml-4 items-center petri-nav">
-      <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center" v-on:click="addPlace">
-        <CircleIcon class="inline-block align-middle" />
-        <span class="inline-block align-middle">Place</span>
-      </button>
-      <button class="border-2 border-black border-l-0 p-2 items-center" v-on:click="addTransition">
-        <SquareIcon class="inline-block align-middle" />
-        <span class="inline-block align-middle">Transition</span>
-      </button>
-      <button class="border-2 border-black border-l-0 border-r-0 p-2 items-center" v-on:click="deleteElement">
-        <RemoveIcon class="inline-block align-middle" />
-        <span class="inline-block align-middle">Remove</span>
-      </button>
-      <button class="border-2 border-black rounded-br-xl rounded-tr-xl p-2 items-center" v-on:click="clear">
-        <ClearIcon class="inline-block align-middle" />
-        <span class="inline-block align-middle">Clear</span>
-      </button>
+  <div class="flex w-full h-16 items-center">
+    <div class="flex w-full h-16 items-center justify-center">
+      <div class="items-center petri-nav w-1/12">
+        <button class="border-2 border-black rounded-bl-xl border-r-0 rounded-tl-xl p-1 items-center" v-on:click="addToken">
+          <PlusIcon class="inline-block align-middle" />
+        </button>
+        <input class="border-2 border-black items-center text-center w-1/3" :value="this.elements[this.current_target].name" disabled>
+        <button class="border-2 border-black border-l-0 rounded-br-xl rounded-tr-xl p-1 items-center">
+          <MinusIcon class="inline-block align-middle" />
+        </button>
+      </div>
+      <div class="ml-4 items-center petri-nav">
+        <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center">
+          <RunIcon class="inline-block align-middle" />
+          <span class="inline-block align-middle">Run</span>
+        </button>
+        <button class="border-2 border-black border-l-0 rounded-br-xl rounded-tr-xl p-2 items-center">
+          <StopIcon class="inline-block align-middle" />
+          <span class="inline-block align-middle">Stop</span>
+        </button>
+      </div>
+      <div class="ml-4 items-center petri-nav">
+        <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center" v-on:click="addPlace">
+          <CircleIcon class="inline-block align-middle" />
+          <span class="inline-block align-middle">Place</span>
+        </button>
+        <button class="border-2 border-black border-l-0 p-2 items-center" v-on:click="addTransition">
+          <SquareIcon class="inline-block align-middle" />
+          <span class="inline-block align-middle">Transition</span>
+        </button>
+        <button class="border-2 border-black border-l-0 border-r-0 p-2 items-center" v-on:click="deleteElement">
+          <RemoveIcon class="inline-block align-middle" />
+          <span class="inline-block align-middle">Remove</span>
+        </button>
+        <button class="border-2 border-black rounded-br-xl rounded-tr-xl p-2 items-center" v-on:click="clear">
+          <ClearIcon class="inline-block align-middle" />
+          <span class="inline-block align-middle">Clear</span>
+        </button>
+      </div>
     </div>
   </div>
   <div class="mx-8 my-4 border-2 border-black rounded-xl h-4/5">
@@ -44,7 +56,21 @@
         </component>
 
         <component v-if='this.elements[index+1].name.substring(1,2) == "A"' :id='this.elements[index+1].name' :is="child"
-          :x1="this.elements[findFirstConnection(this.elements[index+1].name)].x + offset(this.elements[findFirstConnection(this.elements[index+1].name)].x, this.elements[this.elements.length - 1].x2)" :y1="this.elements[findFirstConnection(this.elements[index+1].name)].y" :x2="this.elements[findSecondConnection(this.elements[index+1].name)].x + offset(this.elements[findSecondConnection(this.elements[index+1].name)].x, this.elements[findFirstConnection(this.elements[index+1].name)].x)" :y2="this.elements[findSecondConnection(this.elements[index+1].name)].y">
+          :x1="this.elements[findFirstConnection(this.elements[index+1].name)].x + offset(this.elements[findFirstConnection(this.elements[index+1].name)].x, this.elements[this.elements.length - 1].x2)"
+          :y1="this.elements[findFirstConnection(this.elements[index+1].name)].y"
+          :x2="this.elements[findSecondConnection(this.elements[index+1].name)].x + offset(this.elements[findSecondConnection(this.elements[index+1].name)].x, this.elements[findFirstConnection(this.elements[index+1].name)].x)"
+          :y2="this.elements[findSecondConnection(this.elements[index+1].name)].y">
+        </component>
+
+        <component v-if='this.elements[index+1].name.substring(1,2) == "E"' :id='this.elements[index+1].name' :is="child"
+          :cx="this.elements[findCircle(index+1)].x" :cy="this.elements[findCircle(index+1)].y"
+          @start-drag="startDrag(findCircle(index+1))" @end-drag="endDrag" @mouseover="setHoveredID(findCircle(index+1))" @mouseleave="setHoveredID(0)">
+        </component>
+
+        <component v-if='this.elements[index+1].name.substring(1,2) == "L"' :id='this.elements[index+1].name' :is="child"
+          v-text="findToken(index)"
+          :x="this.elements[findCircle(index)].x + textOffset(findToken(index))" :y="this.elements[findCircle(index)].y - 15"
+          @mouseover="setHoveredID(findCircle(index))" @mouseleave="setHoveredID(0)">
         </component>
       </template>
     </svg>
@@ -79,10 +105,18 @@ import StopIcon from 'vue-material-design-icons/Stop.vue';
 import ImportIcon from 'vue-material-design-icons/ArrowBottomRight.vue';
 import ExportIcon from 'vue-material-design-icons/ArrowTopRight.vue';
 import SaveIcon from 'vue-material-design-icons/ContentSaveAll.vue';
+import PlusIcon from 'vue-material-design-icons/Plus.vue';
+import MinusIcon from 'vue-material-design-icons/Minus.vue';
 
 const Circle = markRaw({
   template: `
     <circle class="element" r="40" stroke="deeppink" stroke-width="2" fill="#ffe6ee" @mousedown="$emit('start-drag')" @mouseup="$emit('end-drag')"/>
+  `
+});
+
+const SmallCircle = markRaw({
+  template: `
+    <circle class="element" r="10" fill="black" @mousedown="$emit('start-drag')" @mouseup="$emit('end-drag')"/>
   `
 });
 
@@ -98,6 +132,12 @@ const Connection = markRaw({
   `
 });
 
+const TokenText = markRaw({
+  template: `
+    <text class="fill-black text-center" disabled></text>
+  `
+});
+
 export default defineComponent({
   name: 'PetriSVG',
   components: {
@@ -109,7 +149,9 @@ export default defineComponent({
     StopIcon,
     ImportIcon,
     ExportIcon,
-    SaveIcon
+    SaveIcon,
+    PlusIcon,
+    MinusIcon
   },
   data() {
     return {
@@ -127,6 +169,7 @@ export default defineComponent({
           y2: 0
         }
       ],
+      tokens: [] as any,
       connections: [] as any,
       connection_edit: false,
       current_connection: '',
@@ -163,7 +206,6 @@ export default defineComponent({
     },
 
     setHoveredID(index: number) {
-      // console.log(index);
       this.hovered_target = index;
     },
 
@@ -184,6 +226,15 @@ export default defineComponent({
         return -5;
       } else {
         return 5;
+      }
+    },
+
+    textOffset(count: number) {
+      const countString = count.toString();
+      if (countString.length === 1) {
+        return -5;
+      } else {
+        return -10;
       }
     },
 
@@ -215,7 +266,7 @@ export default defineComponent({
       if (this.connection_edit) {
         (this.$refs.box as any).removeEventListener('mousemove', this.drag);
         (this.$refs.box as any).removeEventListener('mousemove', this.connection_drag);
-        if (this.hovered_target === 0 || this.hovered_target === this.current_target) {
+        if (this.hovered_target === 0 || this.hovered_target === this.current_target || this.elements[this.hovered_target].name.substring(1, 2) === 'C') {
           this.children.splice(-1, 1);
           this.elements.splice(-1, 1);
           this.connections.splice(-1, 1);
@@ -230,7 +281,6 @@ export default defineComponent({
         }
         this.current_connection = '';
         this.connection_edit = false;
-        console.log(this.elements);
       }
     },
 
@@ -252,6 +302,46 @@ export default defineComponent({
       this.elements.push({ name: 'EA' + this.counter, x: this.elements[target].x, y: this.elements[target].y, x2: this.elements[target].x, y2: this.elements[target].y });
       this.connections.push({ name: 'EA' + this.counter, FT: target, ST: 0 });
       this.children.push(Connection);
+    },
+
+    addToken() {
+      if (this.current_target > 0) {
+        let findCircle = false;
+        for (let i = 0; i < this.tokens.length; i++) {
+          if (this.tokens[i].circle === this.current_target) {
+            findCircle = true;
+            this.tokens[i].token_amount++;
+          }
+        }
+
+        if (!findCircle) {
+          this.counter++;
+          this.elements.push({ name: 'EE' + this.counter, x: this.elements[this.current_target].x, y: this.elements[this.current_target].y, x2: 0, y2: 0 });
+          this.tokens.push({ name: this.counter, circle: this.current_target, token_amount: 1 });
+          this.children.push(SmallCircle);
+          this.counter++;
+          this.elements.push({ name: 'EL' + this.counter, x: this.elements[this.current_target].x, y: this.elements[this.current_target].y, x2: 0, y2: 0 });
+          this.children.push(TokenText);
+        }
+
+        console.log(this.tokens);
+      }
+    },
+
+    findCircle(index: number) {
+      for (let i = 0; i < this.tokens.length; i++) {
+        if (this.tokens[i].name === index) {
+          return this.tokens[i].circle;
+        }
+      }
+    },
+
+    findToken(index: number) {
+      for (let i = 0; i < this.tokens.length; i++) {
+        if (this.tokens[i].name === index) {
+          return this.tokens[i].token_amount;
+        }
+      }
     },
 
     findFirstConnection(index: string) {
