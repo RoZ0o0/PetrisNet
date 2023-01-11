@@ -63,14 +63,14 @@
         </component>
 
         <component v-if='this.elements[index+1].name.substring(1,2) == "E"' :id='this.elements[index+1].name' :is="child"
-          :cx="this.elements[findCircle(index+1)].x" :cy="this.elements[findCircle(index+1)].y"
-          @start-drag="startDrag(findCircle(index+1))" @end-drag="endDrag" @mouseover="setHoveredID(findCircle(index+1))" @mouseleave="setHoveredID(0)">
+          :cx="this.elements[findCircle(this.elements[index+1].name)].x" :cy="this.elements[findCircle(this.elements[index+1].name)].y"
+          @start-drag="startDrag(findCircle(this.elements[index+1].name))" @end-drag="endDrag" @mouseover="setHoveredID(findCircle(this.elements[index+1].name))" @mouseleave="setHoveredID(0)">
         </component>
 
         <component v-if='this.elements[index+1].name.substring(1,2) == "L"' :id='this.elements[index+1].name' :is="child"
-          v-text="findToken(index)"
-          :x="this.elements[findCircle(index)].x + textOffset(findToken(index))" :y="this.elements[findCircle(index)].y - 15"
-          @mouseover="setHoveredID(findCircle(index))" @mouseleave="setHoveredID(0)">
+          v-text="findToken(this.elements[index].name)"
+          :x="this.elements[findCircle(this.elements[index].name)].x + textOffset(findToken(this.elements[index].name))" :y="this.elements[findCircle(this.elements[index].name)].y - 15"
+          @mouseover="setHoveredID(findCircle(this.elements[index].name))" @mouseleave="setHoveredID(0)">
         </component>
       </template>
     </svg>
@@ -155,11 +155,6 @@ export default defineComponent({
   },
   data() {
     return {
-      element: {
-        name: '',
-        x: 100,
-        y: 100
-      },
       elements: [
         {
           name: '',
@@ -266,7 +261,7 @@ export default defineComponent({
       if (this.connection_edit) {
         (this.$refs.box as any).removeEventListener('mousemove', this.drag);
         (this.$refs.box as any).removeEventListener('mousemove', this.connection_drag);
-        if (this.hovered_target === 0 || this.hovered_target === this.current_target || this.elements[this.hovered_target].name.substring(1, 2) === 'C') {
+        if (this.hovered_target === 0 || this.hovered_target === this.current_target) {
           this.children.splice(-1, 1);
           this.elements.splice(-1, 1);
           this.connections.splice(-1, 1);
@@ -276,8 +271,18 @@ export default defineComponent({
           this.elements[this.elements.length - 1].y2 = this.elements[this.hovered_target].y;
           this.elements[this.elements.length - 1].x = this.elements[this.current_target].x;
           this.elements[this.elements.length - 1].y = this.elements[this.current_target].y;
-          this.connections[this.connections.length - 1].ST = this.hovered_target;
+          this.connections[this.connections.length - 1].ST = this.elements[this.hovered_target].name;
           document.getElementById(this.current_connection)?.removeEventListener('mousemove', this.connection_drag);
+
+          if ((this.connections[this.connections.length - 1].FT.substring(1, 2) === 'C' &&
+          this.connections[this.connections.length - 1].ST.substring(1, 2) === 'C') ||
+          (this.connections[this.connections.length - 1].FT.substring(1, 2) === 'T' &&
+          this.connections[this.connections.length - 1].ST.substring(1, 2) === 'T')) {
+            this.children.splice(-1, 1);
+            this.elements.splice(-1, 1);
+            this.connections.splice(-1, 1);
+            this.counter--;
+          }
         }
         this.current_connection = '';
         this.connection_edit = false;
@@ -286,13 +291,13 @@ export default defineComponent({
 
     addPlace() {
       this.counter++;
-      this.elements.push({ name: 'EC' + this.counter, x: this.element.x, y: this.element.y, x2: 0, y2: 0 });
+      this.elements.push({ name: 'EC' + this.counter, x: 100, y: 100, x2: 0, y2: 0 });
       this.children.push(Circle);
     },
 
     addTransition() {
       this.counter++;
-      this.elements.push({ name: 'ET' + this.counter, x: this.element.x, y: this.element.y, x2: 0, y2: 0 });
+      this.elements.push({ name: 'ET' + this.counter, x: 100, y: 100, x2: 0, y2: 0 });
       this.children.push(Square);
     },
 
@@ -300,7 +305,7 @@ export default defineComponent({
       const target = this.current_target;
       this.counter++;
       this.elements.push({ name: 'EA' + this.counter, x: this.elements[target].x, y: this.elements[target].y, x2: this.elements[target].x, y2: this.elements[target].y });
-      this.connections.push({ name: 'EA' + this.counter, FT: target, ST: 0 });
+      this.connections.push({ name: 'EA' + this.counter, FT: this.elements[target].name, ST: '' });
       this.children.push(Connection);
     },
 
@@ -308,7 +313,7 @@ export default defineComponent({
       if (this.current_target > 0) {
         let findCircle = false;
         for (let i = 0; i < this.tokens.length; i++) {
-          if (this.tokens[i].circle === this.current_target) {
+          if (this.tokens[i].circle === this.elements[this.current_target].name) {
             findCircle = true;
             this.tokens[i].token_amount++;
           }
@@ -317,26 +322,28 @@ export default defineComponent({
         if (!findCircle) {
           this.counter++;
           this.elements.push({ name: 'EE' + this.counter, x: this.elements[this.current_target].x, y: this.elements[this.current_target].y, x2: 0, y2: 0 });
-          this.tokens.push({ name: this.counter, circle: this.current_target, token_amount: 1 });
+          this.tokens.push({ name: 'EE' + this.counter, object_name: 'EE' + this.counter, label_name: 'EL' + (this.counter + 1), circle: this.elements[this.current_target].name, token_amount: 1 });
           this.children.push(SmallCircle);
           this.counter++;
           this.elements.push({ name: 'EL' + this.counter, x: this.elements[this.current_target].x, y: this.elements[this.current_target].y, x2: 0, y2: 0 });
           this.children.push(TokenText);
         }
-
-        console.log(this.tokens);
       }
     },
 
-    findCircle(index: number) {
+    findCircle(index: string) {
       for (let i = 0; i < this.tokens.length; i++) {
         if (this.tokens[i].name === index) {
-          return this.tokens[i].circle;
+          for (let j = 0; j < this.elements.length; j++) {
+            if (this.tokens[i].circle === this.elements[j].name) {
+              return j;
+            }
+          }
         }
       }
     },
 
-    findToken(index: number) {
+    findToken(index: string) {
       for (let i = 0; i < this.tokens.length; i++) {
         if (this.tokens[i].name === index) {
           return this.tokens[i].token_amount;
@@ -348,7 +355,11 @@ export default defineComponent({
       let firstElement;
       for (let i = 0; i < this.connections.length; i++) {
         if (this.connections[i].name === index) {
-          firstElement = this.connections[i].FT;
+          for (let j = 0; j < this.elements.length; j++) {
+            if (this.elements[j].name === this.connections[i].FT) {
+              firstElement = j;
+            }
+          }
         }
       }
       return firstElement;
@@ -361,7 +372,11 @@ export default defineComponent({
           if (this.connections[i].ST === 0) {
             secondElement = (this.elements.length - 1);
           } else {
-            secondElement = this.connections[i].ST;
+            for (let j = 0; j < this.elements.length; j++) {
+              if (this.elements[j].name === this.connections[i].ST) {
+                secondElement = j;
+              }
+            }
           }
         }
       }
@@ -374,15 +389,53 @@ export default defineComponent({
     },
 
     deleteElement() {
-      const index = this.current_target;
-      this.children.splice(index - 1, 1);
-      this.elements.splice(index, 1);
+      if (this.current_target !== 0) {
+        let deletedIndex = 0;
+        let deletedIndex2 = 0;
+        const connections2 = [...this.connections];
+        const elements2 = [...this.elements];
+        const children2 = [...this.children];
+        this.connections.forEach((element: any, index: number) => {
+          if (element.FT === this.elements[this.current_target].name || element.ST === this.elements[this.current_target].name) {
+            this.elements.forEach((element2: any, index2: number) => {
+              if (element2.name === element.name) {
+                elements2.splice(index2 - deletedIndex2, 1);
+                children2.splice((index2 - 1) - deletedIndex2, 1);
+                deletedIndex2++;
+              }
+            });
+            connections2.splice(index - deletedIndex, 1);
+            deletedIndex++;
+          }
+        });
+        this.connections = connections2;
+        this.elements = elements2;
+        this.children = children2;
+        for (let i = 0; i < this.tokens.length; i++) {
+          if (this.tokens[i].circle === this.elements[this.current_target].name) {
+            for (let j = 0; j < this.elements.length; j++) {
+              if (this.elements[j].name === this.tokens[i].object_name) {
+                this.elements.splice(j, 1);
+                this.children.splice(j - 1, 1);
+                this.elements.splice(j, 1);
+                this.children.splice(j - 1, 1);
+              }
+            }
+            this.tokens.splice(i, 1);
+          }
+        }
+        this.children.splice(this.current_target - 1, 1);
+        this.elements.splice(this.current_target, 1);
+        this.current_target = 0;
+      }
     },
 
     clear() {
       this.children.splice(0);
+      this.elements.splice(1);
+      this.current_target = 0;
       this.connections.splice(0);
-      this.elements = [{ name: '', x: 100, y: 100, x2: 0, y2: 0 }];
+      this.tokens.splice(0);
       this.counter = 0;
     },
 
@@ -436,7 +489,7 @@ export default defineComponent({
           reader.readAsText(this.selectedFile);
         }
       } else {
-        console.log('zly plik');
+        console.log('Zły plik');
       }
     }
   }
