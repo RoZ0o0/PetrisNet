@@ -2,12 +2,8 @@ package net.petri.springboot.entity;
 
 import lombok.*;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
+import java.util.List;
 
 @Getter
 @Setter
@@ -35,5 +31,9 @@ public class User {
 
     @Column(name = "role")
     private String role;
+
+    @OneToMany
+    @JoinTable(name = "saved_user_nets")
+    private List<SavedNets> savedNetsList;
 
 }
