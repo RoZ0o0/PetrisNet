@@ -16,7 +16,7 @@ export default class LoginServices {
   public static async login(login: ILogin): Promise<AxiosResponse> {
     let responseRequest;
     if ((responseRequest = await axios.post<ILogin>('http://localhost:8081/api/users/login', login)) !== undefined) {
-      localStorage.setItem('mail', login.email);
+      localStorage.setItem('role', responseRequest.data.role);
       return responseRequest;
     }
     return responseRequest;
@@ -30,11 +30,6 @@ export default class LoginServices {
   //     }
   //     return responseRequest;
   //   }
-
-  public static async fetch(): Promise<IUser> {
-    const token = localStorage.getItem('mail');
-    return (await axios.get<IUser>('http://localhost:8081/api/users/email?email=' + token)).data;
-  }
 }
 
 export interface ILogin {

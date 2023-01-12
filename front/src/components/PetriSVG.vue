@@ -7,7 +7,7 @@
           <PlusIcon class="inline-block align-middle" />
         </button>
         <input class="border-2 border-black items-center text-center w-1/3" :value="this.elements[this.current_target].name" disabled>
-        <button class="border-2 border-black border-l-0 rounded-br-xl rounded-tr-xl p-1 items-center">
+        <button class="border-2 border-black border-l-0 rounded-br-xl rounded-tr-xl p-1 items-center" v-on:click="substractToken">
           <MinusIcon class="inline-block align-middle" />
         </button>
       </div>
@@ -86,7 +86,7 @@
         <ExportIcon class="inline-block align-middle" />
         <span class="inline-block align-middle">Export</span>
       </button>
-      <button v-if="test()" class="ml-4 border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center">
+      <button v-if="checkIfLogged()" class="ml-4 border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center">
         <SaveIcon class="inline-block align-middle" />
         <span class="inline-block align-middle">Save</span>
       </button>
@@ -193,8 +193,8 @@ export default defineComponent({
   },
 
   methods: {
-    test() {
-      if (localStorage.getItem('mail') != null) {
+    checkIfLogged() {
+      if (localStorage.getItem('role') != null) {
         return true;
       }
       return false;
@@ -331,6 +331,32 @@ export default defineComponent({
       }
     },
 
+    substractToken() {
+      if (this.current_target > 0) {
+        let findCircle = false;
+        for (let i = 0; i < this.tokens.length; i++) {
+          if (this.tokens[i].circle === this.elements[this.current_target].name) {
+            findCircle = true;
+            this.tokens[i].token_amount--;
+            if (this.tokens[i].token_amount === 0) {
+              for (let j = 0; j < this.elements.length; j++) {
+                if (this.elements[j].name === this.tokens[i].object_name) {
+                  this.elements.splice(j, 1);
+                  this.children.splice(j - 1, 1);
+                }
+
+                if (this.elements[j].name === this.tokens[i].label_name) {
+                  this.elements.splice(j, 1);
+                  this.children.splice(j - 1, 1);
+                }
+              }
+              this.tokens.splice(i, 1);
+            }
+          }
+        }
+      }
+    },
+
     findCircle(index: string) {
       for (let i = 0; i < this.tokens.length; i++) {
         if (this.tokens[i].name === index) {
@@ -440,7 +466,10 @@ export default defineComponent({
     },
 
     exportNet() {
-      const data = JSON.stringify(this.elements.slice(1));
+      const elements = JSON.stringify(this.elements.slice(1));
+      const connections = JSON.stringify(this.connections);
+      const tokens = JSON.stringify(this.tokens);
+      const data = '[' + elements + ',' + connections + ',' + tokens + ']';
       const blob = new Blob([data], { type: 'text/plain' });
       const anchor = document.createElement('a');
       anchor.download = 'PetriNet_import.txt';
@@ -467,21 +496,38 @@ export default defineComponent({
           this.dest = res.target?.result;
           this.clear();
           try {
-            for (let i = 0; i < JSON.parse(this.dest).length; i++) {
-              const objectType = JSON.parse(this.dest)[i].name.substring(1, 2);
+            for (let i = 0; i < JSON.parse(this.dest)[1].length; i++) {
+              this.connections.push(JSON.parse(this.dest)[1][i]);
+            }
+            for (let i = 0; i < JSON.parse(this.dest)[2].length; i++) {
+              this.tokens.push(JSON.parse(this.dest)[2][i]);
+            }
+            for (let i = 0; i < JSON.parse(this.dest)[0].length; i++) {
+              const objectType = JSON.parse(this.dest)[0][i].name.substring(1, 2);
               if (objectType === 'C') {
                 this.counter++;
                 this.children.push(Circle);
               } else if (objectType === 'T') {
                 this.counter++;
                 this.children.push(Square);
+              } else if (objectType === 'A') {
+                this.counter++;
+                this.children.push(Connection);
+              } else if (objectType === 'E') {
+                this.counter++;
+                this.children.push(SmallCircle);
+              } else if (objectType === 'L') {
+                this.counter++;
+                this.children.push(TokenText);
               } else {
                 console.log('Zły plik');
+                this.clear();
                 break;
               }
-              this.elements.push(JSON.parse(this.dest)[i]);
+              this.elements.push(JSON.parse(this.dest)[0][i]);
             }
           } catch (e) {
+            this.clear();
             console.log('Zły plik');
           }
         };

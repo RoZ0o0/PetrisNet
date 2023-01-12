@@ -7,22 +7,22 @@
             <span>Strona główna</span>
           </li>
         </router-link>
-        <router-link to="/users">
-          <li v-if="this.result.role == 'Admin'">
-            <span>Użytkownicy</span>
-          </li>
-        </router-link>
         <router-link to="/creator">
           <li>
             <span>Kreator</span>
           </li>
         </router-link>
+        <router-link to="/users">
+          <li v-if="checkRole() == 'Admin'">
+            <span>Użytkownicy</span>
+          </li>
+        </router-link>
         <router-link to="/login">
-          <li v-if="!this.result.role" class="float-right">
+          <li v-if="checkRole() == null" class="float-right">
             <span>Zaloguj</span>
           </li>
         </router-link>
-        <li v-if="this.result.role" v-on:click="logout()" class="float-right">
+        <li v-if="checkRole() != null" v-on:click="logout()" class="float-right">
           <span>Wyloguj</span>
         </li>
       </ul>
@@ -32,30 +32,20 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import LoginServices, { ILogin } from '../services/LoginService';
-import UserServices, { IUser } from '@/services/UserService';
 export default defineComponent({
-  data() {
-    return {
-      result: UserServices.getBlankUserTemplate()
-    };
-  },
-  mounted() {
-    this.getData().then((data) => (this.result = data));
-    this.$forceUpdate();
-  },
+
   name: 'NavigationBar',
   methods: {
-    async getData(): Promise<IUser> {
-      if (localStorage.getItem('mail') != null) {
-        return await LoginServices.fetch();
+    checkRole() {
+      if (localStorage.getItem('role') !== undefined) {
+        return localStorage.getItem('role');
       } else {
-        return this.result;
+        return null;
       }
     },
 
     logout(): void {
-      localStorage.removeItem('mail');
+      localStorage.removeItem('role');
       if (this.$route.name === 'home') {
         window.location.reload();
       } else {

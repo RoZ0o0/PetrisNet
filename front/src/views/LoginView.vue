@@ -78,14 +78,15 @@ export default defineComponent({
     async login(): Promise<void> {
       try {
         if (await LoginServices.login(this.result)) {
-          this.$router.push('users');
+          this.$router.push('/');
+        } else {
+          document.getElementById('err')?.classList.remove('hidden');
+          document.getElementById('err')?.replaceChildren(document.createTextNode('Niepoprawne dane logowania'));
+          this.result.email = '';
+          this.result.password = '';
         }
       } catch (e) {
       }
-      document.getElementById('err')?.classList.remove('hidden');
-      document.getElementById('err')?.replaceChildren(document.createTextNode('Niepoprawne dane logowania'));
-      this.result.email = '';
-      this.result.password = '';
     }
   }
 });
