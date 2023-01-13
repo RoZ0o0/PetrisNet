@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class SavedNetsFM {
-    private Long idUser;
+    private Long userId;
     private String saveName;
     private String netExport;
 }

@@ -22,8 +22,8 @@
             <span>Zaloguj</span>
           </li>
         </router-link>
-        <li v-if="checkRole() != null" v-on:click="logout()" class="float-right">
-          <span>Wyloguj</span>
+        <li v-if="checkRole() != null" class="float-right" style='padding: 0px'>
+          <dropdown />
         </li>
       </ul>
     </div>
@@ -32,8 +32,11 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
+import dropdown from '../components/LoginDropdownMenu.vue';
 export default defineComponent({
-
+  components: {
+    dropdown
+  },
   name: 'NavigationBar',
   methods: {
     checkRole() {
@@ -41,15 +44,6 @@ export default defineComponent({
         return localStorage.getItem('role');
       } else {
         return null;
-      }
-    },
-
-    logout(): void {
-      localStorage.removeItem('role');
-      if (this.$route.name === 'home') {
-        window.location.reload();
-      } else {
-        this.$router.push('/');
       }
     }
   }

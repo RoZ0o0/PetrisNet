@@ -20,5 +20,4 @@ export default {
 <style>
 @import url("../public/css/tailwind.css");
 @import url("../public/css/style.css");
-
 </style>

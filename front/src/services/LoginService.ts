@@ -1,5 +1,4 @@
 import axios, { AxiosResponse, AxiosResponseHeaders } from 'axios';
-import { IUser } from './UserService';
 
 export default class LoginServices {
   public static getBlankLoginTemplate(): ILogin {
@@ -17,6 +16,8 @@ export default class LoginServices {
     let responseRequest;
     if ((responseRequest = await axios.post<ILogin>('http://localhost:8081/api/users/login', login)) !== undefined) {
       localStorage.setItem('role', responseRequest.data.role);
+      localStorage.setItem('email', responseRequest.data.email);
+      localStorage.setItem('firstName', responseRequest.data.firstName);
       return responseRequest;
     }
     return responseRequest;

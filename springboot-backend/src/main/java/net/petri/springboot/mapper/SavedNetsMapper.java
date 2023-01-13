@@ -13,7 +13,7 @@ public record SavedNetsMapper(UserRepository userRepository) {
     public SavedNetsVM mapToVM(SavedNets src) {
         SavedNetsVM dest = new SavedNetsVM();
         dest.setId(src.getId());
-        dest.setIdUser(src.getUser().getId());
+        dest.setUserId(src.getUser().getId());
         dest.setSaveName(src.getSaveName());
         dest.setNetExport(src.getNetExport());
 
@@ -21,8 +21,8 @@ public record SavedNetsMapper(UserRepository userRepository) {
     }
 
     public void mapToEntity(SavedNets dest, SavedNetsFM src) {
-        if (src.getIdUser() != null) {
-            dest.setUser(userRepository.findById(src.getIdUser()).orElse(null));
+        if (src.getUserId() != null) {
+            dest.setUser(userRepository.findById(src.getUserId()).orElse(null));
         }
         dest.setSaveName(src.getSaveName());
         dest.setNetExport(src.getNetExport());
@@ -31,8 +31,8 @@ public record SavedNetsMapper(UserRepository userRepository) {
     public SavedNets mapToEntity(SavedNetsFM src) {
         SavedNets dest = new SavedNets();
 
-        if (src.getIdUser() != null) {
-            dest.setUser(userRepository.findById(src.getIdUser()).orElse(null));
+        if (src.getUserId() != null) {
+            dest.setUser(userRepository.findById(src.getUserId()).orElse(null));
         }
         dest.setSaveName(src.getSaveName());
         dest.setNetExport(src.getNetExport());

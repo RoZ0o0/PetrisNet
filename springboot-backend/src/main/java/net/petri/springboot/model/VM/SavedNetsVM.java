@@ -7,7 +7,7 @@ import lombok.Setter;
 @Setter
 public class SavedNetsVM {
     private Long id;
-    private Long idUser;
+    private Long userId;
     private String saveName;
     private String netExport;
 
@@ -16,7 +16,7 @@ public class SavedNetsVM {
 
     public SavedNetsVM(Long id, Long idUser, String saveName, String netExport) {
         this.id = id;
-        this.idUser = idUser;
+        this.userId = idUser;
         this.saveName = saveName;
         this.netExport = netExport;
     }

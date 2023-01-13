@@ -86,7 +86,7 @@
         <ExportIcon class="inline-block align-middle" />
         <span class="inline-block align-middle">Export</span>
       </button>
-      <button v-if="checkIfLogged()" class="ml-4 border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center">
+      <button v-if="checkIfLogged()" @click="saveModal()" class="ml-4 border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center" data-bs-toggle="modal" data-bs-target="#saveNetModal">
         <SaveIcon class="inline-block align-middle" />
         <span class="inline-block align-middle">Save</span>
       </button>
@@ -107,6 +107,10 @@ import ExportIcon from 'vue-material-design-icons/ArrowTopRight.vue';
 import SaveIcon from 'vue-material-design-icons/ContentSaveAll.vue';
 import PlusIcon from 'vue-material-design-icons/Plus.vue';
 import MinusIcon from 'vue-material-design-icons/Minus.vue';
+import SaveNetServices from '@/services/SaveNetService';
+import Swal from 'sweetalert2';
+import { IUser } from '@/services/UserService';
+import axios, { AxiosError } from 'axios';
 
 const Circle = markRaw({
   template: `
@@ -177,7 +181,8 @@ export default defineComponent({
       counter: 0,
       dest: null as any,
       selecting: false,
-      selectedFile: null
+      selectedFile: null,
+      saveResult: SaveNetServices.getBlankSaveNetTemplate()
     };
   },
 
@@ -537,6 +542,58 @@ export default defineComponent({
       } else {
         console.log('Zły plik');
       }
+    },
+
+    async getUserID(): Promise<void> {
+      this.saveResult.userId = ((await axios.get<IUser>('http://localhost:8081/api/users/email?email=' + localStorage.getItem('email'))).data.id);
+    },
+
+    async create(): Promise<any> {
+      try {
+        await SaveNetServices.create(this.saveResult);
+      } catch (e: any) {
+        const error = e.response?.status as AxiosError;
+        return error;
+      }
+      return 0;
+    },
+
+    saveModal() {
+      Swal.fire({
+        title: 'Podaj nazwę!',
+        input: 'text',
+        cancelButtonText: 'Anuluj',
+        showCancelButton: true,
+        inputPlaceholder: 'Wpisz nazwę!'
+      }).then((result) => {
+        if (result.value === '') {
+          Swal.fire({
+            title: 'Nie podałeś nazwy!'
+          });
+        }
+        if (result.value) {
+          this.getUserID();
+          this.saveResult.saveName = result.value;
+          this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
+          if (this.children.length === 0) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Błąd!',
+              text: 'Nie możesz zapisać pustego modelu!'
+            });
+          } else {
+            this.create().then(function(result) {
+              if (result === 422) {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Błąd!',
+                  text: 'Posiadasz już model z taką nazwą!'
+                });
+              }
+            });
+          }
+        }
+      });
     }
   }
 });
