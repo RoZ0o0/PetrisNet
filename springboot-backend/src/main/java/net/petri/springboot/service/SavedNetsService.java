@@ -4,10 +4,13 @@ import java.util.List;
 import java.util.Optional;
 
 import net.petri.springboot.components.SavedNetsValidator;
+import net.petri.springboot.components.UserValidator;
 import net.petri.springboot.entity.SavedNets;
+import net.petri.springboot.entity.User;
 import net.petri.springboot.mapper.SavedNetsMapper;
 import net.petri.springboot.model.FM.SavedNetsFM;
 import net.petri.springboot.model.VM.SavedNetsVM;
+import net.petri.springboot.model.VM.UserVM;
 import net.petri.springboot.repository.SavedNetsRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,7 +22,8 @@ import org.springframework.web.server.ResponseStatusException;
 @CrossOrigin
 @Service
 public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNetsMapper savedNetsMapper,
-                               SavedNetsValidator savedNetsValidator) {
+                               SavedNetsValidator savedNetsValidator, UserValidator userValidator,
+                               UserService userService) {
 
     public List<SavedNetsVM> getAll() {
         List<SavedNets> entity = savedNetsRepository.findAll();
@@ -47,7 +51,6 @@ public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNet
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        System.out.println(savedNetsRepository.findBySaveName("chuj"));
         entity = optionalSavedNets.get();
 
         return savedNetsMapper.mapToVM(entity);
@@ -62,4 +65,13 @@ public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNet
         savedNetsRepository.save(entity);
         return savedNetsMapper.mapToVM(entity);
     }
+
+    public List<SavedNetsVM> findByUserID(Long userId) {
+
+        List<SavedNets> entity = savedNetsRepository.findByUserId(userId);
+        List<SavedNetsVM> entities = savedNetsMapper.mapToList(entity);
+
+        return entities;
+    }
+
 }

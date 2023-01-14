@@ -7,13 +7,18 @@ export default class UserServices {
       firstName: '',
       lastName: '',
       email: '',
-      password: ''
+      password: '',
+      role: ''
     };
     return tempUser;
   }
 
   public static async fetch(): Promise<Array<IUser>> {
     return (await axios.get<Array<IUser>>('http://localhost:8081/api/users')).data;
+  }
+
+  public static async fetchByMail(email: string): Promise<IUser> {
+    return (await axios.get<IUser>('http://localhost:8081/api/users/email?email=' + email)).data;
   }
 }
 
@@ -23,4 +28,5 @@ export interface IUser {
     lastName: string;
     email: string;
     password: string;
+    role: string;
 }

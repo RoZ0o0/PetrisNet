@@ -3,6 +3,7 @@ import HomeView from '../views/HomeView.vue';
 import UserView from '../views/users/UserView.vue';
 import LoginView from '../views/LoginView.vue';
 import CreatorView from '../views/creator/CreatorView.vue';
+import UserProfileView from '../views/users/UserProfileView.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -24,6 +25,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/creator',
     name: 'creator',
     component: CreatorView
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: UserProfileView
   }
 ];
 

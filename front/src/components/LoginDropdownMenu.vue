@@ -2,11 +2,13 @@
   <div class="flex flex-wrap items-center">
     <el-dropdown class="border-0">
       <el-button type="primary">
-        Witaj, {{ this.result }}<el-icon class="el-icon--right"><arrow-down /></el-icon>
+        Witaj, {{ this.result }}<el-icon class="el-icon--right"></el-icon>
       </el-button>
       <template #dropdown>
-        <el-dropdown-menu>
-          <el-dropdown-item>Twój profil</el-dropdown-item>
+        <el-dropdown-menu class='dropdown'>
+          <router-link to="/profile">
+            <el-dropdown-item>Twój profil</el-dropdown-item>
+          </router-link>
           <el-dropdown-item @click='logout()'>Wyloguj</el-dropdown-item>
         </el-dropdown-menu>
       </template>
@@ -15,8 +17,6 @@
 </template>
 
 <script lang="ts">
-import UserServices, { IUser } from '@/services/UserService';
-import axios from 'axios';
 import { defineComponent } from 'vue';
 export default defineComponent({
   name: 'LoginDropdownMenu',
@@ -42,9 +42,13 @@ export default defineComponent({
 <style scoped>
     .el-button {
         border: 0px;
-        padding: 1.3rem 2rem 1.3rem 2rem;
+        padding: 1.3rem 1.5rem 1.3rem 2rem;
         margin: 0px;
         width: 100%;
         height: 100%;
+    }
+
+    .el-dropdown-menu {
+      width: 9rem;
     }
 </style>

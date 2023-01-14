@@ -11,7 +11,7 @@
     border-color: rgb(239, 68, 68);
 }
 
-.router-link-active li {
+.navbar .router-link-active li {
     background: rgb(239, 68, 68);
     background: linear-gradient(90deg, rgba(239, 68, 68, 1) 0%, rgba(239, 63, 63, 1) 20%, rgba(239, 33, 33, 1) 50%, rgba(239, 63, 63, 1) 80%, rgba(239, 68, 68, 1) 100%);
     border-width: 2px;
