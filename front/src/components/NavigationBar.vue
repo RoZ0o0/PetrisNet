@@ -13,16 +13,16 @@
           </li>
         </router-link>
         <router-link to="/users">
-          <li v-if="checkRole() == 'Admin'">
+          <li v-if="this.result.role == 'Admin'">
             <span>Użytkownicy</span>
           </li>
         </router-link>
         <router-link to="/login">
-          <li v-if="checkRole() == null" class="float-right">
+          <li v-if="this.result.role == ''" class="float-right">
             <span>Zaloguj</span>
           </li>
         </router-link>
-        <li v-if="checkRole() != null" class="float-right" style='padding: 0px'>
+        <li v-if="this.result.role != ''" class="float-right" style='padding: 0px'>
           <dropdown />
         </li>
       </ul>
@@ -31,20 +31,28 @@
 </template>
 
 <script lang="ts">
+import LoginServices, { ILogin } from '@/services/LoginService';
 import { defineComponent } from 'vue';
 import dropdown from '../components/LoginDropdownMenu.vue';
 export default defineComponent({
   components: {
     dropdown
   },
+  data() {
+    return {
+      result: LoginServices.getBlankLoginTemplate()
+    };
+  },
+  mounted() {
+    if (localStorage.getItem('token') != null) {
+      this.getData().then((data) => (this.result = data));
+    }
+  },
+
   name: 'NavigationBar',
   methods: {
-    checkRole() {
-      if (localStorage.getItem('role') !== undefined) {
-        return localStorage.getItem('role');
-      } else {
-        return null;
-      }
+    async getData(): Promise<ILogin> {
+      return await LoginServices.fetch();
     }
   }
 });

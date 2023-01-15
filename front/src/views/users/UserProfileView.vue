@@ -43,11 +43,12 @@ import { Vue } from 'vue-class-component';
 import { defineComponent } from 'vue';
 import UserServices, { IUser } from '@/services/UserService';
 import SaveNetServices, { ISaveNet } from '@/services/SaveNetService';
+import LoginServices, { ILogin } from '@/services/LoginService';
 
 export default defineComponent({
   data() {
     return {
-      result: UserServices.getBlankUserTemplate(),
+      result: LoginServices.getBlankLoginTemplate(),
       resultSaves: [SaveNetServices.getBlankSaveNetTemplate()]
     };
   },
@@ -58,12 +59,12 @@ export default defineComponent({
   },
 
   methods: {
-    async getUser(): Promise<IUser> {
-      return (await UserServices.fetchByMail(localStorage.getItem('email') as string));
+    async getUser(): Promise<ILogin> {
+      return await LoginServices.fetch();
     },
 
     async getSaves(): Promise<Array<ISaveNet>> {
-      return (await SaveNetServices.fetchSavedNets(2));
+      return (await SaveNetServices.fetchSavedNets((await this.getUser()).email));
     }
   }
 });

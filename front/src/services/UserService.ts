@@ -14,11 +14,12 @@ export default class UserServices {
   }
 
   public static async fetch(): Promise<Array<IUser>> {
-    return (await axios.get<Array<IUser>>('http://localhost:8081/api/users')).data;
-  }
-
-  public static async fetchByMail(email: string): Promise<IUser> {
-    return (await axios.get<IUser>('http://localhost:8081/api/users/email?email=' + email)).data;
+    const token = localStorage.getItem('token');
+    return (await axios.get<Array<IUser>>('http://localhost:8081/api/users', {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
   }
 }
 

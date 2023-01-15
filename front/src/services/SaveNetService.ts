@@ -13,11 +13,21 @@ export default class SaveNetServices {
   }
 
   public static async create(saveNet: ISaveNet): Promise<ISaveNet> {
-    return (await axios.post<ISaveNet>('http://localhost:8081/api/saved_nets', saveNet)).data;
+    const token = localStorage.getItem('token');
+    return (await axios.post<ISaveNet>('http://localhost:8081/api/saved_nets', saveNet, {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
   }
 
-  public static async fetchSavedNets(userId: number): Promise<Array<ISaveNet>> {
-    return (await axios.get<Array<ISaveNet>>('http://localhost:8081/api/saved_nets/user?userId=' + userId)).data;
+  public static async fetchSavedNets(email: string): Promise<Array<ISaveNet>> {
+    const token = localStorage.getItem('token');
+    return (await axios.get<Array<ISaveNet>>('http://localhost:8081/api/saved_nets/user?email=' + email, {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
   }
 }
 

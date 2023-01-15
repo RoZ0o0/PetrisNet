@@ -40,5 +40,5 @@ public class SavedNetsController {
     }
 
     @GetMapping("/user")
-    public List<SavedNetsVM> findByUserID(@RequestParam Long userId) { return savedNetsService.findByUserID(userId);}
+    public List<SavedNetsVM> findByUserEmail(@RequestParam String email) { return savedNetsService.findByUserEmail(email);}
 }

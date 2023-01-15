@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface SavedNetsRepository extends JpaRepository<SavedNets, Long> {
     List<SavedNets> findAll();
 
-    List<SavedNets> findByUserId(Long id);
+    List<SavedNets> findByUserEmail(String email);
 
     Optional<SavedNets> findById(Long id);
 

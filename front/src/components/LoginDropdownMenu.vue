@@ -2,7 +2,7 @@
   <div class="flex flex-wrap items-center">
     <el-dropdown class="border-0">
       <el-button type="primary">
-        Witaj, {{ this.result }}<el-icon class="el-icon--right"></el-icon>
+        Witaj, {{ this.result.firstName }}<el-icon class="el-icon--right"></el-icon>
       </el-button>
       <template #dropdown>
         <el-dropdown-menu class='dropdown'>
@@ -17,18 +17,27 @@
 </template>
 
 <script lang="ts">
+import LoginServices, { ILogin } from '@/services/LoginService';
 import { defineComponent } from 'vue';
 export default defineComponent({
   name: 'LoginDropdownMenu',
   data() {
     return {
-      result: localStorage.getItem('firstName')
+      result: LoginServices.getBlankLoginTemplate()
     };
   },
 
+  mounted() {
+    this.getData().then((data) => (this.result = data));
+  },
+
   methods: {
+    async getData(): Promise<ILogin> {
+      return await LoginServices.fetch();
+    },
+
     logout(): void {
-      localStorage.removeItem('role');
+      localStorage.removeItem('token');
       if (this.$route.name === 'home') {
         window.location.reload();
       } else {

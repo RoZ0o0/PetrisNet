@@ -66,9 +66,9 @@ public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNet
         return savedNetsMapper.mapToVM(entity);
     }
 
-    public List<SavedNetsVM> findByUserID(Long userId) {
+    public List<SavedNetsVM> findByUserEmail(String email) {
 
-        List<SavedNets> entity = savedNetsRepository.findByUserId(userId);
+        List<SavedNets> entity = savedNetsRepository.findByUserEmail(email);
         List<SavedNetsVM> entities = savedNetsMapper.mapToList(entity);
 
         return entities;
