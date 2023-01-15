@@ -44,30 +44,4 @@ public record UserService(UserRepository userRepository,
 
         return userMapper.mapToVM(entity);
     }
-
-    public UserVM findByEmail(String email) {
-        Optional<User> optionalUser = userRepository.findByEmail(email);
-        User entity;
-        if(optionalUser.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-        entity = optionalUser.get();
-
-        return userMapper.mapToVM(entity);
-    }
-
-    public UserVM login(UserFM user) {
-        Optional<User> optionalUser = userRepository.findByEmail(user.getEmail());
-        User entity;
-        if(optionalUser.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-        entity = optionalUser.get();
-
-        if(!Objects.equals(user.getPassword(), entity.getPassword())){
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-
-        return userMapper.mapToVM(entity);
-    }
 }

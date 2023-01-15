@@ -13,11 +13,4 @@ public class UserValidator extends Validator {
     public UserValidator(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
-
-    public boolean validateEmail(User model) {
-        if (userRepository.findByEmail(model.getEmail()).isEmpty()) {
-            return false;
-        }
-        return true;
-    }
 }

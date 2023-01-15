@@ -29,14 +29,4 @@ public class UserController {
     public UserVM find(@PathVariable Long id) {
         return userService.find(id);
     }
-
-    @GetMapping("/email")
-    public UserVM find(@RequestParam String email) {
-        return userService.findByEmail(email);
-    }
-
-    @PostMapping("/login")
-    public UserVM getUserByEmail(@RequestBody UserFM user) {
-        return userService.login(user);
-    }
 }
