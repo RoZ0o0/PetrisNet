@@ -40,5 +40,8 @@ public class SavedNetsController {
     }
 
     @GetMapping("/user")
-    public List<SavedNetsVM> findByUserEmail(@RequestParam String email) { return savedNetsService.findByUserEmail(email);}
+    public List<SavedNetsVM> findByUserEmail(@RequestParam String email) { return savedNetsService.findByUserEmail(email); }
+
+    @GetMapping("/public")
+    public List<SavedNetsVM> findByPublic() { return savedNetsService.findByPublic(true); }
 }

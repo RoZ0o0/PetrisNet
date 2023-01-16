@@ -13,6 +13,8 @@ public interface SavedNetsRepository extends JpaRepository<SavedNets, Long> {
 
     List<SavedNets> findByUserEmail(String email);
 
+    List<SavedNets> findByIsPublic(boolean isPublic);
+
     Optional<SavedNets> findById(Long id);
 
     Optional<SavedNets> findBySaveName(String saveName);

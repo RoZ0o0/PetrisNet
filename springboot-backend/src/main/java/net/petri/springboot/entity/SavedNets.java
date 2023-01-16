@@ -25,4 +25,7 @@ public class SavedNets {
     @Column(name = "net_export")
     private String netExport;
 
+    @Column(name = "is_public")
+    private boolean isPublic;
+
 }

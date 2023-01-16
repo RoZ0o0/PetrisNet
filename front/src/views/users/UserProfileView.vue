@@ -39,9 +39,7 @@
 </template>
 
 <script lang="ts">
-import { Vue } from 'vue-class-component';
 import { defineComponent } from 'vue';
-import UserServices, { IUser } from '@/services/UserService';
 import SaveNetServices, { ISaveNet } from '@/services/SaveNetService';
 import LoginServices, { ILogin } from '@/services/LoginService';
 

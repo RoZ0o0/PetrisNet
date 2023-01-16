@@ -21,7 +21,7 @@ public record UserMapper() {
         return dest;
     }
 
-    void mapToEntity(User dest, UserFM src) {
+    public void mapToEntity(User dest, UserFM src) {
         dest.setFirstName(src.getFirstName());
         dest.setLastName(src.getLastName());
         dest.setEmail(src.getEmail());
@@ -29,7 +29,7 @@ public record UserMapper() {
         dest.setRole(src.getRole());
     }
 
-    User mapToEntity(UserFM src) {
+    public User mapToEntity(UserFM src) {
         User dest = new User();
         dest.setFirstName(src.getFirstName());
         dest.setLastName(src.getLastName());

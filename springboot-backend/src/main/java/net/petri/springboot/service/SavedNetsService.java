@@ -74,4 +74,11 @@ public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNet
         return entities;
     }
 
+    public List<SavedNetsVM> findByPublic (boolean isPublic) {
+        List<SavedNets> entity = savedNetsRepository.findByIsPublic(isPublic);
+        List<SavedNetsVM> entities = savedNetsMapper.mapToList(entity);
+
+        return entities;
+    }
+
 }

@@ -10,14 +10,16 @@ public class SavedNetsVM {
     private Long userId;
     private String saveName;
     private String netExport;
+    private boolean isPublic;
 
     public SavedNetsVM() {
     }
 
-    public SavedNetsVM(Long id, Long idUser, String saveName, String netExport) {
+    public SavedNetsVM(Long id, Long idUser, String saveName, String netExport, boolean isPublic) {
         this.id = id;
         this.userId = idUser;
         this.saveName = saveName;
         this.netExport = netExport;
+        this.isPublic = isPublic;
     }
 }

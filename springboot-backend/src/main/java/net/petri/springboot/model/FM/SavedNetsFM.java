@@ -10,4 +10,5 @@ public class SavedNetsFM {
     private Long userId;
     private String saveName;
     private String netExport;
+    private boolean isPublic;
 }
