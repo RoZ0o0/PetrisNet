@@ -36,6 +36,9 @@ public class  UserValidator extends Validator {
         if (!emailCheck(user.getEmail())) {
             return false;
         }
+        if (!passswordCheck(user.getPassword())) {
+            return false;
+        }
         if (user.getPassword().length() < 3 || user.getPassword().isEmpty() || user.getPassword().isBlank()){
             return false;
         }
@@ -43,13 +46,21 @@ public class  UserValidator extends Validator {
     }
 
     public boolean emailCheck(String email) {
-        String regex = "^(?=.{1,64}@)[A-Za-z\\d_-]+(\\.[A-Za-z\\d_-]+)*@"
-                + "[^-][A-Za-z\\d-]+(\\.[A-Za-z\\d-]+)*(\\.[A-Za-z]{2,})$";
+        String regex = "^[A-Za-z-\\.]+[A-Za-z0-9-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$";
 
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(email);
 
         return matcher.matches();
 
+    }
+
+    public boolean passswordCheck(String password) {
+        String regex = "^(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d]{8,16}$";
+
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(password);
+
+        return matcher.matches();
     }
 }

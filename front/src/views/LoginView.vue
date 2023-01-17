@@ -58,6 +58,9 @@
 
         <hr />
       </div>
+      <div class='text-center'>
+        <p>Nie posiadasz konta? <router-link to='/register' class='text-white'>Zarejestruj się!</router-link></p>
+      </div>
       <p id="err" class="text-center hidden"></p>
     </div>
   </div>

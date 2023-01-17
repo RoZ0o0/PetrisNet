@@ -13,7 +13,7 @@
           </li>
         </router-link>
         <router-link to="/users">
-          <li v-if="this.result.role == 'Admin'">
+          <li v-if="this.result.role == 'ROLE_ADMIN'">
             <span>Użytkownicy</span>
           </li>
         </router-link>

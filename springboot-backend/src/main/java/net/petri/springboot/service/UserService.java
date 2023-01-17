@@ -54,7 +54,7 @@ public record UserService(UserRepository userRepository, UserMapper userMapper,
 
         newEntity.setPassword(bCryptPasswordEncoder.encode(newEntity.getPassword()));
 
-        newEntity.setRole("User");
+        newEntity.setRole("ROLE_USER");
 
         User entity = userMapper.mapToEntity(newEntity);
         userRepository.save(entity);

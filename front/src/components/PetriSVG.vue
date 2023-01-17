@@ -199,7 +199,7 @@ export default defineComponent({
 
   methods: {
     checkIfLogged() {
-      if (localStorage.getItem('role') != null) {
+      if (localStorage.getItem('token') != null) {
         return true;
       }
       return false;

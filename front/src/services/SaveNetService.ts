@@ -29,6 +29,10 @@ export default class SaveNetServices {
       }
     })).data;
   }
+
+  public static async fetchPublicNets(): Promise<Array<ISaveNet>> {
+    return (await axios.get<Array<ISaveNet>>('http://localhost:8081/api/saved_nets/public')).data;
+  }
 }
 
 export interface ISaveNet {

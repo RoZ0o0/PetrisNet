@@ -21,6 +21,10 @@ export default class UserServices {
       }
     })).data;
   }
+
+  public static async create(user: IUser): Promise<IUser> {
+    return (await axios.post<IUser>('http://localhost:8081/api/users/register', user)).data;
+  }
 }
 
 export interface IUser {
