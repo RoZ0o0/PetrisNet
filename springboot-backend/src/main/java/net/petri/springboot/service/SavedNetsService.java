@@ -22,8 +22,7 @@ import org.springframework.web.server.ResponseStatusException;
 @CrossOrigin
 @Service
 public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNetsMapper savedNetsMapper,
-                               SavedNetsValidator savedNetsValidator, UserValidator userValidator,
-                               UserService userService) {
+                               SavedNetsValidator savedNetsValidator, UserValidator userValidator) {
 
     public List<SavedNetsVM> getAll() {
         List<SavedNets> entity = savedNetsRepository.findAll();
@@ -44,20 +43,8 @@ public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNet
         return savedNetsMapper.mapToVM(entity);
     }
 
-    public SavedNetsVM findBySaveName(String saveName) {
-        Optional<SavedNets> optionalSavedNets = savedNetsRepository.findBySaveName(saveName);
-        SavedNets entity;
-        if (optionalSavedNets.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-
-        entity = optionalSavedNets.get();
-
-        return savedNetsMapper.mapToVM(entity);
-    }
-
     public SavedNetsVM create(SavedNetsFM newEntity) {
-        if (!savedNetsValidator.validateSaveName(newEntity)) {
+        if (!savedNetsValidator.findBySaveNameAndUserId(newEntity.getSaveName(), newEntity.getUserId())) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
@@ -67,7 +54,6 @@ public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNet
     }
 
     public List<SavedNetsVM> findByUserEmail(String email) {
-
         List<SavedNets> entity = savedNetsRepository.findByUserEmail(email);
         List<SavedNetsVM> entities = savedNetsMapper.mapToList(entity);
 
@@ -80,5 +66,4 @@ public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNet
 
         return entities;
     }
-
 }

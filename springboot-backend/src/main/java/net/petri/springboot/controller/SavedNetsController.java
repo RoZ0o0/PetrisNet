@@ -31,9 +31,6 @@ public class SavedNetsController {
         return savedNetsService.find(id);
     }
 
-    @GetMapping("/save_name")
-    public SavedNetsVM find(@RequestParam String saveName) { return savedNetsService.findBySaveName(saveName); }
-
     @PostMapping()
     public SavedNetsVM create(@RequestBody SavedNetsFM newEntity) {
         return savedNetsService.create(newEntity);

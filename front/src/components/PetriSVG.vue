@@ -111,6 +111,7 @@ import SaveNetServices from '@/services/SaveNetService';
 import Swal from 'sweetalert2';
 import { IUser } from '@/services/UserService';
 import axios, { AxiosError } from 'axios';
+import LoginServices, { ILogin } from '@/services/LoginService';
 
 const Circle = markRaw({
   template: `
@@ -182,7 +183,8 @@ export default defineComponent({
       dest: null as any,
       selecting: false,
       selectedFile: null,
-      saveResult: SaveNetServices.getBlankSaveNetTemplate()
+      saveResult: SaveNetServices.getBlankSaveNetTemplate(),
+      loginResult: LoginServices.getBlankLoginTemplate()
     };
   },
 
@@ -195,9 +197,17 @@ export default defineComponent({
     window.addEventListener('keyup', (e) => {
       this.ctrl_pressed = false;
     });
+
+    if (localStorage.getItem('token') != null) {
+      this.getUser().then((data) => (this.loginResult = data));
+    }
   },
 
   methods: {
+    async getUser(): Promise<ILogin> {
+      return await LoginServices.fetch();
+    },
+
     checkIfLogged() {
       if (localStorage.getItem('token') != null) {
         return true;
@@ -544,10 +554,6 @@ export default defineComponent({
       }
     },
 
-    async getUserID(): Promise<void> {
-      this.saveResult.userId = ((await axios.get<IUser>('http://localhost:8081/api/users/email?email=' + localStorage.getItem('email'))).data.id);
-    },
-
     async create(): Promise<any> {
       try {
         await SaveNetServices.create(this.saveResult);
@@ -572,7 +578,7 @@ export default defineComponent({
           });
         }
         if (result.value) {
-          this.getUserID();
+          this.saveResult.userId = this.loginResult.id;
           this.saveResult.saveName = result.value;
           this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
           if (this.children.length === 0) {

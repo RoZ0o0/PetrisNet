@@ -22,8 +22,26 @@ export default class UserServices {
     })).data;
   }
 
+  public static async fetchByEmail(email: string): Promise<IUser> {
+    const token = localStorage.getItem('token');
+    return (await axios.get<IUser>('http://localhost:8081/api/users/email?email=' + email, {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
+  }
+
   public static async create(user: IUser): Promise<IUser> {
     return (await axios.post<IUser>('http://localhost:8081/api/users/register', user)).data;
+  }
+
+  public static async update(userId: number, user: IUser): Promise<IUser> {
+    const token = localStorage.getItem('token');
+    return (await axios.put<IUser>('http://localhost:8081/api/users/' + userId, user, {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
   }
 }
 

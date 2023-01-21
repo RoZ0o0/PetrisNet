@@ -28,8 +28,21 @@ public class UserController {
         return userService.find(id);
     }
 
+    @GetMapping("/email")
+    public UserVM findByEmail(@RequestParam String email) { return userService.findByEmail(email); }
+
     @PostMapping("/register")
     public UserVM create(@RequestBody UserFM newEntity) {
         return userService.create(newEntity);
+    }
+
+    @PutMapping("/{id}")
+    public UserVM update(@PathVariable Long id, @RequestBody UserFM newEntity) {
+        return userService.update(id, newEntity);
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        userService.delete(id);
     }
 }

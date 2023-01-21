@@ -79,7 +79,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/api/users/register").permitAll()
                 .antMatchers("/api/saved_nets/public").permitAll()
                 .antMatchers("/api/users").hasAnyRole("ADMIN")
-                .antMatchers("/api/users/**").permitAll()
+                .antMatchers("/api/users/**").hasAnyRole("ADMIN")
                 .anyRequest().authenticated()
                 .and()
                 .sessionManagement()

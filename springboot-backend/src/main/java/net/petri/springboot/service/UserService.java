@@ -47,8 +47,17 @@ public record UserService(UserRepository userRepository, UserMapper userMapper,
         return userMapper.mapToVM(entity);
     }
 
+    public UserVM findByEmail(String email) {
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        return userMapper.mapToVM(user);
+    }
+
     public UserVM create(UserFM newEntity) {
-        if (!userValidator.validateUser(newEntity)) {
+        if (!userValidator.validateCreateUser(newEntity)) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
@@ -59,5 +68,36 @@ public record UserService(UserRepository userRepository, UserMapper userMapper,
         User entity = userMapper.mapToEntity(newEntity);
         userRepository.save(entity);
         return userMapper.mapToVM(entity);
+    }
+
+
+    public UserVM update(Long id, UserFM newEntity) {
+        if (!userValidator().validateUpdateUser(newEntity, id)) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        Optional<User> optionalUser = userRepository.findById(id);
+        User entity;
+        if (optionalUser.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        entity = optionalUser.get();
+
+        newEntity.setPassword(entity.getPassword());
+
+        userMapper.mapToEntity(entity, newEntity);
+        userRepository.save(entity);
+
+        return userMapper.mapToVM(entity);
+    }
+
+    public void delete(Long id) {
+        Optional<User> optionalUser = userRepository.findById(id);
+        User entity;
+        if (optionalUser.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        entity = optionalUser.get();
+        userRepository.delete(entity);
     }
 }

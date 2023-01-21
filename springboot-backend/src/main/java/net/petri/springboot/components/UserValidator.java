@@ -1,6 +1,7 @@
 package net.petri.springboot.components;
 
 import net.petri.springboot.entity.User;
+import net.petri.springboot.mapper.UserMapper;
 import net.petri.springboot.model.FM.UserFM;
 import net.petri.springboot.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,16 +9,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Component
 public class  UserValidator extends Validator {
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     @Autowired
-    public UserValidator(UserRepository userRepository) {
+    public UserValidator(UserRepository userRepository, UserMapper userMapper) {
         this.userRepository = userRepository;
+        this.userMapper = userMapper;
     }
 
     public boolean validateUser(UserFM user) {
@@ -30,18 +34,41 @@ public class  UserValidator extends Validator {
         if (user.getFirstName().length() < 3 || user.getLastName().length() <3) {
             return false;
         }
-        if (userRepository.findByEmail(user.getEmail()) != null) {
-            return false;
-        }
         if (!emailCheck(user.getEmail())) {
             return false;
         }
-        if (!passswordCheck(user.getPassword())) {
+
+        return true;
+    }
+
+    public boolean validateCreateUser(UserFM user) {
+        if (!validateUser(user)) {
+            return false;
+        }
+        if (userRepository.findByEmail(user.getEmail()) != null) {
             return false;
         }
         if (user.getPassword().length() < 3 || user.getPassword().isEmpty() || user.getPassword().isBlank()){
             return false;
         }
+        if (!passswordCheck(user.getPassword())) {
+            return false;
+        }
+        if (!List.of("ROLE_ADMIN", "ROLE_USER").contains(user.getRole())) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public boolean validateUpdateUser(UserFM user, Long id) {
+        if (!validateUser(user)) {
+            return false;
+        }
+        if (userRepository.findByEmail(user.getEmail()) != null && userRepository.findByEmail(user.getEmail()).getId() != id) {
+            return false;
+        }
+
         return true;
     }
 

@@ -3,6 +3,7 @@ import axios, { AxiosResponse, AxiosResponseHeaders } from 'axios';
 export default class LoginServices {
   public static getBlankLoginTemplate(): ILogin {
     const tempLogin: ILogin = {
+      id: 0,
       firstName: '',
       lastName: '',
       email: '',
@@ -32,6 +33,7 @@ export default class LoginServices {
 }
 
 export interface ILogin {
+    id: number;
     firstName: string;
     lastName: string;
     email: string;
