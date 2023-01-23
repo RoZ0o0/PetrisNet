@@ -53,8 +53,27 @@
               required
             />
           </div>
+
+          <div class="mb-8 text-right">
+            <label class="inline text-black  text-base font-bold mb-2" for="email">
+              Rola:
+            </label>
+
+            <select v-model='this.result.role' class="shadow appearance-none border-2 border-red-600  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+              <option v-for='item in roles' v-bind:value='item.role' v-bind:key='item.role'>
+                {{ item.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="text-center">
+            <button class="shadow appearance-none border-2 border-red-600 bg-red-400  rounded w-3/5 py-2 px-3 text-black leading-tight focus:outline-none focus:shadow-outline" @click='validateEdit()'>
+              <span class="inline-block align-middle">Edytuj użytkownika</span>
+            </button>
+          </div>
         </slot>
       </section>
+      <p id="err" class="text-center hidden"></p>
     </div>
   </div>
 </template>
@@ -63,6 +82,7 @@
 import UserServices, { IUser } from '@/services/UserService';
 import { defineComponent } from 'vue';
 import Close from 'vue-material-design-icons/Close.vue';
+import Swal from 'sweetalert2';
 
 export default defineComponent({
   components: {
@@ -72,12 +92,18 @@ export default defineComponent({
   props: ['user'],
   data() {
     return {
-      result: UserServices.getBlankUserTemplate()
+      result: UserServices.getBlankUserTemplate(),
+      roles: [
+        { name: 'User', role: 'ROLE_USER' },
+        { name: 'Admin', role: 'ROLE_ADMIN' }
+      ]
     };
   },
   watch: {
-    user: function() {
-      this.getUser().then((data) => (this.result = data));
+    user() {
+      if (this.user !== '') {
+        this.getUser().then((data) => (this.result = data));
+      }
     }
   },
   methods: {
@@ -87,6 +113,46 @@ export default defineComponent({
 
     async getUser(): Promise<IUser> {
       return await UserServices.fetchByEmail(this.user);
+    },
+
+    regexEmail(email: string) {
+      const regex = /^[A-Za-z-\\.]+[A-Za-z0-9-\\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+      const matches = regex.exec(email);
+      return matches;
+    },
+
+    async validateEdit(e: Event) {
+      if (this.result.firstName.length < 3) {
+        document.getElementById('err')?.classList.remove('hidden');
+        document.getElementById('err')?.replaceChildren(document.createTextNode('Imie jest niepoprawne!'));
+        return;
+      }
+
+      if (this.result.lastName.length < 3) {
+        document.getElementById('err')?.classList.remove('hidden');
+        document.getElementById('err')?.replaceChildren(document.createTextNode('Nazwisko jest niepoprawne!'));
+        return;
+      }
+
+      if (!this.regexEmail(this.result.email)) {
+        document.getElementById('err')?.classList.remove('hidden');
+        document.getElementById('err')?.replaceChildren(document.createTextNode('Niepoprawny email!'));
+        return;
+      }
+
+      try {
+        await UserServices.update(this.result.id, this.result);
+      } catch (e) {
+        document.getElementById('err')?.classList.remove('hidden');
+        document.getElementById('err')?.replaceChildren(document.createTextNode('Email już istnieje!'));
+        return;
+      }
+      Swal.fire(
+        'Gotowe!',
+        'Użytkownik został edytowany!',
+        'success'
+      );
+      this.$emit('close');
     }
   }
 });

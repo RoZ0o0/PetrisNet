@@ -35,7 +35,11 @@ export default defineComponent({
   },
 
   mounted() {
-    this.getData().then((data) => (this.result = data));
+    (this.getData().then((data) => (this.result = data))).catch((error) => {
+      if (error?.response.status === 401) {
+        localStorage.removeItem('token');
+      }
+    });
   },
 
   methods: {

@@ -199,7 +199,11 @@ export default defineComponent({
     });
 
     if (localStorage.getItem('token') != null) {
-      this.getUser().then((data) => (this.loginResult = data));
+      (this.getUser().then((data) => (this.loginResult = data))).catch((error) => {
+        if (error?.response.status === 401) {
+          localStorage.removeItem('token');
+        }
+      });
     }
   },
 
@@ -600,6 +604,10 @@ export default defineComponent({
           }
         }
       });
+    },
+
+    fetchData: function() {
+      return this.children.length;
     }
   }
 });

@@ -43,6 +43,15 @@ export default class UserServices {
       }
     })).data;
   }
+
+  public static async delete(userId: number): Promise<IUser> {
+    const token = localStorage.getItem('token');
+    return (await axios.delete('http://localhost:8081/api/users/' + userId, {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
+  }
 }
 
 export interface IUser {

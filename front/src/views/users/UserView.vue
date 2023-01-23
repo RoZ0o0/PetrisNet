@@ -7,13 +7,16 @@
             <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-3/12">
               Imię
             </th>
-            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-4/12">
+            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-3/12">
               Nazwisko
             </th>
-            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-4/12">
+            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-3/12">
               E-mail
             </th>
-            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-1/12">
+            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-2/12">
+              Rola
+            </th>
+            <th class="text-center py-3 px-4 uppercase font-semibold text-sm w-1/12">
               Akcja
             </th>
           </tr>
@@ -29,8 +32,12 @@
             <td class="text-left py-2 px-4">
               {{ user.email }}
             </td>
+            <td class="text-left py-2 px-4">
+              {{ showRole(user.role) }}
+            </td>
             <td class="py-2 px-4 text-center">
               <AccountEditIcon class="inline-block align-middle" @click='showEditModal(user.email)'/>
+              <DeleteIcon class="inline-block align-middle" @click='deleteAlert(user.id)'/>
             </td>
           </tr>
         </tbody>
@@ -50,19 +57,39 @@ import { defineComponent } from 'vue';
 import UserServices, { IUser } from '../../services/UserService';
 import AccountEditIcon from 'vue-material-design-icons/AccountEdit.vue';
 import EditModal from '../../components/EditModal.vue';
+import DeleteIcon from 'vue-material-design-icons/Delete.vue';
+import Swal from 'sweetalert2';
+import { AxiosError } from 'axios';
+import { onBeforeRouteLeave } from 'vue-router';
 
 export default defineComponent({
   components: {
     AccountEditIcon,
-    EditModal
+    EditModal,
+    DeleteIcon
   },
   data() {
     return {
       isModalVisible: false,
       result: Array<IUser>(),
       resultEdit: UserServices.getBlankUserTemplate(),
-      editedUser: ''
+      editedUser: '',
+      closed: false,
+      deleted: false
     };
+  },
+
+  watch: {
+    closed() {
+      if (this.closed) {
+        this.getData().then((data) => (this.result = data));
+      }
+    },
+    deleted() {
+      if (this.deleted) {
+        this.getData().then((data) => (this.result = data));
+      }
+    }
   },
 
   mounted() {
@@ -74,13 +101,67 @@ export default defineComponent({
       return await UserServices.fetch();
     },
 
+    async deleteUser(userId: number): Promise<any> {
+      try {
+        await UserServices.delete(userId);
+      } catch (e: any) {
+        const error = e.response?.status as AxiosError;
+        return error;
+      }
+      this.deleted = true;
+      return 0;
+    },
+
+    deleteAlert(userId: number) {
+      this.deleted = false;
+      Swal.fire({
+        title: 'Jesteś pewien?',
+        text: 'Nie będziesz w stanie tego cofnąć!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Tak, usuń!',
+        cancelButtonText: 'Anuluj'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.deleteUser(userId).then(function(result) {
+            if (result > 0) {
+              Swal.fire(
+                'Błąd!',
+                'Nie można usunąć użytkownika.',
+                'error'
+              );
+            } else {
+              Swal.fire(
+                'Gotowe!',
+                'Użytkownik został usunięty.',
+                'success'
+              );
+            }
+          });
+        }
+      });
+    },
+
     showEditModal(email: string) {
       this.editedUser = email;
       this.isModalVisible = true;
+      this.closed = false;
     },
 
     closeEditModal() {
       this.isModalVisible = false;
+      this.editedUser = '';
+      this.closed = true;
+    },
+
+    showRole(role: string) {
+      if (role === 'ROLE_ADMIN') {
+        return 'Admin';
+      } else {
+        return 'User';
+      }
     }
   }
 });
