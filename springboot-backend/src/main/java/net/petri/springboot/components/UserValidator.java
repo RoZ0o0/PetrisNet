@@ -3,13 +3,16 @@ package net.petri.springboot.components;
 import net.petri.springboot.entity.User;
 import net.petri.springboot.mapper.UserMapper;
 import net.petri.springboot.model.FM.UserFM;
+import net.petri.springboot.model.VM.UserVM;
 import net.petri.springboot.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -55,6 +58,32 @@ public class  UserValidator extends Validator {
             return false;
         }
         if (!List.of("ROLE_ADMIN", "ROLE_USER").contains(user.getRole())) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public boolean validateEditProfile(Long userId, UserFM user, Authentication authentication) {
+        User userByEmail;
+        Optional<User> userById;
+
+        if (!validateUser(user)) {
+            return false;
+        }
+        if (!passswordCheck(user.getPassword())){
+            return false;
+        }
+        if ((userById = userRepository.findById(userId)).isEmpty()) {
+            return false;
+        }
+        if ((userByEmail = userRepository.findByEmail(authentication.getName())) == null) {
+            return false;
+        }
+        if (userById.get() != userByEmail) {
+            return false;
+        }
+        if (userRepository.findByEmail(user.getEmail()) != null && userRepository.findByEmail(user.getEmail()).getId() != userId) {
             return false;
         }
 

@@ -1,15 +1,19 @@
 package net.petri.springboot.service;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
 import net.petri.springboot.components.UserValidator;
+import net.petri.springboot.config.DetailsUser;
 import net.petri.springboot.entity.User;
 import net.petri.springboot.mapper.UserMapper;
 import net.petri.springboot.model.FM.UserFM;
 import net.petri.springboot.model.VM.UserVM;
 import net.petri.springboot.repository.UserRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -84,6 +88,26 @@ public record UserService(UserRepository userRepository, UserMapper userMapper,
         entity = optionalUser.get();
 
         newEntity.setPassword(entity.getPassword());
+
+        userMapper.mapToEntity(entity, newEntity);
+        userRepository.save(entity);
+
+        return userMapper.mapToVM(entity);
+    }
+
+    public UserVM editProfile(Long userId, UserFM newEntity,Authentication authentication) {
+        if (!userValidator.validateEditProfile(userId, newEntity, authentication)) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        Optional<User> optionalUser = userRepository.findById(userId);
+        User entity;
+        if (optionalUser.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        entity = optionalUser.get();
+
+        newEntity.setPassword(bCryptPasswordEncoder.encode(newEntity.getPassword()));
 
         userMapper.mapToEntity(entity, newEntity);
         userRepository.save(entity);

@@ -36,8 +36,8 @@
               {{ showRole(user.role) }}
             </td>
             <td class="py-2 px-4 text-center">
-              <AccountEditIcon class="inline-block align-middle" @click='showEditModal(user.email)'/>
-              <DeleteIcon class="inline-block align-middle" @click='deleteAlert(user.id)'/>
+              <AccountEditIcon v-if="user.id != this.resultLoggedUser.id" class="inline-block align-middle" @click='showEditModal(user.email)'/>
+              <DeleteIcon v-if="user.id != this.resultLoggedUser.id" class="inline-block align-middle" @click='deleteAlert(user.id)'/>
             </td>
           </tr>
         </tbody>
@@ -61,6 +61,7 @@ import DeleteIcon from 'vue-material-design-icons/Delete.vue';
 import Swal from 'sweetalert2';
 import { AxiosError } from 'axios';
 import { onBeforeRouteLeave } from 'vue-router';
+import LoginServices from '@/services/LoginService';
 
 export default defineComponent({
   components: {
@@ -72,6 +73,7 @@ export default defineComponent({
     return {
       isModalVisible: false,
       result: Array<IUser>(),
+      resultLoggedUser: UserServices.getBlankUserTemplate(),
       resultEdit: UserServices.getBlankUserTemplate(),
       editedUser: '',
       closed: false,
@@ -94,9 +96,14 @@ export default defineComponent({
 
   mounted() {
     this.getData().then((data) => (this.result = data));
+    this.getUser().then((data) => (this.resultLoggedUser = data));
   },
 
   methods: {
+    async getUser(): Promise<IUser> {
+      return await LoginServices.fetch();
+    },
+
     async getData(): Promise<Array<IUser>> {
       return await UserServices.fetch();
     },

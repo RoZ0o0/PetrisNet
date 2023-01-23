@@ -1,10 +1,13 @@
 package net.petri.springboot.controller;
 
+import java.security.Principal;
 import java.util.List;
 import net.petri.springboot.model.FM.UserFM;
 import net.petri.springboot.model.VM.UserVM;
 import net.petri.springboot.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin
@@ -44,5 +47,10 @@ public class UserController {
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         userService.delete(id);
+    }
+
+    @PutMapping("/profile")
+    public UserVM editProfile(@RequestParam Long userId, @RequestBody UserFM newEntity, Authentication authentication) {
+        return userService.editProfile(userId, newEntity, authentication);
     }
 }

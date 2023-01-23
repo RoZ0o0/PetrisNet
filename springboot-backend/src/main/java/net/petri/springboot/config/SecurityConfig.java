@@ -80,6 +80,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/api/saved_nets/public").permitAll()
                 .antMatchers("/api/users").hasAnyRole("ADMIN")
                 .antMatchers("/api/users/**").hasAnyRole("ADMIN")
+                .antMatchers("/api/users/profile").hasAnyRole("ADMIN", "USER")
+                .antMatchers("/api/users/profile/**").hasAnyRole("ADMIN", "USER")
                 .anyRequest().authenticated()
                 .and()
                 .sessionManagement()
