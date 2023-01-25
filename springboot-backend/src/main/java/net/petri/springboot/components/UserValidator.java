@@ -57,9 +57,6 @@ public class  UserValidator extends Validator {
         if (!passswordCheck(user.getPassword())) {
             return false;
         }
-        if (!List.of("ROLE_ADMIN", "ROLE_USER").contains(user.getRole())) {
-            return false;
-        }
 
         return true;
     }
@@ -68,10 +65,16 @@ public class  UserValidator extends Validator {
         User userByEmail;
         Optional<User> userById;
 
-        if (!validateUser(user)) {
+        if (!user.getFirstName().isEmpty() && user.getFirstName().length() < 3) {
             return false;
         }
-        if (!passswordCheck(user.getPassword())){
+        if (user.getLastName() == null && (!user.getLastName().isEmpty() && user.getLastName().length() <3)) {
+            return false;
+        }
+        if (!user.getEmail().isEmpty() && !emailCheck(user.getEmail())){
+            return false;
+        }
+        if (!user.getPassword().isEmpty() && !passswordCheck(user.getPassword())) {
             return false;
         }
         if ((userById = userRepository.findById(userId)).isEmpty()) {
@@ -83,11 +86,25 @@ public class  UserValidator extends Validator {
         if (userById.get() != userByEmail) {
             return false;
         }
-        if (userRepository.findByEmail(user.getEmail()) != null && userRepository.findByEmail(user.getEmail()).getId() != userId) {
+        if (!user.getEmail().isEmpty() && (userRepository.findByEmail(user.getEmail()) != null && userRepository.findByEmail(user.getEmail()).getId() != userId)) {
             return false;
         }
 
         return true;
+    }
+
+    public UserFM setEditUser(UserFM user, User entity) {
+        if (user.getFirstName().isEmpty()) {
+            user.setFirstName(entity.getFirstName());
+        }
+        if (user.getLastName().isEmpty()) {
+            user.setLastName(entity.getLastName());
+        }
+        if (user.getEmail().isEmpty()) {
+            user.setEmail(entity.getEmail());
+        }
+
+        return user;
     }
 
     public boolean validateUpdateUser(UserFM user, Long id) {

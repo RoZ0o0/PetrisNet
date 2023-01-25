@@ -105,9 +105,18 @@ public record UserService(UserRepository userRepository, UserMapper userMapper,
         if (optionalUser.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
+
         entity = optionalUser.get();
 
-        newEntity.setPassword(bCryptPasswordEncoder.encode(newEntity.getPassword()));
+        userValidator.setEditUser(newEntity, entity);
+
+        if (!newEntity.getPassword().isEmpty() && newEntity.getPassword()  != null) {
+            newEntity.setPassword(bCryptPasswordEncoder.encode(newEntity.getPassword()));
+        } else {
+            newEntity.setPassword(entity.getPassword());
+        }
+
+        newEntity.setRole(entity.getRole());
 
         userMapper.mapToEntity(entity, newEntity);
         userRepository.save(entity);

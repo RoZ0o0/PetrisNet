@@ -52,6 +52,15 @@ export default class UserServices {
       }
     })).data;
   }
+
+  public static async editProfile(userId: number, user: IUser) {
+    const token = localStorage.getItem('token');
+    return (await axios.put<IUser>('http://localhost:8081/api/users/profile?userId=' + userId, user, {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
+  }
 }
 
 export interface IUser {
