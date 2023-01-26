@@ -6,6 +6,7 @@ import net.petri.springboot.model.VM.SavedNetsVM;
 import net.petri.springboot.model.VM.UserVM;
 import net.petri.springboot.service.SavedNetsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,9 +32,19 @@ public class SavedNetsController {
         return savedNetsService.find(id);
     }
 
+    @GetMapping("/find")
+    public Long findBySaveNameAndUserId(@RequestParam String saveName, Authentication authentication) {
+        return savedNetsService.findBySaveNameAndUserId(saveName, authentication);
+    }
+
     @PostMapping()
-    public SavedNetsVM create(@RequestBody SavedNetsFM newEntity) {
-        return savedNetsService.create(newEntity);
+    public SavedNetsVM create(@RequestBody SavedNetsFM newEntity, Authentication authentication) {
+        return savedNetsService.create(newEntity, authentication);
+    }
+
+    @PutMapping()
+    public SavedNetsVM update(@RequestBody SavedNetsFM newEntity, @RequestParam Long id, Authentication authentication) {
+        return savedNetsService.update(newEntity, id, authentication);
     }
 
     @GetMapping("/user")

@@ -107,7 +107,7 @@ import ExportIcon from 'vue-material-design-icons/ArrowTopRight.vue';
 import SaveIcon from 'vue-material-design-icons/ContentSaveAll.vue';
 import PlusIcon from 'vue-material-design-icons/Plus.vue';
 import MinusIcon from 'vue-material-design-icons/Minus.vue';
-import SaveNetServices from '@/services/SaveNetService';
+import SaveNetServices, { ISaveNet } from '@/services/SaveNetService';
 import Swal from 'sweetalert2';
 import { IUser } from '@/services/UserService';
 import axios, { AxiosError } from 'axios';
@@ -558,6 +558,10 @@ export default defineComponent({
       }
     },
 
+    async findByUserAndSaveName(saveName: string): Promise<number> {
+      return await SaveNetServices.findBySaveNameAndId(saveName);
+    },
+
     async create(): Promise<any> {
       try {
         await SaveNetServices.create(this.saveResult);
@@ -566,6 +570,10 @@ export default defineComponent({
         return error;
       }
       return 0;
+    },
+
+    async update(id: number): Promise<ISaveNet> {
+      return await SaveNetServices.update(this.saveResult, id);
     },
 
     saveModal() {
@@ -582,9 +590,6 @@ export default defineComponent({
           });
         }
         if (result.value) {
-          this.saveResult.userId = this.loginResult.id;
-          this.saveResult.saveName = result.value;
-          this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
           if (this.children.length === 0) {
             Swal.fire({
               icon: 'error',
@@ -592,12 +597,45 @@ export default defineComponent({
               text: 'Nie możesz zapisać pustego modelu!'
             });
           } else {
-            this.create().then(function(result) {
-              if (result === 422) {
+            this.saveResult.userId = this.loginResult.id;
+            this.saveResult.saveName = result.value;
+            this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
+            this.findByUserAndSaveName(result.value).then((id) => {
+              if (id !== 0) {
                 Swal.fire({
-                  icon: 'error',
-                  title: 'Błąd!',
-                  text: 'Posiadasz już model z taką nazwą!'
+                  icon: 'warning',
+                  title: 'Posiadasz już model z taką nazwą!',
+                  text: 'Czy napewno chcesz nadpisać model? Nie będziesz mógł tego cofnąć!',
+                  showCancelButton: true,
+                  confirmButtonColor: '#d33',
+                  cancelButtonColor: '#3085d6',
+                  confirmButtonText: 'Tak, zapisz!',
+                  cancelButtonText: 'Anuluj'
+                }).then((result) => {
+                  if (result.isConfirmed) {
+                    this.update(id);
+                    Swal.fire(
+                      'Zapisane!',
+                      'Twój model został zapisany.',
+                      'success'
+                    );
+                  }
+                });
+              } else {
+                this.create().then((result) => {
+                  if (result !== 0) {
+                    Swal.fire({
+                      icon: 'error',
+                      title: 'Błąd!',
+                      text: 'Wystąpił błąd!'
+                    });
+                  } else {
+                    Swal.fire(
+                      'Zapisane!',
+                      'Twój model został zapisany.',
+                      'success'
+                    );
+                  }
                 });
               }
             });

@@ -21,6 +21,24 @@ export default class SaveNetServices {
     })).data;
   }
 
+  public static async update(saveNet: ISaveNet, id: number): Promise<ISaveNet> {
+    const token = localStorage.getItem('token');
+    return (await axios.put<ISaveNet>('http://localhost:8081/api/saved_nets?id=' + id, saveNet, {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
+  }
+
+  public static async findBySaveNameAndId(saveName: string): Promise<number> {
+    const token = localStorage.getItem('token');
+    return (await axios.get<number>('http://localhost:8081/api/saved_nets/find?saveName=' + saveName, {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
+  }
+
   public static async fetchSavedNets(email: string): Promise<Array<ISaveNet>> {
     const token = localStorage.getItem('token');
     return (await axios.get<Array<ISaveNet>>('http://localhost:8081/api/saved_nets/user?email=' + email, {
