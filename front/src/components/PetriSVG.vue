@@ -584,12 +584,15 @@ export default defineComponent({
         showCancelButton: true,
         inputPlaceholder: 'Wpisz nazwę!'
       }).then((result) => {
-        if (result.value === '') {
+        if (result.value === '' || !result.value) {
           Swal.fire({
             title: 'Nie podałeś nazwy!'
           });
-        }
-        if (result.value) {
+        } else if ((result.value < 3)) {
+          Swal.fire({
+            title: 'Nazwa jest za krótka!'
+          });
+        } else {
           if (this.children.length === 0) {
             Swal.fire({
               icon: 'error',

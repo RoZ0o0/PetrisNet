@@ -19,28 +19,35 @@
                 <div class='mt-10'>
                   <span>Imię: </span>
                   {{ this.result.firstName }}
-                  <PencilIcon class='inline-block align-middle float-right pb-1' @click='EditProfile(this.result.firstName, "firstName")'/>
+                  <PencilIcon class='inline-block align-middle float-right pb-1' @click='editProfile(this.result.firstName, "firstName")'/>
                 </div>
                 <div class='mt-10'>
                   <span>Nazwisko: </span>
                   {{ this.result.lastName }}
-                  <PencilIcon class='inline-block align-middle float-right pb-1' @click='EditProfile(this.result.lastName, "lastName")'/>
+                  <PencilIcon class='inline-block align-middle float-right pb-1' @click='editProfile(this.result.lastName, "lastName")'/>
                 </div>
                 <div class='mt-10'>
                   <span>Email: </span>
                   {{ this.result.email }}
-                  <PencilIcon class='inline-block align-middle float-right pb-1' @click='EditProfile(this.result.email, "email")'/>
+                  <PencilIcon class='inline-block align-middle float-right pb-1' @click='editProfile(this.result.email, "email")'/>
                 </div>
                 <div class='mt-6 text-center'>
-                  <button class='bg-gray-600 px-4 py-2 text-white rounded-xl' @click='EditPassword()'> Edytuj Hasło </button>
+                  <button class='bg-gray-600 px-4 py-2 text-white rounded-xl' @click='editPassword()'> Edytuj Hasło </button>
                 </div>
               </div>
             </td>
-            <td class="text-center px-4 pt-8 pb-4 h-full w-1/2 align-top">
-              <span>Twoje zapisy</span> <br>
-              <template v-for="save in resultSaves" :key="save">
-                <span>{{ save.saveName }}</span><br>
-              </template>
+            <td class="text-center px-10 py-20 h-1/2 w-1/2">
+              <div class='border-4 py-4 px-2 rounded-xl border-black'>
+                <div class='border-b-2 border-red-500 bg-gray-800 rounded-xl text-red-50'>
+                  <h1 class='text-center'>Twoje zapisy</h1>
+                </div>
+                <template v-for="save in resultSaves" :key="save">
+                  <div class='mt-2'>
+                    <span>{{ save.saveName }}</span>
+                    <PencilIcon class='inline-block align-middle float-right pb-1' @click='editSave(save, save.saveName)'/>
+                  </div>
+                </template>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -66,7 +73,8 @@ export default defineComponent({
     return {
       result: LoginServices.getBlankLoginTemplate(),
       resultSaves: [SaveNetServices.getBlankSaveNetTemplate()],
-      resultEdit: UserServices.getBlankUserTemplate()
+      resultEdit: UserServices.getBlankUserTemplate(),
+      resultEditSave: SaveNetServices.getBlankSaveNetTemplate()
     };
   },
 
@@ -94,6 +102,14 @@ export default defineComponent({
       return 200;
     },
 
+    async findByUserAndSaveName(saveName: string): Promise<number> {
+      return await SaveNetServices.findBySaveNameAndId(saveName);
+    },
+
+    async editSaveName(id: number): Promise<ISaveNet> {
+      return await SaveNetServices.update(this.resultEditSave, id);
+    },
+
     logout(): void {
       localStorage.removeItem('token');
       if (this.$route.name === 'home') {
@@ -103,7 +119,50 @@ export default defineComponent({
       }
     },
 
-    EditProfile(name: string, type: string) {
+    editSave(save: ISaveNet, saveName: string) {
+      this.resultEditSave = SaveNetServices.getBlankSaveNetTemplate();
+      Swal.fire({
+        title: 'Edytujesz nazwę ' + saveName,
+        html: '<input type="text" id="edit" class="swal2-input">',
+        cancelButtonText: 'Anuluj',
+        showCancelButton: true,
+        preConfirm: () => {
+          const editValue = (document.getElementById('edit') as HTMLInputElement).value;
+          if (!editValue) {
+            Swal.showValidationMessage('Pole jest puste!');
+          }
+          if (editValue.length < 3 && editValue.length > 0) {
+            Swal.showValidationMessage('Podana nazwa jest za krótka!');
+          }
+
+          return { editValue };
+        }
+      }).then((result) => {
+        if (result.value) {
+          this.findByUserAndSaveName(result.value.editValue).then((found) => {
+            if (found !== 0) {
+              Swal.fire({
+                icon: 'error',
+                title: 'Błąd!',
+                text: 'Istnieje już taka nazwa!'
+              });
+            } else {
+              this.resultEditSave.saveName = result.value?.editValue as string;
+              this.resultEditSave.userId = this.result.id;
+              this.editSaveName(save.id);
+              Swal.fire(
+                'Gotowe!',
+                'Twoja nazwa została zmieniona.',
+                'success'
+              );
+              this.getSaves().then((data) => (this.resultSaves = data));
+            }
+          });
+        }
+      });
+    },
+
+    editProfile(name: string, type: string) {
       this.resultEdit = UserServices.getBlankUserTemplate();
       Swal.fire({
         title: 'Edytujesz: ' + name,
@@ -154,7 +213,7 @@ export default defineComponent({
       });
     },
 
-    EditPassword() {
+    editPassword() {
       this.resultEdit = UserServices.getBlankUserTemplate();
       Swal.fire({
         title: 'Edytujesz hasło',

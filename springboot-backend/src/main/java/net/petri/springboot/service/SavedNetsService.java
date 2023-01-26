@@ -65,10 +65,6 @@ public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNet
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
-        if(findBySaveNameAndUserId(newEntity.getSaveName(), authentication) == valueOf(0)) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY);
-        }
-
         Optional<SavedNets> optionalSavedNets = savedNetsRepository.findById(id);
         SavedNets entity;
         if (optionalSavedNets.isEmpty()) {
@@ -77,7 +73,6 @@ public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNet
 
         entity = optionalSavedNets.get();
 
-        newEntity.setSaveName(entity.getSaveName());
         newEntity.setPublic(entity.isPublic());
         newEntity.setUserId(entity.getUser().getId());
 
