@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import HomeView from '../views/HomeView.vue';
 import UserView from '../views/users/UserView.vue';
+import NetsView from '../views/nets/NetsView.vue';
 
 import LoginView from '../views/LoginView.vue';
 import RegisterView from '../views/RegisterView.vue';
@@ -38,6 +39,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/register',
     name: 'register',
     component: RegisterView
+  },
+  {
+    path: '/nets',
+    name: 'nets',
+    component: NetsView
   }
 ];
 

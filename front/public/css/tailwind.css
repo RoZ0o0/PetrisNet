@@ -577,8 +577,16 @@ video {
   position: relative;
 }
 
+.left-0 {
+  left: 0px;
+}
+
 .float-right {
   float: right;
+}
+
+.float-left {
+  float: left;
 }
 
 .m-auto {
@@ -625,6 +633,10 @@ video {
 
 .ml-4 {
   margin-left: 1rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
 }
 
 .block {
@@ -1022,10 +1034,6 @@ video {
 
 .text-right {
   text-align: right;
-}
-
-.align-top {
-  vertical-align: top;
 }
 
 .align-middle {

@@ -43,7 +43,7 @@
                 </div>
                 <template v-for="save in resultSaves" :key="save">
                   <div class='mt-2'>
-                    <span>{{ save.saveName }}</span>
+                    <span @click='this.$router.push({ name:"creator", state: {redirectExport: save.netExport} })'>{{ save.saveName }}</span>
                     <PencilIcon class='inline-block align-middle float-right pb-1' @click='editSave(save, save.saveName)'/>
                   </div>
                 </template>

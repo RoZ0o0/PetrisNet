@@ -1,15 +1,24 @@
 import axios, { AxiosResponse } from 'axios';
-import { IUser } from './UserService';
 
 export default class SaveNetServices {
   public static getBlankSaveNetTemplate(): ISaveNet {
-    const tempUser: ISaveNet = {
+    const tempSaveNet: ISaveNet = {
       id: 0,
       userId: 0,
       saveName: '',
-      netExport: ''
+      netExport: '',
+      public: false
     };
-    return tempUser;
+    return tempSaveNet;
+  }
+
+  public static async fetchAll(): Promise<Array<ISaveNet>> {
+    const token = localStorage.getItem('token');
+    return (await axios.get<Array<ISaveNet>>('http://localhost:8081/api/saved_nets', {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
   }
 
   public static async create(saveNet: ISaveNet): Promise<ISaveNet> {
@@ -58,4 +67,5 @@ export interface ISaveNet {
     userId: number;
     saveName: string;
     netExport: string;
+    public: boolean;
 }

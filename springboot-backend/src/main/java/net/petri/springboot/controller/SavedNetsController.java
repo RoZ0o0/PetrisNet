@@ -1,9 +1,7 @@
 package net.petri.springboot.controller;
 
-import net.petri.springboot.entity.User;
 import net.petri.springboot.model.FM.SavedNetsFM;
 import net.petri.springboot.model.VM.SavedNetsVM;
-import net.petri.springboot.model.VM.UserVM;
 import net.petri.springboot.service.SavedNetsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;

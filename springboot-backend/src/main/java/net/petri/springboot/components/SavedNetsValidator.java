@@ -19,7 +19,7 @@ public class SavedNetsValidator extends Validator {
         if (userService.findByEmail(authentication.getName()).getId() != savedNetsFM.getUserId()) {
             return false;
         }
-        if (savedNetsFM.getSaveName().isEmpty() || savedNetsFM.getSaveName().length() < 3) {
+        if (savedNetsFM.getSaveName().isEmpty() || savedNetsFM.getSaveName().length() < 3 || savedNetsFM.getSaveName().length() > 16) {
             return false;
         }
 

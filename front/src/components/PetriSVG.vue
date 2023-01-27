@@ -189,6 +189,10 @@ export default defineComponent({
   },
 
   mounted() {
+    if (history.state.redirectExport) {
+      this.redirectNetExport(history.state.redirectExport);
+    }
+
     window.addEventListener('keydown', (e) => {
       if (e.ctrlKey) {
         this.ctrl_pressed = true;
@@ -558,6 +562,42 @@ export default defineComponent({
       }
     },
 
+    redirectNetExport(netExport: string) {
+      try {
+        for (let i = 0; i < JSON.parse(netExport)[1].length; i++) {
+          this.connections.push(JSON.parse(netExport)[1][i]);
+        }
+        for (let i = 0; i < JSON.parse(netExport)[2].length; i++) {
+          this.tokens.push(JSON.parse(netExport)[2][i]);
+        }
+        for (let i = 0; i < JSON.parse(netExport)[0].length; i++) {
+          const objectType = JSON.parse(netExport)[0][i].name.substring(1, 2);
+          if (objectType === 'C') {
+            this.counter++;
+            this.children.push(Circle);
+          } else if (objectType === 'T') {
+            this.counter++;
+            this.children.push(Square);
+          } else if (objectType === 'A') {
+            this.counter++;
+            this.children.push(Connection);
+          } else if (objectType === 'E') {
+            this.counter++;
+            this.children.push(SmallCircle);
+          } else if (objectType === 'L') {
+            this.counter++;
+            this.children.push(TokenText);
+          } else {
+            this.clear();
+            break;
+          }
+          this.elements.push(JSON.parse(netExport)[0][i]);
+        }
+      } catch (e) {
+        this.clear();
+      }
+    },
+
     async findByUserAndSaveName(saveName: string): Promise<number> {
       return await SaveNetServices.findBySaveNameAndId(saveName);
     },
@@ -588,9 +628,13 @@ export default defineComponent({
           Swal.fire({
             title: 'Nie podałeś nazwy!'
           });
-        } else if ((result.value < 3)) {
+        } else if ((result.value).length < 3) {
           Swal.fire({
             title: 'Nazwa jest za krótka!'
+          });
+        } else if ((result.value).length > 16) {
+          Swal.fire({
+            title: 'Nazwa jest za długa!'
           });
         } else {
           if (this.children.length === 0) {

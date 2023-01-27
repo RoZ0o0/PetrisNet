@@ -17,6 +17,11 @@
             <span>Użytkownicy</span>
           </li>
         </router-link>
+        <router-link to="/nets">
+          <li v-if="this.result.role == 'ROLE_ADMIN'">
+            <span>Sieci</span>
+          </li>
+        </router-link>
         <router-link to="/login">
           <li v-if="this.result.role == ''" class="float-right">
             <span>Zaloguj</span>
@@ -45,7 +50,11 @@ export default defineComponent({
   },
   mounted() {
     if (localStorage.getItem('token') != null) {
-      this.getData().then((data) => (this.result = data));
+      this.getData().then((data) => (this.result = data)).catch((error) => {
+        if (error.response.status === 401) {
+          this.logout();
+        }
+      });
     }
   },
 
@@ -53,6 +62,15 @@ export default defineComponent({
   methods: {
     async getData(): Promise<ILogin> {
       return await LoginServices.fetch();
+    },
+
+    logout(): void {
+      localStorage.removeItem('token');
+      if (this.$route.name === 'home') {
+        window.location.reload();
+      } else {
+        this.$router.push('/');
+      }
     }
   }
 });

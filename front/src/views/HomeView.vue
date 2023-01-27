@@ -5,11 +5,14 @@
         <div class="text-center border-2 rounded-xl bg-gray-400 p-6">
           <span class="border-b-2">Sieci innych użytkowników</span>
           <ul v-for="save in result" :key="save" class="mt-2">
-            <li>{{ save.saveName }}</li>
+            <li @click='this.$router.push({ name:"creator", state: {redirectExport: save.netExport} })'>{{ save.saveName }}</li>
           </ul>
         </div>
         <div class="text-center border-2 rounded-xl bg-gray-400 p-6">
-          <span class="border-b-2">Coś innego</span>
+          <span class="border-b-2">Przykładowe sieci</span>
+          <ul v-for="exampleNets in resultExampleNets" :key="exampleNets" class="mt-2">
+            <li @click='this.$router.push({ name:"creator", state: {redirectExport: exampleNets.netExport} })'>{{ exampleNets.netName }}</li>
+          </ul>
         </div>
         <div class="text-center border-2 rounded-xl bg-gray-400 p-6">
           <span class="border-b-2">Coś innego</span>
@@ -24,13 +27,15 @@
 
 <script lang="ts">
 import SaveNetServices, { ISaveNet } from '@/services/SaveNetService';
+import ExampleNetServices, { IExampleNet } from '@/services/ExampleNetService';
 import { defineComponent } from 'vue';
 
 export default defineComponent({
   name: 'HomeView',
   data() {
     return {
-      result: [SaveNetServices.getBlankSaveNetTemplate()]
+      result: [SaveNetServices.getBlankSaveNetTemplate()],
+      resultExampleNets: [ExampleNetServices.getBlankExampleNetTemplate()]
     };
   },
 
@@ -40,11 +45,17 @@ export default defineComponent({
         localStorage.removeItem('token');
       }
     });
+
+    this.getExampleNets().then((data) => (this.resultExampleNets = data));
   },
 
   methods: {
     async getData(): Promise<Array<ISaveNet>> {
       return await SaveNetServices.fetchPublicNets();
+    },
+
+    async getExampleNets(): Promise<Array<IExampleNet>> {
+      return await ExampleNetServices.fetchAll();
     }
   }
 });

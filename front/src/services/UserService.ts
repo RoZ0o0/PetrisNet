@@ -22,6 +22,15 @@ export default class UserServices {
     })).data;
   }
 
+  public static async findById(id: number): Promise<IUser> {
+    const token = localStorage.getItem('token');
+    return (await axios.get<IUser>('http://localhost:8081/api/users/' + id, {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
+  }
+
   public static async fetchByEmail(email: string): Promise<IUser> {
     const token = localStorage.getItem('token');
     return (await axios.get<IUser>('http://localhost:8081/api/users/email?email=' + email, {
