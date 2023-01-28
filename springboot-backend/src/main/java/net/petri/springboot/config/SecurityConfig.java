@@ -6,16 +6,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.provisioning.UserDetailsManager;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.web.cors.CorsConfiguration;
 
@@ -24,7 +25,9 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
+public class SecurityConfig {
+
+    AuthenticationManager authenticationManager;
 
     private final DataSource dataSource;
     private final ObjectMapper objectMapper;
@@ -59,19 +62,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return authProvider;
     }
 
-    /**
-     *
-     *
-     * @param auth
-     */
+    @Bean
+    protected SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) {
-        auth.authenticationProvider(authenticationProvider());
-    }
+        AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+        authenticationManagerBuilder.userDetailsService(userDetailsService());
+        authenticationManager = authenticationManagerBuilder.build();
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
+
         http.csrf().disable();
         http
                 .authorizeRequests()
@@ -86,11 +84,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/api/example_nets/**").permitAll()
                 .anyRequest().authenticated()
                 .and()
+                .authenticationProvider(authenticationProvider())
+                .authenticationManager(authenticationManager)
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .addFilter(authenticationFilter())
-                .addFilter(new JwtAuthorizationFilter(authenticationManager(), userDetailsService(), secret))
+                .addFilter(new JwtAuthorizationFilter(authenticationManager, userDetailsService(), secret))
                 .exceptionHandling()
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));
         http.cors().configurationSource(x-> {
@@ -102,6 +102,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             cors.setExposedHeaders(List.of("Authorization"));
             return cors;
         });
+
+        return http.build();
     }
 
     public JsonObjectAuthenticationFilter authenticationFilter() throws Exception {
@@ -109,7 +111,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         authenticationFilter.setFilterProcessesUrl("/api/auth/login");
         authenticationFilter.setAuthenticationSuccessHandler(successHandler);
         authenticationFilter.setAuthenticationFailureHandler(failureHandler);
-        authenticationFilter.setAuthenticationManager(super.authenticationManager());
+        authenticationFilter.setAuthenticationManager(authenticationManager);
         return authenticationFilter;
     }
 
