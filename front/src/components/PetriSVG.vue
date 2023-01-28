@@ -1,6 +1,7 @@
 <!-- eslint-disable vue/no-v-text-v-html-on-component -->
 <template>
   <div class="flex w-full h-16 items-center">
+    <span v-if='checkIfCreateExample()' class='inline-block absolute ml-8'>Tworzenie przykładowej sieci</span>
     <div class="flex w-full h-16 items-center justify-center">
       <div class="items-center petri-nav w-1/12">
         <button class="border-2 border-black rounded-bl-xl border-r-0 rounded-tl-xl p-1 items-center" v-on:click="addToken">
@@ -112,6 +113,7 @@ import Swal from 'sweetalert2';
 import { IUser } from '@/services/UserService';
 import axios, { AxiosError } from 'axios';
 import LoginServices, { ILogin } from '@/services/LoginService';
+import ExampleNetServices from '@/services/ExampleNetService';
 
 const Circle = markRaw({
   template: `
@@ -184,6 +186,7 @@ export default defineComponent({
       selecting: false,
       selectedFile: null,
       saveResult: SaveNetServices.getBlankSaveNetTemplate(),
+      exampleNetResult: ExampleNetServices.getBlankExampleNetTemplate(),
       loginResult: LoginServices.getBlankLoginTemplate()
     };
   },
@@ -602,6 +605,10 @@ export default defineComponent({
       return await SaveNetServices.findBySaveNameAndId(saveName);
     },
 
+    async findByNetName(netName: string): Promise<boolean> {
+      return await ExampleNetServices.findByNetName(netName);
+    },
+
     async create(): Promise<any> {
       try {
         await SaveNetServices.create(this.saveResult);
@@ -609,6 +616,17 @@ export default defineComponent({
         const error = e.response?.status as AxiosError;
         return error;
       }
+      return 0;
+    },
+
+    async createExampleNet(): Promise<any> {
+      try {
+        await ExampleNetServices.create(this.exampleNetResult);
+      } catch (e: any) {
+        const error = e.response?.status as AxiosError;
+        return error;
+      }
+
       return 0;
     },
 
@@ -644,48 +662,93 @@ export default defineComponent({
               text: 'Nie możesz zapisać pustego modelu!'
             });
           } else {
-            this.saveResult.userId = this.loginResult.id;
-            this.saveResult.saveName = result.value;
-            this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
-            this.findByUserAndSaveName(result.value).then((id) => {
-              if (id !== 0) {
-                Swal.fire({
-                  icon: 'warning',
-                  title: 'Posiadasz już model z taką nazwą!',
-                  text: 'Czy napewno chcesz nadpisać model? Nie będziesz mógł tego cofnąć!',
-                  showCancelButton: true,
-                  confirmButtonColor: '#d33',
-                  cancelButtonColor: '#3085d6',
-                  confirmButtonText: 'Tak, zapisz!',
-                  cancelButtonText: 'Anuluj'
-                }).then((result) => {
-                  if (result.isConfirmed) {
-                    this.update(id);
-                    Swal.fire(
-                      'Zapisane!',
-                      'Twój model został zapisany.',
-                      'success'
-                    );
-                  }
-                });
-              } else {
-                this.create().then((result) => {
-                  if (result !== 0) {
-                    Swal.fire({
-                      icon: 'error',
-                      title: 'Błąd!',
-                      text: 'Wystąpił błąd!'
-                    });
-                  } else {
-                    Swal.fire(
-                      'Zapisane!',
-                      'Twój model został zapisany.',
-                      'success'
-                    );
-                  }
-                });
-              }
-            });
+            if (!this.checkIfCreateExample()) {
+              this.saveResult.userId = this.loginResult.id;
+              this.saveResult.saveName = result.value;
+              this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
+              this.findByUserAndSaveName(result.value).then((id) => {
+                if (id !== 0) {
+                  Swal.fire({
+                    icon: 'warning',
+                    title: 'Posiadasz już model z taką nazwą!',
+                    text: 'Czy napewno chcesz nadpisać model? Nie będziesz mógł tego cofnąć!',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Tak, zapisz!',
+                    cancelButtonText: 'Anuluj'
+                  }).then((result) => {
+                    if (result.isConfirmed) {
+                      this.update(id);
+                      Swal.fire(
+                        'Zapisane!',
+                        'Twój model został zapisany.',
+                        'success'
+                      );
+                    }
+                  });
+                } else {
+                  this.create().then((result) => {
+                    if (result !== 0) {
+                      Swal.fire({
+                        icon: 'error',
+                        title: 'Błąd!',
+                        text: 'Wystąpił błąd!'
+                      });
+                    } else {
+                      Swal.fire(
+                        'Zapisane!',
+                        'Twój model został zapisany.',
+                        'success'
+                      );
+                    }
+                  });
+                }
+              });
+            } else {
+              this.exampleNetResult.netName = result.value;
+              this.exampleNetResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
+              this.findByNetName(result.value).then((exist) => {
+                if (exist) {
+                  Swal.fire({
+                    icon: 'warning',
+                    title: 'Istnieje już model z taką nazwą!'
+                    // text: 'Czy napewno chcesz nadpisać model? Nie będziesz mógł tego cofnąć!'
+                    // showCancelButton: true,
+                    // confirmButtonColor: '#d33',
+                    // cancelButtonColor: '#3085d6',
+                    // confirmButtonText: 'Tak, zapisz!',
+                    // cancelButtonText: 'Anuluj'
+                  });
+                  // .then((result) => {
+                  //   if (result.isConfirmed) {
+                  //     this.update(id);
+                  //     Swal.fire(
+                  //       'Zapisane!',
+                  //       'Twój model został zapisany.',
+                  //       'success'
+                  //     );
+                  //   }
+                  // });
+                } else {
+                  this.createExampleNet().then((result) => {
+                    if (result !== 0) {
+                      Swal.fire({
+                        icon: 'error',
+                        title: 'Błąd!',
+                        text: 'Wystąpił błąd!'
+                      });
+                    } else {
+                      Swal.fire(
+                        'Zapisane!',
+                        'Model przykładowy został zapisany.',
+                        'success'
+                      );
+                    }
+                  });
+                }
+              });
+            }
           }
         }
       });
@@ -693,6 +756,14 @@ export default defineComponent({
 
     fetchData: function() {
       return this.children.length;
+    },
+
+    checkIfCreateExample() {
+      if (history.state.createExample) {
+        return true;
+      }
+
+      return false;
     }
   }
 });

@@ -11,4 +11,6 @@ public interface ExampleNetsRepository extends JpaRepository<ExampleNets, Long> 
     List<ExampleNets> findAll();
 
     Optional<ExampleNets> findById(Long id);
+
+    Optional<ExampleNets> findByNetName(String netName);
 }

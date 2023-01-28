@@ -21,19 +21,21 @@
             </th>
             <th class="text-center py-3 px-4 uppercase font-semibold text-sm w-1/12">
               Akcja
+
             </th>
           </tr>
         </thead>
         <thead v-if="this.selectOption == 'examples'" class="bg-gray-800 text-white">
           <tr class="rounded-xl">
-            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-3/12">
+            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-5/12">
               Nazwa
             </th>
-            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-2/12">
+            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-5/12">
               Export
             </th>
-            <th class="text-center py-3 px-4 uppercase font-semibold text-sm w-1/12">
-              Akcja
+            <th class="text-center align-middle py-3 px-4 uppercase font-semibold text-sm w-2/12">
+              <span class='inline-block align-middle'>Akcja</span>
+              <PlusIcon @click='this.$router.push({ name:"creator", state: {createExample: true} })' class='inline-block float-right bg-green-600 rounded-lg' />
             </th>
           </tr>
         </thead>
@@ -76,16 +78,19 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import UserServices, { IUser } from '../../services/UserService';
-import AccountEditIcon from 'vue-material-design-icons/AccountEdit.vue';
-import DeleteIcon from 'vue-material-design-icons/Delete.vue';
 import LoginServices from '@/services/LoginService';
 import SaveNetServices, { ISaveNet } from '@/services/SaveNetService';
 import ExampleNetServices, { IExampleNet } from '@/services/ExampleNetService';
 
+import AccountEditIcon from 'vue-material-design-icons/AccountEdit.vue';
+import DeleteIcon from 'vue-material-design-icons/Delete.vue';
+import PlusIcon from 'vue-material-design-icons/Plus.vue';
+
 export default defineComponent({
   components: {
     AccountEditIcon,
-    DeleteIcon
+    DeleteIcon,
+    PlusIcon
   },
   data() {
     return {

@@ -50,4 +50,9 @@ public class SavedNetsController {
 
     @GetMapping("/public")
     public List<SavedNetsVM> findByPublic() { return savedNetsService.findByPublic(true); }
+
+    @PutMapping("/public")
+    public SavedNetsVM setPublic(@RequestBody SavedNetsFM newEntity, @RequestParam Long id, Authentication authentication) {
+        return savedNetsService.setPublic(newEntity, id, authentication);
+    }
 }

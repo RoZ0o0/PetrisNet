@@ -108,4 +108,28 @@ public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNet
 
         return entities;
     }
+
+    public SavedNetsVM setPublic(SavedNetsFM newEntity, Long id, Authentication authentication) {
+        if (!savedNetsValidator.checkNetUser(newEntity, authentication)) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        Optional<SavedNets> optionalSavedNets = savedNetsRepository.findById(id);
+        SavedNets entity;
+        if (optionalSavedNets.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        entity = optionalSavedNets.get();
+
+        newEntity.setPublic(true);
+        newEntity.setNetExport(entity.getNetExport());
+        newEntity.setSaveName(entity.getSaveName());
+        newEntity.setUserId(entity.getUser().getId());
+
+        savedNetsMapper.mapToEntity(entity, newEntity);
+        savedNetsRepository.save(entity);
+
+        return savedNetsMapper.mapToVM(entity);
+    }
 }

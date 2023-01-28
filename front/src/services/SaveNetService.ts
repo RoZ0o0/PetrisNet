@@ -39,6 +39,15 @@ export default class SaveNetServices {
     })).data;
   }
 
+  public static async setPublic(saveNet: ISaveNet, id: number): Promise<ISaveNet> {
+    const token = localStorage.getItem('token');
+    return (await axios.put<ISaveNet>('http://localhost:8081/api/saved_nets/public?id=' + id, saveNet, {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
+  }
+
   public static async findBySaveNameAndId(saveName: string): Promise<number> {
     const token = localStorage.getItem('token');
     return (await axios.get<number>('http://localhost:8081/api/saved_nets/find?saveName=' + saveName, {

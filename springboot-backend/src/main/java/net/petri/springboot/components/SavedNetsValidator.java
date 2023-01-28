@@ -16,13 +16,20 @@ public class SavedNetsValidator extends Validator {
     }
 
     public boolean validateUserSave(SavedNetsFM savedNetsFM, Authentication authentication) {
-        if (userService.findByEmail(authentication.getName()).getId() != savedNetsFM.getUserId()) {
+        if (!checkNetUser(savedNetsFM, authentication)) {
             return false;
         }
         if (savedNetsFM.getSaveName().isEmpty() || savedNetsFM.getSaveName().length() < 3 || savedNetsFM.getSaveName().length() > 16) {
             return false;
         }
 
+        return true;
+    }
+
+    public boolean checkNetUser(SavedNetsFM savedNetsFM, Authentication authentication){
+        if (userService.findByEmail(authentication.getName()).getId() != savedNetsFM.getUserId()) {
+            return false;
+        }
         return true;
     }
 }

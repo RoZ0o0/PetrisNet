@@ -43,6 +43,7 @@
                 </div>
                 <template v-for="save in resultSaves" :key="save">
                   <div class='mt-2'>
+                    <ShareIcon v-if='!save.public' class='inline-block align-middle float-left pb-1' @click='setPublicAlert(save, save.id)'/>
                     <span @click='this.$router.push({ name:"creator", state: {redirectExport: save.netExport} })'>{{ save.saveName }}</span>
                     <PencilIcon class='inline-block align-middle float-right pb-1' @click='editSave(save, save.saveName)'/>
                   </div>
@@ -60,14 +61,17 @@
 import { defineComponent } from 'vue';
 import SaveNetServices, { ISaveNet } from '@/services/SaveNetService';
 import LoginServices, { ILogin } from '@/services/LoginService';
-import PencilIcon from 'vue-material-design-icons/Pencil.vue';
 import UserServices, { IUser } from '@/services/UserService';
 import Swal from 'sweetalert2';
 import { AxiosError } from 'axios';
 
+import PencilIcon from 'vue-material-design-icons/Pencil.vue';
+import ShareIcon from 'vue-material-design-icons/Share.vue';
+
 export default defineComponent({
   components: {
-    PencilIcon
+    PencilIcon,
+    ShareIcon
   },
   data() {
     return {
@@ -108,6 +112,10 @@ export default defineComponent({
 
     async editSaveName(id: number): Promise<ISaveNet> {
       return await SaveNetServices.update(this.resultEditSave, id);
+    },
+
+    async setPublic(save: ISaveNet, id: number): Promise<ISaveNet> {
+      return await SaveNetServices.setPublic(save, id);
     },
 
     logout(): void {
@@ -209,6 +217,29 @@ export default defineComponent({
                 this.logout());
             }
           });
+        }
+      });
+    },
+
+    setPublicAlert(save: ISaveNet, id: number) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Czy napewno chcesz ustawić swój model jako publiczny?',
+        text: 'Bo zmianie, będzie on widoczny dla innych użytkowników na stronie głównej!',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Tak',
+        cancelButtonText: 'Anuluj'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.setPublic(save, id);
+          this.getSaves().then((data) => (this.resultSaves = data));
+          Swal.fire(
+            'Gotowe!',
+            'Twój model został udostępniony.',
+            'success'
+          );
         }
       });
     },
