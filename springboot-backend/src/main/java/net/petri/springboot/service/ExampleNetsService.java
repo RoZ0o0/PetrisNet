@@ -5,14 +5,11 @@ import java.util.Optional;
 
 import net.petri.springboot.components.ExampleNetsValidator;
 import net.petri.springboot.entity.ExampleNets;
-import net.petri.springboot.entity.SavedNets;
 import net.petri.springboot.mapper.ExampleNetsMapper;
 import net.petri.springboot.model.FM.ExampleNetsFM;
 import net.petri.springboot.model.VM.ExampleNetsVM;
-import net.petri.springboot.model.VM.UserVM;
 import net.petri.springboot.repository.ExampleNetsRepository;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
@@ -81,5 +78,15 @@ public record ExampleNetsService(ExampleNetsRepository exampleNetsRepository, Ex
         }
 
         return true;
+    }
+
+    public void delete(Long id) {
+        Optional<ExampleNets> exampleNets = exampleNetsRepository.findById(id);
+        ExampleNets entity;
+        if (exampleNets.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        entity = exampleNets.get();
+        exampleNetsRepository.delete(entity);
     }
 }

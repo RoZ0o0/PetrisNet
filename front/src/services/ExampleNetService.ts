@@ -35,6 +35,24 @@ export default class ExampleNetServices {
       }
     })).data;
   }
+
+  public static async update(exampleNet: IExampleNet, id: number): Promise<IExampleNet> {
+    const token = localStorage.getItem('token');
+    return (await axios.put<IExampleNet>('http://localhost:8081/api/example_nets?id=' + id, exampleNet, {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
+  }
+
+  public static async delete(exampleNetId: number): Promise<IExampleNet> {
+    const token = localStorage.getItem('token');
+    return (await axios.delete('http://localhost:8081/api/example_nets/' + exampleNetId, {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
+  }
 }
 
 export interface IExampleNet {

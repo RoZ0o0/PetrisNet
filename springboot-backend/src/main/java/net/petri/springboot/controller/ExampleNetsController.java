@@ -43,4 +43,7 @@ public class ExampleNetsController {
     public boolean find(@RequestParam String netName) {
         return exampleNetsService.findByNetName(netName);
     }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) { exampleNetsService.delete(id); }
 }

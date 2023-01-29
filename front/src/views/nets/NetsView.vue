@@ -51,7 +51,7 @@
               {{ returnPublic(userNets.public) }}
             </td>
             <td class="py-2 px-4 text-center">
-              <AccountEditIcon class="inline-block align-middle"/>
+              <PencilIcon class="inline-block align-middle"/>
               <DeleteIcon class="inline-block align-middle"/>
             </td>
           </tr>
@@ -65,8 +65,8 @@
               {{ exampleNets.netExport }}
             </td>
             <td class="py-2 px-4 text-center">
-              <AccountEditIcon class="inline-block align-middle"/>
-              <DeleteIcon class="inline-block align-middle"/>
+              <PencilIcon class="inline-block align-middle" @click='editExampleNetAlert(exampleNets, exampleNets.id)'/>
+              <DeleteIcon class="inline-block align-middle" @click='deleteExampleNetAlert(exampleNets.id)'/>
             </td>
           </tr>
         </tbody>
@@ -81,16 +81,18 @@ import UserServices, { IUser } from '../../services/UserService';
 import LoginServices from '@/services/LoginService';
 import SaveNetServices, { ISaveNet } from '@/services/SaveNetService';
 import ExampleNetServices, { IExampleNet } from '@/services/ExampleNetService';
+import Swal from 'sweetalert2';
 
-import AccountEditIcon from 'vue-material-design-icons/AccountEdit.vue';
 import DeleteIcon from 'vue-material-design-icons/Delete.vue';
 import PlusIcon from 'vue-material-design-icons/Plus.vue';
+import PencilIcon from 'vue-material-design-icons/Pencil.vue';
+import { AxiosError } from 'axios';
 
 export default defineComponent({
   components: {
-    AccountEditIcon,
     DeleteIcon,
-    PlusIcon
+    PlusIcon,
+    PencilIcon
   },
   data() {
     return {
@@ -125,6 +127,30 @@ export default defineComponent({
       return await ExampleNetServices.fetchAll();
     },
 
+    async findNetName(netName: string): Promise<boolean> {
+      return await ExampleNetServices.findByNetName(netName);
+    },
+
+    async editExampleNets(exampleNet: IExampleNet, id: number): Promise<any> {
+      try {
+        await ExampleNetServices.update(exampleNet, id);
+      } catch (e: any) {
+        const error = e.response?.status as AxiosError;
+        return error;
+      }
+      return 200;
+    },
+
+    async deleteExampleNet(exampleNetId: number): Promise<any> {
+      try {
+        await ExampleNetServices.delete(exampleNetId);
+      } catch (e: any) {
+        const error = e.response?.status as AxiosError;
+        return error;
+      }
+      return 200;
+    },
+
     getUserInfo(userId: number) {
       return this.resultUsers.find(name => name.id === userId)?.firstName + ' ' + this.resultUsers.find(name => name.id === userId)?.lastName;
     },
@@ -143,6 +169,93 @@ export default defineComponent({
       } else {
         this.getExampleNets().then((data) => (this.resultExampleNets = data));
       }
+    },
+
+    editExampleNetAlert(net: IExampleNet, id: number) {
+      Swal.fire({
+        title: 'Edytujesz nazwę sieci: ' + net.netName,
+        html: '<input type="text" id="edit" class="swal2-input">',
+        cancelButtonText: 'Anuluj',
+        showCancelButton: true,
+        preConfirm: () => {
+          const editValue = (document.getElementById('edit') as HTMLInputElement).value;
+          if (!editValue) {
+            Swal.showValidationMessage('Pole jest puste!');
+          }
+          if (editValue.length < 3) {
+            Swal.showValidationMessage('Podana nazwa jest za krótka');
+          }
+          if (editValue.length > 16) {
+            Swal.showValidationMessage('Podana nazwa jest za długa');
+          }
+
+          return { editValue };
+        }
+      }).then((result) => {
+        if (result.value) {
+          net.netName = result.value.editValue;
+          this.findNetName(result.value.editValue).then((exist) => {
+            if (exist) {
+              Swal.fire({
+                icon: 'error',
+                title: 'Błąd!',
+                text: 'Nazwa już istnieje!'
+              });
+              this.getExampleNets().then((data) => (this.resultExampleNets = data));
+            } else {
+              this.editExampleNets(net, id).then((error) => {
+                if (error !== 200) {
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'Błąd!',
+                    text: 'Wystąpił błąd!'
+                  });
+                } else {
+                  Swal.fire({
+                    title: 'Gotowe!',
+                    text: 'Nazwa przykładowej sieci została edytowana!',
+                    icon: 'success'
+                  });
+                }
+                this.getExampleNets().then((data) => (this.resultExampleNets = data));
+              });
+            }
+          });
+        }
+      });
+    },
+
+    deleteExampleNetAlert(exampleNetId: number) {
+      Swal.fire({
+        title: 'Jesteś pewien?',
+        text: 'Nie będziesz w stanie tego cofnąć!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Tak, usuń!',
+        cancelButtonText: 'Anuluj'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.deleteExampleNet(exampleNetId).then((response) => {
+            if (response !== 200) {
+              Swal.fire(
+                'Błąd!',
+                'Nie można usunąć sieci.',
+                'error'
+              );
+              this.getExampleNets().then((data) => (this.resultExampleNets = data));
+            } else {
+              Swal.fire(
+                'Gotowe!',
+                'Sieć została usunięta.',
+                'success'
+              );
+              this.getExampleNets().then((data) => (this.resultExampleNets = data));
+            }
+          });
+        }
+      });
     }
   }
 });
