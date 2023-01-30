@@ -2,6 +2,8 @@
 <template>
   <div class="flex w-full h-16 items-center">
     <span v-if='checkIfCreateExample()' class='inline-block absolute ml-8'>Tworzenie przykładowej sieci</span>
+    <span v-if='checkIfEdited()' class='inline-block absolute ml-8'>Edytowanie sieci: {{ this.saveResult.saveName }}</span>
+    <span v-if='checkIfExampleEdited()' class='inline-block absolute ml-8'>Edytowanie przykładowej sieci: {{ this.exampleEditResult.netName }}</span>
     <div class="flex w-full h-16 items-center justify-center">
       <div class="items-center petri-nav w-1/12">
         <button class="border-2 border-black rounded-bl-xl border-r-0 rounded-tl-xl p-1 items-center" v-on:click="addToken">
@@ -43,7 +45,7 @@
     </div>
   </div>
   <div class="mx-8 my-4 border-2 border-black rounded-xl h-4/5">
-    <svg ref="box" class="bg-gray-300 rounded-xl box" height="100%" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <svg ref="box" class="bg-gray-300 rounded-xl box" height="100%" width="100%" xmlns="http://www.w3.org/2000/svg" @mouseup='endDrag()' @mouseenter="endDrag()">
       <template v-for="(child, index) in children" :key="child.name">
         <component v-if='this.elements[index+1].name.substring(1,2) == "C"' :id='this.elements[index+1].name' :is="child"
           :cx="this.elements[index+1].x" :cy="this.elements[index+1].y"
@@ -113,7 +115,7 @@ import Swal from 'sweetalert2';
 import { IUser } from '@/services/UserService';
 import axios, { AxiosError } from 'axios';
 import LoginServices, { ILogin } from '@/services/LoginService';
-import ExampleNetServices from '@/services/ExampleNetService';
+import ExampleNetServices, { IExampleNet } from '@/services/ExampleNetService';
 
 const Circle = markRaw({
   template: `
@@ -186,6 +188,7 @@ export default defineComponent({
       selecting: false,
       selectedFile: null,
       saveResult: SaveNetServices.getBlankSaveNetTemplate(),
+      exampleEditResult: ExampleNetServices.getBlankExampleNetTemplate(),
       exampleNetResult: ExampleNetServices.getBlankExampleNetTemplate(),
       loginResult: LoginServices.getBlankLoginTemplate()
     };
@@ -194,6 +197,16 @@ export default defineComponent({
   mounted() {
     if (history.state.redirectExport) {
       this.redirectNetExport(history.state.redirectExport);
+    }
+
+    if (history.state.editUserSave) {
+      this.getUserNet().then((data) => (this.saveResult = data));
+      this.redirectNetExport(history.state.editUserSave);
+    }
+
+    if (history.state.editExampleNet) {
+      this.getExampleNet().then((data) => (this.exampleEditResult = data));
+      this.redirectNetExport(history.state.editExampleNet);
     }
 
     window.addEventListener('keydown', (e) => {
@@ -217,6 +230,14 @@ export default defineComponent({
   methods: {
     async getUser(): Promise<ILogin> {
       return await LoginServices.fetch();
+    },
+
+    async getUserNet(): Promise<ISaveNet> {
+      return await SaveNetServices.find(history.state.editId);
+    },
+
+    async getExampleNet(): Promise<IExampleNet> {
+      return await ExampleNetServices.fetchById(history.state.editId);
     },
 
     checkIfLogged() {
@@ -634,124 +655,140 @@ export default defineComponent({
       return await SaveNetServices.update(this.saveResult, id);
     },
 
+    async updateExampleNet(id: number): Promise<IExampleNet> {
+      return await ExampleNetServices.update(this.exampleEditResult, id);
+    },
+
     saveModal() {
-      Swal.fire({
-        title: 'Podaj nazwę!',
-        input: 'text',
-        cancelButtonText: 'Anuluj',
-        showCancelButton: true,
-        inputPlaceholder: 'Wpisz nazwę!'
-      }).then((result) => {
-        if (result.value === '' || !result.value) {
-          Swal.fire({
-            title: 'Nie podałeś nazwy!'
-          });
-        } else if ((result.value).length < 3) {
-          Swal.fire({
-            title: 'Nazwa jest za krótka!'
-          });
-        } else if ((result.value).length > 16) {
-          Swal.fire({
-            title: 'Nazwa jest za długa!'
-          });
-        } else {
-          if (this.children.length === 0) {
+      if (history.state.editUserSave || history.state.editExampleNet) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Czy napewno chcesz edytować tą sieć?',
+          text: 'Nie będziesz mógł tego cofnąć!',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'Tak, edytuj!',
+          cancelButtonText: 'Anuluj'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            if (history.state.editUserSave) {
+              this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
+              this.update(history.state.editId);
+            } else {
+              this.exampleEditResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
+              this.updateExampleNet(history.state.editId);
+            }
+            Swal.fire(
+              'Zapisane!',
+              'Twój model został zedytowany!',
+              'success'
+            );
+          }
+        });
+      } else {
+        Swal.fire({
+          title: 'Podaj nazwę!',
+          input: 'text',
+          cancelButtonText: 'Anuluj',
+          showCancelButton: true,
+          inputPlaceholder: 'Wpisz nazwę!'
+        }).then((result) => {
+          if (result.value === '' || !result.value) {
             Swal.fire({
-              icon: 'error',
-              title: 'Błąd!',
-              text: 'Nie możesz zapisać pustego modelu!'
+              title: 'Nie podałeś nazwy!'
+            });
+          } else if ((result.value).length < 3) {
+            Swal.fire({
+              title: 'Nazwa jest za krótka!'
+            });
+          } else if ((result.value).length > 16) {
+            Swal.fire({
+              title: 'Nazwa jest za długa!'
             });
           } else {
-            if (!this.checkIfCreateExample()) {
-              this.saveResult.userId = this.loginResult.id;
-              this.saveResult.saveName = result.value;
-              this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
-              this.findByUserAndSaveName(result.value).then((id) => {
-                if (id !== 0) {
-                  Swal.fire({
-                    icon: 'warning',
-                    title: 'Posiadasz już model z taką nazwą!',
-                    text: 'Czy napewno chcesz nadpisać model? Nie będziesz mógł tego cofnąć!',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'Tak, zapisz!',
-                    cancelButtonText: 'Anuluj'
-                  }).then((result) => {
-                    if (result.isConfirmed) {
-                      this.update(id);
-                      Swal.fire(
-                        'Zapisane!',
-                        'Twój model został zapisany.',
-                        'success'
-                      );
-                    }
-                  });
-                } else {
-                  this.create().then((result) => {
-                    if (result !== 0) {
-                      Swal.fire({
-                        icon: 'error',
-                        title: 'Błąd!',
-                        text: 'Wystąpił błąd!'
-                      });
-                    } else {
-                      Swal.fire(
-                        'Zapisane!',
-                        'Twój model został zapisany.',
-                        'success'
-                      );
-                    }
-                  });
-                }
+            if (this.children.length === 0) {
+              Swal.fire({
+                icon: 'error',
+                title: 'Błąd!',
+                text: 'Nie możesz zapisać pustego modelu!'
               });
             } else {
-              this.exampleNetResult.netName = result.value;
-              this.exampleNetResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
-              this.findByNetName(result.value).then((exist) => {
-                if (exist) {
-                  Swal.fire({
-                    icon: 'warning',
-                    title: 'Istnieje już model z taką nazwą!'
-                    // text: 'Czy napewno chcesz nadpisać model? Nie będziesz mógł tego cofnąć!'
-                    // showCancelButton: true,
-                    // confirmButtonColor: '#d33',
-                    // cancelButtonColor: '#3085d6',
-                    // confirmButtonText: 'Tak, zapisz!',
-                    // cancelButtonText: 'Anuluj'
-                  });
-                  // .then((result) => {
-                  //   if (result.isConfirmed) {
-                  //     this.update(id);
-                  //     Swal.fire(
-                  //       'Zapisane!',
-                  //       'Twój model został zapisany.',
-                  //       'success'
-                  //     );
-                  //   }
-                  // });
-                } else {
-                  this.createExampleNet().then((result) => {
-                    if (result !== 0) {
-                      Swal.fire({
-                        icon: 'error',
-                        title: 'Błąd!',
-                        text: 'Wystąpił błąd!'
-                      });
-                    } else {
-                      Swal.fire(
-                        'Zapisane!',
-                        'Model przykładowy został zapisany.',
-                        'success'
-                      );
-                    }
-                  });
-                }
-              });
+              if (!this.checkIfCreateExample()) {
+                this.saveResult.userId = this.loginResult.id;
+                this.saveResult.saveName = result.value;
+                this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
+                this.findByUserAndSaveName(result.value).then((id) => {
+                  if (id !== 0) {
+                    Swal.fire({
+                      icon: 'warning',
+                      title: 'Posiadasz już model z taką nazwą!',
+                      text: 'Czy napewno chcesz nadpisać model? Nie będziesz mógł tego cofnąć!',
+                      showCancelButton: true,
+                      confirmButtonColor: '#d33',
+                      cancelButtonColor: '#3085d6',
+                      confirmButtonText: 'Tak, zapisz!',
+                      cancelButtonText: 'Anuluj'
+                    }).then((result) => {
+                      if (result.isConfirmed) {
+                        this.update(id);
+                        Swal.fire(
+                          'Zapisane!',
+                          'Twój model został zapisany.',
+                          'success'
+                        );
+                      }
+                    });
+                  } else {
+                    this.create().then((result) => {
+                      if (result !== 0) {
+                        Swal.fire({
+                          icon: 'error',
+                          title: 'Błąd!',
+                          text: 'Wystąpił błąd!'
+                        });
+                      } else {
+                        Swal.fire(
+                          'Zapisane!',
+                          'Twój model został zapisany.',
+                          'success'
+                        );
+                      }
+                    });
+                  }
+                });
+              } else {
+                this.exampleNetResult.netName = result.value;
+                this.exampleNetResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
+                this.findByNetName(result.value).then((exist) => {
+                  if (exist) {
+                    Swal.fire({
+                      icon: 'warning',
+                      title: 'Istnieje już model z taką nazwą!'
+                    });
+                  } else {
+                    this.createExampleNet().then((result) => {
+                      if (result !== 0) {
+                        Swal.fire({
+                          icon: 'error',
+                          title: 'Błąd!',
+                          text: 'Wystąpił błąd!'
+                        });
+                      } else {
+                        Swal.fire(
+                          'Zapisane!',
+                          'Model przykładowy został zapisany.',
+                          'success'
+                        );
+                      }
+                    });
+                  }
+                });
+              }
             }
           }
-        }
-      });
+        });
+      }
     },
 
     fetchData: function() {
@@ -760,6 +797,22 @@ export default defineComponent({
 
     checkIfCreateExample() {
       if (history.state.createExample) {
+        return true;
+      }
+
+      return false;
+    },
+
+    checkIfEdited() {
+      if (history.state.editUserSave) {
+        return true;
+      }
+
+      return false;
+    },
+
+    checkIfExampleEdited() {
+      if (history.state.editExampleNet) {
         return true;
       }
 

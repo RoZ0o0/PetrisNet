@@ -1,10 +1,12 @@
 package net.petri.springboot.service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import net.petri.springboot.components.SavedNetsValidator;
 import net.petri.springboot.components.UserValidator;
+import net.petri.springboot.entity.ExampleNets;
 import net.petri.springboot.entity.SavedNets;
 import net.petri.springboot.mapper.SavedNetsMapper;
 import net.petri.springboot.model.FM.SavedNetsFM;
@@ -66,6 +68,7 @@ public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNet
         }
 
         Optional<SavedNets> optionalSavedNets = savedNetsRepository.findById(id);
+        Optional<SavedNets> optionalSaveNameAndUser = savedNetsRepository.findBySaveNameAndUserId(newEntity.getSaveName(), newEntity.getUserId());
         SavedNets entity;
         if (optionalSavedNets.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -73,13 +76,29 @@ public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNet
 
         entity = optionalSavedNets.get();
 
-        newEntity.setPublic(entity.isPublic());
-        newEntity.setUserId(entity.getUser().getId());
+        if (optionalSaveNameAndUser.isPresent() && optionalSaveNameAndUser.get().getId() != id) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        if (!Objects.equals(userService.findByEmail(authentication.getName()).getRole(), "ROLE_ADMIN")) {
+            newEntity.setPublic(entity.isPublic());
+            newEntity.setUserId(entity.getUser().getId());
+        }
 
         savedNetsMapper.mapToEntity(entity, newEntity);
         savedNetsRepository.save(entity);
 
         return savedNetsMapper.mapToVM(entity);
+    }
+
+    public void delete(Long id) {
+        Optional<SavedNets> savedNetsOptional = savedNetsRepository.findById(id);
+        SavedNets entity;
+        if (savedNetsOptional.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        entity = savedNetsOptional.get();
+        savedNetsRepository.delete(entity);
     }
 
     public List<SavedNetsVM> findByUserEmail(String email) {

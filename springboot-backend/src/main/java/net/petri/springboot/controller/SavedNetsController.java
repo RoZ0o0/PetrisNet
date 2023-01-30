@@ -45,6 +45,9 @@ public class SavedNetsController {
         return savedNetsService.update(newEntity, id, authentication);
     }
 
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) { savedNetsService.delete(id); }
+
     @GetMapping("/user")
     public List<SavedNetsVM> findByUserEmail(@RequestParam String email) { return savedNetsService.findByUserEmail(email); }
 

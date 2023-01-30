@@ -1,10 +1,15 @@
 package net.petri.springboot.components;
 
+import net.petri.springboot.entity.SavedNets;
 import net.petri.springboot.model.FM.SavedNetsFM;
+import net.petri.springboot.repository.SavedNetsRepository;
 import net.petri.springboot.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+
+import java.util.Objects;
+import java.util.Optional;
 
 @Component
 public class SavedNetsValidator extends Validator {
@@ -27,7 +32,8 @@ public class SavedNetsValidator extends Validator {
     }
 
     public boolean checkNetUser(SavedNetsFM savedNetsFM, Authentication authentication){
-        if (userService.findByEmail(authentication.getName()).getId() != savedNetsFM.getUserId()) {
+        if (!Objects.equals(userService.findByEmail(authentication.getName()).getId(), savedNetsFM.getUserId()) &&
+                !Objects.equals(userService.findByEmail(authentication.getName()).getRole(), "ROLE_ADMIN")) {
             return false;
         }
         return true;

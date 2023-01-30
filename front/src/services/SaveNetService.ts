@@ -12,6 +12,15 @@ export default class SaveNetServices {
     return tempSaveNet;
   }
 
+  public static async find(id: number): Promise<ISaveNet> {
+    const token = localStorage.getItem('token');
+    return (await axios.get<ISaveNet>('http://localhost:8081/api/saved_nets/' + id, {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
+  }
+
   public static async fetchAll(): Promise<Array<ISaveNet>> {
     const token = localStorage.getItem('token');
     return (await axios.get<Array<ISaveNet>>('http://localhost:8081/api/saved_nets', {
@@ -33,6 +42,15 @@ export default class SaveNetServices {
   public static async update(saveNet: ISaveNet, id: number): Promise<ISaveNet> {
     const token = localStorage.getItem('token');
     return (await axios.put<ISaveNet>('http://localhost:8081/api/saved_nets?id=' + id, saveNet, {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
+  }
+
+  public static async delete(saveNetId: number): Promise<ISaveNet> {
+    const token = localStorage.getItem('token');
+    return (await axios.delete('http://localhost:8081/api/saved_nets/' + saveNetId, {
       headers: {
         Authorization: `${token}`
       }

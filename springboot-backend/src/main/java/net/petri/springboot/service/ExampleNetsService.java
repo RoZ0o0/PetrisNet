@@ -58,12 +58,17 @@ public record ExampleNetsService(ExampleNetsRepository exampleNetsRepository, Ex
         }
 
         Optional<ExampleNets> optionalExampleNets = exampleNetsRepository.findById(id);
+        Optional<ExampleNets> findByName = exampleNetsRepository.findByNetName(newEntity.getNetName());
         ExampleNets entity;
         if (optionalExampleNets.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
         entity = optionalExampleNets.get();
+
+        if (findByName.isPresent() && findByName.get().getId() != id) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY);
+        }
 
         exampleNetsMapper.mapToEntity(entity, newEntity);
         exampleNetsRepository.save(entity);

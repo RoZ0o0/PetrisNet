@@ -1,6 +1,6 @@
 <template>
   <div class='mt-4 text-left'>
-    <select v-model="this.selectOption" @change="reloadData(this.selectOption)">
+    <select v-model="this.selectOption" @change="reloadData(this.selectOption)" class='p-2 rounded-md appearance-none'>
       <option value='users' selected>Zapisy użytkowników</option>
       <option value='examples'>Zapisy przykładowe</option>
     </select>
@@ -10,16 +10,16 @@
       <table class="min-w-full">
         <thead v-if="this.selectOption == 'users'" class="bg-gray-800 text-white">
           <tr class="rounded-xl">
-            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-3/12">
+            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-5/12">
               Użytkownik
             </th>
-            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-3/12">
+            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-4/12">
               Nazwa
             </th>
-            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-2/12">
+            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-1/12">
               Publiczne
             </th>
-            <th class="text-center py-3 px-4 uppercase font-semibold text-sm w-1/12">
+            <th class="text-center py-3 px-4 uppercase font-semibold text-sm w-2/12">
               Akcja
 
             </th>
@@ -27,11 +27,8 @@
         </thead>
         <thead v-if="this.selectOption == 'examples'" class="bg-gray-800 text-white">
           <tr class="rounded-xl">
-            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-5/12">
+            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-10/12">
               Nazwa
-            </th>
-            <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-5/12">
-              Export
             </th>
             <th class="text-center align-middle py-3 px-4 uppercase font-semibold text-sm w-2/12">
               <span class='inline-block align-middle'>Akcja</span>
@@ -51,8 +48,9 @@
               {{ returnPublic(userNets.public) }}
             </td>
             <td class="py-2 px-4 text-center">
-              <PencilIcon class="inline-block align-middle"/>
-              <DeleteIcon class="inline-block align-middle"/>
+              <TableEditIcon class="inline-block align-middle" @click='this.$router.push({ name:"creator", state: {editUserSave: userNets.netExport, editId: userNets.id} })'/>
+              <PencilIcon class="inline-block align-middle" @click='showEditModal(userNets)'/>
+              <DeleteIcon class="inline-block align-middle" @click='deleteUserNetAlert(userNets.id)'/>
             </td>
           </tr>
         </tbody>
@@ -61,38 +59,45 @@
             <td class="text-left py-2 px-4">
               {{ exampleNets.netName }}
             </td>
-            <td class="text-left py-2 px-4">
-              {{ exampleNets.netExport }}
-            </td>
             <td class="py-2 px-4 text-center">
+              <TableEditIcon class="inline-block align-middle" @click='this.$router.push({ name:"creator", state: {editExampleNet: exampleNets.netExport, editId: exampleNets.id} })'/>
               <PencilIcon class="inline-block align-middle" @click='editExampleNetAlert(exampleNets, exampleNets.id)'/>
               <DeleteIcon class="inline-block align-middle" @click='deleteExampleNetAlert(exampleNets.id)'/>
             </td>
           </tr>
         </tbody>
       </table>
+      <EditSavedNets
+        :net='editedNet'
+        v-show='isModalVisible'
+        @close='closeEditModal()'
+      />
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
+import { AxiosError } from 'axios';
 import UserServices, { IUser } from '../../services/UserService';
 import LoginServices from '@/services/LoginService';
 import SaveNetServices, { ISaveNet } from '@/services/SaveNetService';
 import ExampleNetServices, { IExampleNet } from '@/services/ExampleNetService';
 import Swal from 'sweetalert2';
+import EditSavedNets from '../../components/EditSavedNets.vue';
 
 import DeleteIcon from 'vue-material-design-icons/Delete.vue';
 import PlusIcon from 'vue-material-design-icons/Plus.vue';
 import PencilIcon from 'vue-material-design-icons/Pencil.vue';
-import { AxiosError } from 'axios';
+import TableEditIcon from 'vue-material-design-icons/TableEdit.vue';
 
 export default defineComponent({
   components: {
     DeleteIcon,
     PlusIcon,
-    PencilIcon
+    PencilIcon,
+    EditSavedNets,
+    TableEditIcon
   },
   data() {
     return {
@@ -101,7 +106,8 @@ export default defineComponent({
       resultExampleNets: [ExampleNetServices.getBlankExampleNetTemplate()],
       resultLoggedUser: UserServices.getBlankUserTemplate(),
       resultUsers: [UserServices.getBlankUserTemplate()],
-      selectOption: 'users'
+      selectOption: 'users',
+      editedNet: 0
     };
   },
   mounted() {
@@ -144,6 +150,16 @@ export default defineComponent({
     async deleteExampleNet(exampleNetId: number): Promise<any> {
       try {
         await ExampleNetServices.delete(exampleNetId);
+      } catch (e: any) {
+        const error = e.response?.status as AxiosError;
+        return error;
+      }
+      return 200;
+    },
+
+    async deleteSaveNet(saveNetId: number): Promise<any> {
+      try {
+        await SaveNetServices.delete(saveNetId);
       } catch (e: any) {
         const error = e.response?.status as AxiosError;
         return error;
@@ -256,6 +272,50 @@ export default defineComponent({
           });
         }
       });
+    },
+
+    deleteUserNetAlert(userNetId: number) {
+      Swal.fire({
+        title: 'Jesteś pewien?',
+        text: 'Nie będziesz w stanie tego cofnąć!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Tak, usuń!',
+        cancelButtonText: 'Anuluj'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.deleteSaveNet(userNetId).then((response) => {
+            if (response !== 200) {
+              Swal.fire(
+                'Błąd!',
+                'Nie można usunąć sieci.',
+                'error'
+              );
+              this.getUserNets().then((data) => (this.resultUserNets = data));
+            } else {
+              Swal.fire(
+                'Gotowe!',
+                'Sieć została usunięta.',
+                'success'
+              );
+              this.getUserNets().then((data) => (this.resultUserNets = data));
+            }
+          });
+        }
+      });
+    },
+
+    showEditModal(save: ISaveNet) {
+      this.editedNet = save.id;
+      this.isModalVisible = true;
+    },
+
+    closeEditModal() {
+      this.isModalVisible = false;
+      this.editedNet = 0;
+      this.getUserNets().then((data) => (this.resultUserNets = data));
     }
   }
 });
