@@ -1,13 +1,11 @@
 package net.petri.springboot.controller;
 
-import java.security.Principal;
 import java.util.List;
 import net.petri.springboot.model.FM.UserFM;
 import net.petri.springboot.model.VM.UserVM;
 import net.petri.springboot.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin
@@ -25,6 +23,9 @@ public class UserController {
     public List<UserVM> fetchUsers() {
         return userService.getAll();
     }
+
+    @GetMapping("/fetchAll")
+    public List<UserVM> fetchUsersPaginated(@RequestParam int page, @RequestParam int size) { return userService.getAllPaginated(page, size); }
 
     @GetMapping("/{id}")
     public UserVM find(@PathVariable Long id) {

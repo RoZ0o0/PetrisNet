@@ -22,6 +22,15 @@ export default class UserServices {
     })).data;
   }
 
+  public static async fetchPaginated(page: number, size: number): Promise<Array<IUser>> {
+    const token = localStorage.getItem('token');
+    return (await axios.get<Array<IUser>>('http://localhost:8081/api/users/fetchAll?page=' + page + '&size=' + size, {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
+  }
+
   public static async findById(id: number): Promise<IUser> {
     const token = localStorage.getItem('token');
     return (await axios.get<IUser>('http://localhost:8081/api/users/' + id, {

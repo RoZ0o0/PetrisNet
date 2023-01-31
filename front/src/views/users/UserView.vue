@@ -1,5 +1,9 @@
 <template>
   <div class="px-6 pb-4 pt-7 w-4/5">
+    <PaginationBar ref='pagination'
+      class='w-1/2 m-auto'
+      :size='this.size'
+    />
     <div class="overflow-auto rounded-xl">
       <table class="min-w-full">
         <thead class="bg-gray-800 text-white">
@@ -55,19 +59,23 @@
 import { Vue } from 'vue-class-component';
 import { defineComponent } from 'vue';
 import UserServices, { IUser } from '../../services/UserService';
-import AccountEditIcon from 'vue-material-design-icons/AccountEdit.vue';
-import EditModal from '../../components/EditModal.vue';
-import DeleteIcon from 'vue-material-design-icons/Delete.vue';
 import Swal from 'sweetalert2';
 import { AxiosError } from 'axios';
 import { onBeforeRouteLeave } from 'vue-router';
 import LoginServices from '@/services/LoginService';
 
+import EditModal from '../../components/EditModal.vue';
+import PaginationBar from '../../components/PaginationBar.vue';
+
+import AccountEditIcon from 'vue-material-design-icons/AccountEdit.vue';
+import DeleteIcon from 'vue-material-design-icons/Delete.vue';
+
 export default defineComponent({
   components: {
     AccountEditIcon,
+    DeleteIcon,
     EditModal,
-    DeleteIcon
+    PaginationBar
   },
   data() {
     return {
@@ -77,26 +85,47 @@ export default defineComponent({
       resultEdit: UserServices.getBlankUserTemplate(),
       editedUser: '',
       closed: false,
-      deleted: false
+      deleted: false,
+      size: 0,
+      selected: 0,
+      pageSize: 0
     };
   },
 
   watch: {
     closed() {
       if (this.closed) {
-        this.getData().then((data) => (this.result = data));
+        this.getData(this.selected, this.pageSize).then((data) => (this.result = data));
+        this.getUsers().then((data) => (this.size = data.length));
       }
     },
     deleted() {
       if (this.deleted) {
-        this.getData().then((data) => (this.result = data));
+        this.getData(this.selected, this.pageSize).then((data) => (this.result = data));
+        this.getUsers().then((data) => (this.size = data.length));
       }
     }
   },
 
   mounted() {
-    this.getData().then((data) => (this.result = data));
+    this.pageSize = (this.$refs.pagination as any).pageSize;
+    this.getData(this.selected, this.pageSize).then((data) => (this.result = data));
     this.getUser().then((data) => (this.resultLoggedUser = data));
+    this.getUsers().then((data) => (this.size = data.length));
+    this.$watch(
+      '$refs.pagination.selected',
+      (newVal: any) => {
+        this.selected = newVal;
+        this.getData(this.selected, this.pageSize).then((data) => (this.result = data));
+      }
+    );
+    this.$watch(
+      '$refs.pagination.pageSize',
+      (newVal: any) => {
+        this.pageSize = newVal;
+        this.getData(0, this.pageSize).then((data) => (this.result = data));
+      }
+    );
   },
 
   methods: {
@@ -104,7 +133,11 @@ export default defineComponent({
       return await LoginServices.fetch();
     },
 
-    async getData(): Promise<Array<IUser>> {
+    async getData(page: number, pageSize: number): Promise<Array<IUser>> {
+      return await UserServices.fetchPaginated(page, pageSize);
+    },
+
+    async getUsers(): Promise<Array<IUser>> {
       return await UserServices.fetch();
     },
 

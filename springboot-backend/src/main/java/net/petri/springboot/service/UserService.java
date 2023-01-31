@@ -1,19 +1,19 @@
 package net.petri.springboot.service;
 
-import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
 import net.petri.springboot.components.UserValidator;
-import net.petri.springboot.config.DetailsUser;
 import net.petri.springboot.entity.User;
 import net.petri.springboot.mapper.UserMapper;
 import net.petri.springboot.model.FM.UserFM;
 import net.petri.springboot.model.VM.UserVM;
 import net.petri.springboot.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -36,6 +36,15 @@ public record UserService(UserRepository userRepository, UserMapper userMapper,
         List<User> entity = userRepository.findAll();
 
         List<UserVM> entities = userMapper.mapToList(entity);
+
+        return entities;
+    }
+
+    public List<UserVM> getAllPaginated(int page, int size) {
+        Pageable getPage = PageRequest.of(page, size);
+        Page<User> entity = userRepository.findAll(getPage);
+
+        List<UserVM> entities = userMapper.mapToListPage(entity);
 
         return entities;
     }
