@@ -59,6 +59,7 @@
         </component>
 
         <component v-if='this.elements[index+1].name.substring(1,2) == "A"' :id='this.elements[index+1].name' :is="child"
+          @click='selectConnection(index+1)'
           :x1="this.elements[findFirstConnection(this.elements[index+1].name)].x + offset(this.elements[findFirstConnection(this.elements[index+1].name)].x, this.elements[this.elements.length - 1].x2)"
           :y1="this.elements[findFirstConnection(this.elements[index+1].name)].y"
           :x2="this.elements[findSecondConnection(this.elements[index+1].name)].x + offset(this.elements[findSecondConnection(this.elements[index+1].name)].x, this.elements[findFirstConnection(this.elements[index+1].name)].x)"
@@ -263,6 +264,10 @@ export default defineComponent({
       }
     },
 
+    selectConnection(index: number) {
+      this.current_target = index;
+    },
+
     offset(offset1: number, offset2: number) {
       if (offset1 > offset2) {
         return -5;
@@ -358,22 +363,24 @@ export default defineComponent({
 
     addToken() {
       if (this.current_target > 0) {
-        let findCircle = false;
-        for (let i = 0; i < this.tokens.length; i++) {
-          if (this.tokens[i].circle === this.elements[this.current_target].name) {
-            findCircle = true;
-            this.tokens[i].token_amount++;
+        if (this.elements[this.current_target].name.substring(1, 2) === 'C') {
+          let findCircle = false;
+          for (let i = 0; i < this.tokens.length; i++) {
+            if (this.tokens[i].circle === this.elements[this.current_target].name) {
+              findCircle = true;
+              this.tokens[i].token_amount++;
+            }
           }
-        }
 
-        if (!findCircle) {
-          this.counter++;
-          this.elements.push({ name: 'EE' + this.counter, x: this.elements[this.current_target].x, y: this.elements[this.current_target].y, x2: 0, y2: 0 });
-          this.tokens.push({ name: 'EE' + this.counter, object_name: 'EE' + this.counter, label_name: 'EL' + (this.counter + 1), circle: this.elements[this.current_target].name, token_amount: 1 });
-          this.children.push(SmallCircle);
-          this.counter++;
-          this.elements.push({ name: 'EL' + this.counter, x: this.elements[this.current_target].x, y: this.elements[this.current_target].y, x2: 0, y2: 0 });
-          this.children.push(TokenText);
+          if (!findCircle) {
+            this.counter++;
+            this.elements.push({ name: 'EE' + this.counter, x: this.elements[this.current_target].x, y: this.elements[this.current_target].y, x2: 0, y2: 0 });
+            this.tokens.push({ name: 'EE' + this.counter, object_name: 'EE' + this.counter, label_name: 'EL' + (this.counter + 1), circle: this.elements[this.current_target].name, token_amount: 1 });
+            this.children.push(SmallCircle);
+            this.counter++;
+            this.elements.push({ name: 'EL' + this.counter, x: this.elements[this.current_target].x, y: this.elements[this.current_target].y, x2: 0, y2: 0 });
+            this.children.push(TokenText);
+          }
         }
       }
     },
@@ -497,6 +504,13 @@ export default defineComponent({
             this.tokens.splice(i, 1);
           }
         }
+        if (this.elements[this.current_target].name.substring(1, 2) === 'A') {
+          for (let i = 0; i < this.connections.length; i++) {
+            if (this.connections[i].name === this.elements[this.current_target].name) {
+              this.connections.splice(i, 1);
+            }
+          }
+        }
         this.children.splice(this.current_target - 1, 1);
         this.elements.splice(this.current_target, 1);
         this.current_target = 0;
@@ -513,16 +527,73 @@ export default defineComponent({
     },
 
     exportNet() {
-      const elements = JSON.stringify(this.elements.slice(1));
-      const connections = JSON.stringify(this.connections);
-      const tokens = JSON.stringify(this.tokens);
-      const data = '[' + elements + ',' + connections + ',' + tokens + ']';
-      const blob = new Blob([data], { type: 'text/plain' });
-      const anchor = document.createElement('a');
-      anchor.download = 'PetriNet_import.txt';
-      anchor.href = window.URL.createObjectURL(blob);
-      anchor.dataset.downloadurl = ['text/plain', anchor.download, anchor.href].join(':');
-      anchor.click();
+      if (this.children.length > 0) {
+        Swal.fire({
+          title: 'Wybierz format',
+          showDenyButton: true,
+          confirmButtonText: 'Standardowy',
+          denyButtonText: 'Tina',
+          denyButtonColor: '#7066e0'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            const elements = JSON.stringify(this.elements.slice(1));
+            const connections = JSON.stringify(this.connections);
+            const tokens = JSON.stringify(this.tokens);
+            const data = '[' + elements + ',' + connections + ',' + tokens + ']';
+            const blob = new Blob([data], { type: 'text/plain' });
+            const anchor = document.createElement('a');
+            anchor.download = 'PetriNet_import.txt';
+            anchor.href = window.URL.createObjectURL(blob);
+            anchor.dataset.downloadurl = ['text/plain', anchor.download, anchor.href].join(':');
+            anchor.click();
+          } else if (result.isDenied) {
+            let data = '';
+            this.elements.slice(1).forEach((element) => {
+              if (element.name.substring(1, 2) === 'C') {
+                data = data + 'p ' + element.x + '.0 ' + element.y + '.0 ' + element.name + ' ';
+
+                if (this.tokens.length === 0) {
+                  data = data + '0';
+                } else {
+                  let found = false;
+                  for (let i = 0; i < this.tokens.length; i++) {
+                    if (this.tokens[i].circle === element.name) {
+                      data = data + this.tokens[i].token_amount;
+                      found = true;
+                    }
+                  }
+                  if (!found) {
+                    data = data + '0';
+                  }
+                }
+
+                data = data + ' n\n';
+              }
+
+              if (element.name.substring(1, 2) === 'T') {
+                data = data + 't ' + element.x + '.0 ' + element.y + '.0 ' + element.name + ' 0 w n\n';
+              }
+            });
+
+            this.connections.forEach((connection: { name: string, FT: string, ST: string }) => {
+              data = data + 'e ' + connection.FT + ' ' + connection.ST + ' 1 n\n';
+            });
+
+            data = data + 'h PetriNetExport';
+
+            const blob = new Blob([data], { type: 'text/plain' });
+            const anchor = document.createElement('a');
+            anchor.download = 'PetriNetExport.ndr';
+            anchor.href = window.URL.createObjectURL(blob);
+            anchor.dataset.downloadurl = ['text/plain', anchor.download, anchor.href].join(':');
+            anchor.click();
+          }
+        });
+      } else {
+        Swal.fire(
+          'Model jest pusty'
+        );
+      }
     },
 
     importNet() {
