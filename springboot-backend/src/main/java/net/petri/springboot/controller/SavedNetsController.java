@@ -25,6 +25,9 @@ public class SavedNetsController {
         return savedNetsService.getAll();
     }
 
+    @GetMapping("/fetchAll")
+    public List<SavedNetsVM> fetchSavedNetsPaginated(@RequestParam int page, @RequestParam int size) { return savedNetsService.getAllPaginated(page, size); }
+
     @GetMapping("/{id}")
     public SavedNetsVM find(@PathVariable Long id) {
         return savedNetsService.find(id);
@@ -49,10 +52,16 @@ public class SavedNetsController {
     public void delete(@PathVariable Long id) { savedNetsService.delete(id); }
 
     @GetMapping("/user")
-    public List<SavedNetsVM> findByUserEmail(@RequestParam String email) { return savedNetsService.findByUserEmail(email); }
+    public List<SavedNetsVM> findByUserEmail(@RequestParam String email, Authentication authentication) { return savedNetsService.findByUserEmail(email, authentication); }
+
+    @GetMapping("/user/fetchAll")
+    public List<SavedNetsVM> findByUserEmailPaginated(@RequestParam String email, @RequestParam int page, @RequestParam int size, Authentication authentication) { return savedNetsService.findByUserEmailPaginated(email, page, size, authentication); }
 
     @GetMapping("/public")
     public List<SavedNetsVM> findByPublic() { return savedNetsService.findByPublic(true); }
+
+    @GetMapping("/public/fetchAll")
+    public List<SavedNetsVM> findByPublicPaginated(@RequestParam int page, @RequestParam int size) { return savedNetsService.getPublicPaginated(true, page, size); }
 
     @PutMapping("/public")
     public SavedNetsVM setPublic(@RequestBody SavedNetsFM newEntity, @RequestParam Long id, Authentication authentication) {

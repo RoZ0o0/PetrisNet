@@ -24,6 +24,9 @@ public class ExampleNetsController {
         return exampleNetsService.getAll();
     }
 
+    @GetMapping("/fetchAll")
+    public List<ExampleNetsVM> fetchExampleNetsPaginated(@RequestParam int page, @RequestParam int size) { return exampleNetsService.getAllPaginated(page, size); }
+
     @GetMapping("/{id}")
     public ExampleNetsVM find(@PathVariable Long id) {
         return exampleNetsService.find(id);

@@ -6,13 +6,15 @@ import java.util.Optional;
 
 import net.petri.springboot.components.SavedNetsValidator;
 import net.petri.springboot.components.UserValidator;
-import net.petri.springboot.entity.ExampleNets;
 import net.petri.springboot.entity.SavedNets;
 import net.petri.springboot.mapper.SavedNetsMapper;
 import net.petri.springboot.model.FM.SavedNetsFM;
 import net.petri.springboot.model.VM.SavedNetsVM;
 import net.petri.springboot.model.VM.UserVM;
 import net.petri.springboot.repository.SavedNetsRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -33,6 +35,15 @@ public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNet
         List<SavedNets> entity = savedNetsRepository.findAll();
 
         List<SavedNetsVM> entities = savedNetsMapper.mapToList(entity);
+
+        return entities;
+    }
+
+    public List<SavedNetsVM> getAllPaginated(int page, int size) {
+        Pageable getPage = PageRequest.of(page, size);
+        Page<SavedNets> entity = savedNetsRepository.findAll(getPage);
+
+        List<SavedNetsVM> entities = savedNetsMapper.mapToListPage(entity);
 
         return entities;
     }
@@ -101,9 +112,24 @@ public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNet
         savedNetsRepository.delete(entity);
     }
 
-    public List<SavedNetsVM> findByUserEmail(String email) {
+    public List<SavedNetsVM> findByUserEmail(String email, Authentication authentication) {
+        if (!Objects.equals(email, authentication.getName())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
         List<SavedNets> entity = savedNetsRepository.findByUserEmail(email);
         List<SavedNetsVM> entities = savedNetsMapper.mapToList(entity);
+
+        return entities;
+    }
+
+    public List<SavedNetsVM> findByUserEmailPaginated(String email, int page, int size, Authentication authentication) {
+        if (!Objects.equals(email, authentication.getName())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        Pageable getPage = PageRequest.of(page, size);
+        Page<SavedNets> entity = savedNetsRepository.findByUserEmail(email, getPage);
+        List<SavedNetsVM> entities = savedNetsMapper.mapToListPage(entity);
 
         return entities;
     }
@@ -124,6 +150,15 @@ public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNet
     public List<SavedNetsVM> findByPublic (boolean isPublic) {
         List<SavedNets> entity = savedNetsRepository.findByIsPublic(isPublic);
         List<SavedNetsVM> entities = savedNetsMapper.mapToList(entity);
+
+        return entities;
+    }
+
+    public List<SavedNetsVM> getPublicPaginated(boolean isPublic, int page, int size) {
+        Pageable getPage = PageRequest.of(page, size);
+        Page<SavedNets> entity = savedNetsRepository.findByIsPublic(isPublic, getPage);
+
+        List<SavedNetsVM> entities = savedNetsMapper.mapToListPage(entity);
 
         return entities;
     }

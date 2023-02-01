@@ -9,6 +9,9 @@ import net.petri.springboot.mapper.ExampleNetsMapper;
 import net.petri.springboot.model.FM.ExampleNetsFM;
 import net.petri.springboot.model.VM.ExampleNetsVM;
 import net.petri.springboot.repository.ExampleNetsRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -27,6 +30,15 @@ public record ExampleNetsService(ExampleNetsRepository exampleNetsRepository, Ex
         List<ExampleNets> entity = exampleNetsRepository.findAll();
 
         List<ExampleNetsVM> entities = exampleNetsMapper.mapToList(entity);
+
+        return entities;
+    }
+
+    public List<ExampleNetsVM> getAllPaginated(int page, int size) {
+        Pageable getPage = PageRequest.of(page, size);
+        Page<ExampleNets> entity = exampleNetsRepository.findAll(getPage);
+
+        List<ExampleNetsVM> entities = exampleNetsMapper.mapToListPage(entity);
 
         return entities;
     }

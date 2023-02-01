@@ -30,6 +30,15 @@ export default class SaveNetServices {
     })).data;
   }
 
+  public static async fetchPaginated(page: number, size: number): Promise<Array<ISaveNet>> {
+    const token = localStorage.getItem('token');
+    return (await axios.get<Array<ISaveNet>>('http://localhost:8081/api/saved_nets/fetchAll?page=' + page + '&size=' + size, {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
+  }
+
   public static async create(saveNet: ISaveNet): Promise<ISaveNet> {
     const token = localStorage.getItem('token');
     return (await axios.post<ISaveNet>('http://localhost:8081/api/saved_nets', saveNet, {
@@ -84,8 +93,21 @@ export default class SaveNetServices {
     })).data;
   }
 
+  public static async fetchSavedNetsPaginated(email: string, page: number, size: number): Promise<Array<ISaveNet>> {
+    const token = localStorage.getItem('token');
+    return (await axios.get<Array<ISaveNet>>('http://localhost:8081/api/saved_nets/user/fetchAll?email=' + email + '&page=' + page + '&size=' + size, {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
+  }
+
   public static async fetchPublicNets(): Promise<Array<ISaveNet>> {
     return (await axios.get<Array<ISaveNet>>('http://localhost:8081/api/saved_nets/public')).data;
+  }
+
+  public static async fetchPublicNetsPaginated(page: number, size: number): Promise<Array<ISaveNet>> {
+    return (await axios.get<Array<ISaveNet>>('http://localhost:8081/api/saved_nets/public/fetchAll?page=' + page + '&size=' + size)).data;
   }
 }
 

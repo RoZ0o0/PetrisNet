@@ -1,19 +1,13 @@
 <template>
-  <div class='border-2 border-slate-400 text-center p-1 rounded-xl bg-slate-500' v-if='calculatePages(this.size) < 10 && this.size > 0'>
+  <div class='border-2 border-slate-400 text-center p-1 rounded-xl bg-slate-500' v-if='calculatePages(this.size) < 10 && this.size >= this.pageSize'>
     <PaginationLeft class='bg-white p-1 rounded-md font-bold select-none inline-block align-middle' @click='goLeft()' />
     <ul v-for='(n, i) in calculatePages(this.size)' :key='i' class='inline-block align-middle'>
       <li v-if='i == this.selected' class='text-lg mx-2 px-1 bg-slate-200 rounded-md text-red-600 select-none'> {{ n }} </li>
       <li v-else @click='this.selected = i' class='px-2 select-none'> {{ n }} </li>
     </ul>
     <PaginationRight class='bg-white p-1 rounded-md font-bold select-none inline-block align-middle' @click='goRight()' />
-
-    <select @change="changePageSize($event)" v-model="this.pageSize" class='inline-block align-middle float-right mt-1'>
-      <option value=5 selected>5</option>
-      <option value=10>10</option>
-      <option value=15>15</option>
-    </select>
   </div>
-  <div class='border-2 border-slate-400 text-center p-1 rounded-xl bg-slate-500' v-else-if='calculatePages(this.size) > 10 && this.size > 0'>
+  <div class='border-2 border-slate-400 text-center p-1 rounded-xl bg-slate-500' v-else-if='calculatePages(this.size) > 10 && this.size >= this.pageSize'>
     <PaginationLeft class='bg-white p-1 rounded-md font-bold select-none inline-block align-middle' @click='goLeft()' />
     <ul v-for='(n, i) in calculatePages(this.size)' :key='i' class='inline-block align-middle'>
       <li v-if='i == this.selected && (i == 0 || i == 1)' class='text-lg mx-2 px-1 bg-slate-200 rounded-md text-red-600 select-none'> {{ n }} </li>
@@ -26,12 +20,6 @@
       <li v-else class='px-2 select-none' @click='this.selected = calculatePages(this.size) - 1'> {{ calculatePages(this.size) }} </li>
     </ul>
     <PaginationRight class='bg-white p-1 rounded-md font-bold select-none inline-block align-middle' @click='goRight()' />
-
-    <select @change="changePageSize($event)" v-model='this.pageSize' class='float-right'>
-      <option value=5>5</option>
-      <option value=10>10</option>
-      <option value=15>15</option>
-    </select>
   </div>
 </template>
 
@@ -49,7 +37,7 @@ export default defineComponent({
   },
   data() {
     return {
-      pageSize: 5,
+      pageSize: 0,
       selected: 0
     };
   },
@@ -64,7 +52,14 @@ export default defineComponent({
     }
   },
 
-  props: ['size'],
+  props: ['size', 'type'],
+  mounted() {
+    if (this.type === 'home') {
+      this.pageSize = 20;
+    } else {
+      this.pageSize = 6;
+    }
+  },
   methods: {
     calculatePages(size: number) {
       let pages = 0;
@@ -74,11 +69,6 @@ export default defineComponent({
       }
 
       return pages;
-    },
-
-    changePageSize(event: any) {
-      this.pageSize = event.target.value;
-      this.selected = 0;
     },
 
     goLeft() {

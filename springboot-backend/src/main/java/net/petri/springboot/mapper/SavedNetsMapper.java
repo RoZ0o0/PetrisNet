@@ -4,6 +4,7 @@ import net.petri.springboot.entity.SavedNets;
 import net.petri.springboot.model.FM.SavedNetsFM;
 import net.petri.springboot.model.VM.SavedNetsVM;
 import net.petri.springboot.repository.UserRepository;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +47,15 @@ public record SavedNetsMapper(UserRepository userRepository) {
     public List<SavedNetsVM> mapToList(List<SavedNets> srcList) {
         List<SavedNetsVM> destList = new ArrayList<>();
         for (SavedNets srcEntity : srcList) {
+            destList.add(mapToVM(srcEntity));
+        }
+
+        return destList;
+    }
+
+    public List<SavedNetsVM> mapToListPage(Page<SavedNets> srcPage) {
+        List<SavedNetsVM> destList = new ArrayList<>();
+        for (SavedNets srcEntity : srcPage) {
             destList.add(mapToVM(srcEntity));
         }
 

@@ -1,10 +1,11 @@
 <template>
   <div class="px-6 pb-4 pt-7 w-4/5">
-    <PaginationBar ref='pagination'
+    <PaginationBar
+      ref='pagination'
       class='w-1/2 m-auto'
       :size='this.size'
     />
-    <div class="overflow-auto rounded-xl">
+    <div class="overflow-auto rounded-xl mt-8">
       <table class="min-w-full">
         <thead class="bg-gray-800 text-white">
           <tr class="rounded-xl">

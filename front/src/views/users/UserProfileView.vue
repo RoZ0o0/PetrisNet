@@ -37,17 +37,24 @@
               </div>
             </td>
             <td class="text-center px-10 py-20 h-1/2 w-1/2">
-              <div class='border-4 py-4 px-2 rounded-xl border-black'>
+              <div class='border-4 py-4 px-2 rounded-xl border-black flex flex-col h-full'>
                 <div class='border-b-2 border-red-500 bg-gray-800 rounded-xl text-red-50'>
                   <h1 class='text-center'>Twoje zapisy</h1>
                 </div>
-                <template v-for="save in resultSaves" :key="save">
+                <span v-for="save in resultSaves" :key="save">
                   <div class='mt-2'>
                     <ShareIcon v-if='!save.public' class='inline-block align-middle float-left pb-1' @click='setPublicAlert(save, save.id)'/>
                     <span @click='this.$router.push({ name:"creator", state: {redirectExport: save.netExport} })'>{{ save.saveName }}</span>
                     <PencilIcon class='inline-block align-middle float-right pb-1' @click='editSave(save, save.saveName)'/>
                   </div>
-                </template>
+                </span>
+                <HomePaginationBar
+                  ref='pagination'
+                  class='mt-auto'
+                  :size='this.size'
+                  :type='this.type'
+                />
+                <span v-if='this.resultSaves.length == 0' class='my-auto'>Nie zapisałeś jeszcze żadnych sieci!</span>
               </div>
             </td>
           </tr>
@@ -68,23 +75,40 @@ import { AxiosError } from 'axios';
 import PencilIcon from 'vue-material-design-icons/Pencil.vue';
 import ShareIcon from 'vue-material-design-icons/Share.vue';
 
+import HomePaginationBar from '../../components/HomePaginationBar.vue';
+
 export default defineComponent({
   components: {
     PencilIcon,
-    ShareIcon
+    ShareIcon,
+    HomePaginationBar
   },
   data() {
     return {
       result: LoginServices.getBlankLoginTemplate(),
       resultSaves: [SaveNetServices.getBlankSaveNetTemplate()],
       resultEdit: UserServices.getBlankUserTemplate(),
-      resultEditSave: SaveNetServices.getBlankSaveNetTemplate()
+      resultEditSave: SaveNetServices.getBlankSaveNetTemplate(),
+      size: 0,
+      selected: 0,
+      pageSize: 6,
+      type: 'profile'
     };
   },
 
   mounted() {
     this.getUser().then((data) => (this.result = data));
-    this.getSaves().then((data) => (this.resultSaves = data));
+    this.getSaves().then((data) => (this.size = data.length));
+
+    this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
+
+    this.$watch(
+      '$refs.pagination.selected',
+      (newVal: any) => {
+        this.selected = newVal;
+        this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
+      }
+    );
   },
 
   methods: {
@@ -94,6 +118,10 @@ export default defineComponent({
 
     async getSaves(): Promise<Array<ISaveNet>> {
       return (await SaveNetServices.fetchSavedNets((await this.getUser()).email));
+    },
+
+    async getSavesPaginated(page: number, pageSize: number): Promise<Array<ISaveNet>> {
+      return (await SaveNetServices.fetchSavedNetsPaginated((await this.getUser()).email, page, pageSize));
     },
 
     async editUserProfile(): Promise<any> {
@@ -163,7 +191,7 @@ export default defineComponent({
                 'Twoja nazwa została zmieniona.',
                 'success'
               );
-              this.getSaves().then((data) => (this.resultSaves = data));
+              this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
             }
           });
         }
@@ -234,7 +262,7 @@ export default defineComponent({
       }).then((result) => {
         if (result.isConfirmed) {
           this.setPublic(save, id);
-          this.getSaves().then((data) => (this.resultSaves = data));
+          this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
           Swal.fire(
             'Gotowe!',
             'Twój model został udostępniony.',

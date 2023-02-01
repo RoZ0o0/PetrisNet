@@ -14,6 +14,15 @@ export default class ExampleNetServices {
     return (await axios.get<Array<IExampleNet>>('http://localhost:8081/api/example_nets')).data;
   }
 
+  public static async fetchPaginated(page: number, size: number): Promise<Array<IExampleNet>> {
+    const token = localStorage.getItem('token');
+    return (await axios.get<Array<IExampleNet>>('http://localhost:8081/api/example_nets/fetchAll?page=' + page + '&size=' + size, {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
+  }
+
   public static async fetchById(id: number): Promise<IExampleNet> {
     return (await axios.get<IExampleNet>('http://localhost:8081/api/example_nets/' + id)).data;
   }

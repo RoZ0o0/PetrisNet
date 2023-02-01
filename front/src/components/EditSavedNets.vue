@@ -137,7 +137,7 @@ export default defineComponent({
       }
       Swal.fire(
         'Gotowe!',
-        'Użytkownik został edytowany!',
+        'Sieć została edytowana!',
         'success'
       );
       document.getElementById('err')?.classList.add('hidden');

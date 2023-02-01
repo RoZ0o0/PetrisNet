@@ -1,6 +1,12 @@
 <template>
-  <div class='mt-4 text-left'>
-    <select v-model="this.selectOption" @change="reloadData(this.selectOption)" class='p-2 rounded-md appearance-none'>
+  <div class='pt-7 pr-6 w-4/5 flex items-center justify-center'>
+    <span />
+    <PaginationBar
+      ref='pagination'
+      class='w-1/2 ml-auto'
+      :size='this.size'
+    />
+    <select v-model="this.selectOption" @change="reloadData(this.selectOption)" class='px-2 py-3 rounded-md appearance-none float-right text-center ml-auto'>
       <option value='users' selected>Zapisy użytkowników</option>
       <option value='examples'>Zapisy przykładowe</option>
     </select>
@@ -91,13 +97,16 @@ import PlusIcon from 'vue-material-design-icons/Plus.vue';
 import PencilIcon from 'vue-material-design-icons/Pencil.vue';
 import TableEditIcon from 'vue-material-design-icons/TableEdit.vue';
 
+import PaginationBar from '../../components/PaginationBar.vue';
+
 export default defineComponent({
   components: {
     DeleteIcon,
     PlusIcon,
     PencilIcon,
     EditSavedNets,
-    TableEditIcon
+    TableEditIcon,
+    PaginationBar
   },
   data() {
     return {
@@ -107,18 +116,49 @@ export default defineComponent({
       resultLoggedUser: UserServices.getBlankUserTemplate(),
       resultUsers: [UserServices.getBlankUserTemplate()],
       selectOption: 'users',
-      editedNet: 0
+      editedNet: 0,
+      size: 0,
+      selected: 0,
+      pageSize: 0
     };
   },
   mounted() {
+    this.pageSize = (this.$refs.pagination as any).pageSize;
     this.getLoggedUser().then((data) => (this.resultLoggedUser = data));
-    this.getUserNets().then((data) => (this.resultUserNets = data));
+    this.getUserNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultUserNets = data));
+    this.getUserNets().then((data) => (this.size = data.length));
     this.getUsers().then((data) => (this.resultUsers = data));
+    this.$watch(
+      '$refs.pagination.selected',
+      (newVal: any) => {
+        this.selected = newVal;
+        if (this.selectOption === 'users') {
+          this.getUserNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultUserNets = data));
+        } else {
+          this.getExampleNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultExampleNets = data));
+        }
+      }
+    );
+    this.$watch(
+      '$refs.pagination.pageSize',
+      (newVal: any) => {
+        this.pageSize = newVal;
+        if (this.selectOption === 'users') {
+          this.getUserNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultUserNets = data));
+        } else {
+          this.getExampleNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultExampleNets = data));
+        }
+      }
+    );
   },
 
   methods: {
     async getLoggedUser(): Promise<IUser> {
       return await LoginServices.fetch();
+    },
+
+    async getUserNetsPaginated(page: number, pageSize: number): Promise<Array<ISaveNet>> {
+      return await SaveNetServices.fetchPaginated(page, pageSize);
     },
 
     async getUserNets(): Promise<Array<ISaveNet>> {
@@ -131,6 +171,10 @@ export default defineComponent({
 
     async getExampleNets(): Promise<Array<IExampleNet>> {
       return await ExampleNetServices.fetchAll();
+    },
+
+    async getExampleNetsPaginated(page: number, pageSize: number): Promise<Array<IExampleNet>> {
+      return await ExampleNetServices.fetchPaginated(page, pageSize);
     },
 
     async findNetName(netName: string): Promise<boolean> {
@@ -181,9 +225,13 @@ export default defineComponent({
 
     reloadData(option: string) {
       if (option === 'users') {
-        this.getUserNets().then((data) => (this.resultUserNets = data));
+        this.selected = 0;
+        this.getUserNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultUserNets = data));
+        this.getUserNets().then((data) => (this.size = data.length));
       } else {
-        this.getExampleNets().then((data) => (this.resultExampleNets = data));
+        this.selected = 0;
+        this.getExampleNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultExampleNets = data));
+        this.getExampleNets().then((data) => (this.size = data.length));
       }
     },
 
@@ -217,7 +265,7 @@ export default defineComponent({
                 title: 'Błąd!',
                 text: 'Nazwa już istnieje!'
               });
-              this.getExampleNets().then((data) => (this.resultExampleNets = data));
+              this.getExampleNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultExampleNets = data));
             } else {
               this.editExampleNets(net, id).then((error) => {
                 if (error !== 200) {
@@ -233,7 +281,7 @@ export default defineComponent({
                     icon: 'success'
                   });
                 }
-                this.getExampleNets().then((data) => (this.resultExampleNets = data));
+                this.getExampleNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultExampleNets = data));
               });
             }
           });
@@ -260,14 +308,15 @@ export default defineComponent({
                 'Nie można usunąć sieci.',
                 'error'
               );
-              this.getExampleNets().then((data) => (this.resultExampleNets = data));
+              this.getExampleNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultExampleNets = data));
             } else {
               Swal.fire(
                 'Gotowe!',
                 'Sieć została usunięta.',
                 'success'
               );
-              this.getExampleNets().then((data) => (this.resultExampleNets = data));
+              this.getExampleNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultExampleNets = data));
+              this.getExampleNets().then((data) => (this.size = data.length));
             }
           });
         }
@@ -293,14 +342,15 @@ export default defineComponent({
                 'Nie można usunąć sieci.',
                 'error'
               );
-              this.getUserNets().then((data) => (this.resultUserNets = data));
+              this.getUserNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultUserNets = data));
             } else {
               Swal.fire(
                 'Gotowe!',
                 'Sieć została usunięta.',
                 'success'
               );
-              this.getUserNets().then((data) => (this.resultUserNets = data));
+              this.getUserNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultUserNets = data));
+              this.getUserNets().then((data) => (this.size = data.length));
             }
           });
         }
@@ -308,6 +358,7 @@ export default defineComponent({
     },
 
     showEditModal(save: ISaveNet) {
+      this.getUsers().then((data) => (this.resultUsers = data));
       this.editedNet = save.id;
       this.isModalVisible = true;
     },
@@ -315,7 +366,7 @@ export default defineComponent({
     closeEditModal() {
       this.isModalVisible = false;
       this.editedNet = 0;
-      this.getUserNets().then((data) => (this.resultUserNets = data));
+      this.getUserNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultUserNets = data));
     }
   }
 });

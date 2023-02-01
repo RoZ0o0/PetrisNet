@@ -3,6 +3,7 @@ package net.petri.springboot.mapper;
 import net.petri.springboot.entity.ExampleNets;
 import net.petri.springboot.model.FM.ExampleNetsFM;
 import net.petri.springboot.model.VM.ExampleNetsVM;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +36,15 @@ public record ExampleNetsMapper() {
     public List<ExampleNetsVM> mapToList(List<ExampleNets> srcList) {
         List<ExampleNetsVM> destList = new ArrayList<>();
         for (ExampleNets srcEntity : srcList) {
+            destList.add(mapToVM(srcEntity));
+        }
+
+        return destList;
+    }
+
+    public List<ExampleNetsVM> mapToListPage(Page<ExampleNets> srcPage) {
+        List<ExampleNetsVM> destList = new ArrayList<>();
+        for (ExampleNets srcEntity : srcPage) {
             destList.add(mapToVM(srcEntity));
         }
 

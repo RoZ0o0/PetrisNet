@@ -694,7 +694,7 @@ export default defineComponent({
           showCancelButton: true,
           inputPlaceholder: 'Wpisz nazwę!'
         }).then((result) => {
-          if (result.value === '' || !result.value) {
+          if (result.value === '') {
             Swal.fire({
               title: 'Nie podałeś nazwy!'
             });

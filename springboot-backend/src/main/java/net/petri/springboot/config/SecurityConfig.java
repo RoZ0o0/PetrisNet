@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -73,15 +74,29 @@ public class SecurityConfig {
         http.csrf().disable();
         http
                 .authorizeRequests()
-                .antMatchers("/api/auth/login").permitAll()
-                .antMatchers("/api/users/register").permitAll()
-                .antMatchers("/api/saved_nets/public").permitAll()
+                .antMatchers(HttpMethod.GET, "/api/auth/login").permitAll()
+                .antMatchers(HttpMethod.GET, "/api/auth/user").hasAnyRole("ADMIN", "USER")
+                .antMatchers(HttpMethod.GET, "/api/auth/user/role").hasAnyRole("ADMIN", "USER")
+                .antMatchers(HttpMethod.GET, "/api/example_nets").permitAll()
+                .antMatchers(HttpMethod.PUT, "/api/example_nets").hasAnyRole("ADMIN")
+                .antMatchers(HttpMethod.POST, "/api/example_nets").hasAnyRole("ADMIN")
+                .antMatchers(HttpMethod.GET, "/api/example_nets/**").permitAll()
+                .antMatchers(HttpMethod.DELETE, "/api/example_nets/**").hasAnyRole("ADMIN")
+                .antMatchers("/api/saved_nets").hasAnyRole("ADMIN", "USER")
+                .antMatchers("/api/saved_nets/find").hasAnyRole("ADMIN", "USER")
+                .antMatchers("/api/saved_nets/fetchAll").hasAnyRole("ADMIN")
+                .antMatchers("/api/saved_nets/user").hasAnyRole("ADMIN", "USER")
+                .antMatchers("/api/saved_nets/user/fetchAll").hasAnyRole("ADMIN", "USER")
+                .antMatchers("/api/saved_nets/{\\d+").hasAnyRole("ADMIN")
+                .antMatchers(HttpMethod.GET, "/api/saved_nets/public").permitAll()
+                .antMatchers(HttpMethod.PUT, "/api/saved_nets/public").hasAnyRole("ADMIN", "USER")
+                .antMatchers(HttpMethod.GET, "/api/saved_nets/public/fetchAll").permitAll()
                 .antMatchers("/api/users").hasAnyRole("ADMIN")
-                .antMatchers("/api/users/**").permitAll()
-                .antMatchers("/api/users/profile").permitAll()
-                .antMatchers("/api/users/profile/**").permitAll()
-                .antMatchers("/api/example_nets").permitAll()
-                .antMatchers("/api/example_nets/**").permitAll()
+                .antMatchers("/api/users/email").hasAnyRole("ADMIN")
+                .antMatchers("/api/users/fetchAll").hasAnyRole("ADMIN")
+                .antMatchers("/api/users/{\\d+").hasAnyRole("ADMIN")
+                .antMatchers(HttpMethod.PUT, "/api/users/profile").hasAnyRole("ADMIN", "USER")
+                .antMatchers(HttpMethod.POST, "/api/users/register").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .authenticationProvider(authenticationProvider())
