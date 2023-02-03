@@ -17,6 +17,8 @@ public interface SavedNetsRepository extends JpaRepository<SavedNets, Long> {
 
     Optional<SavedNets> findBySaveNameAndUserId(String saveName, Long userId);
 
+    Optional<SavedNets> findByRefLink(String refLink);
+
     List<SavedNets> findByIsPublic(boolean isPublic);
 
     Page<SavedNets> findByIsPublic(boolean isPublic, Pageable pageable);

@@ -191,13 +191,25 @@ export default defineComponent({
       saveResult: SaveNetServices.getBlankSaveNetTemplate(),
       exampleEditResult: ExampleNetServices.getBlankExampleNetTemplate(),
       exampleNetResult: ExampleNetServices.getBlankExampleNetTemplate(),
-      loginResult: LoginServices.getBlankLoginTemplate()
+      loginResult: LoginServices.getBlankLoginTemplate(),
+      resultRef: SaveNetServices.getBlankSaveNetTemplate()
     };
   },
-
+  watch: {
+    resultRef() {
+      if (this.resultRef.id !== 0) {
+        this.redirectNetExport(this.resultRef.netExport);
+      }
+    }
+  },
   mounted() {
     if (history.state.redirectExport) {
       this.redirectNetExport(history.state.redirectExport);
+    }
+
+    if (this.$route.query.ref) {
+      const ref = this.$route.query.ref as string;
+      this.getByRef(ref).then((data) => (this.resultRef = data));
     }
 
     if (history.state.editUserSave) {
@@ -239,6 +251,47 @@ export default defineComponent({
 
     async getExampleNet(): Promise<IExampleNet> {
       return await ExampleNetServices.fetchById(history.state.editId);
+    },
+
+    async findByUserAndSaveName(saveName: string): Promise<number> {
+      return await SaveNetServices.findBySaveNameAndId(saveName);
+    },
+
+    async findByNetName(netName: string): Promise<boolean> {
+      return await ExampleNetServices.findByNetName(netName);
+    },
+
+    async create(): Promise<any> {
+      try {
+        await SaveNetServices.create(this.saveResult);
+      } catch (e: any) {
+        const error = e.response?.status as AxiosError;
+        return error;
+      }
+      return 0;
+    },
+
+    async createExampleNet(): Promise<any> {
+      try {
+        await ExampleNetServices.create(this.exampleNetResult);
+      } catch (e: any) {
+        const error = e.response?.status as AxiosError;
+        return error;
+      }
+
+      return 0;
+    },
+
+    async update(id: number): Promise<ISaveNet> {
+      return await SaveNetServices.update(this.saveResult, id);
+    },
+
+    async updateExampleNet(id: number): Promise<IExampleNet> {
+      return await ExampleNetServices.update(this.exampleEditResult, id);
+    },
+
+    async getByRef(ref: string): Promise<ISaveNet> {
+      return await SaveNetServices.getByRef(ref);
     },
 
     checkIfLogged() {
@@ -691,43 +744,6 @@ export default defineComponent({
       } catch (e) {
         this.clear();
       }
-    },
-
-    async findByUserAndSaveName(saveName: string): Promise<number> {
-      return await SaveNetServices.findBySaveNameAndId(saveName);
-    },
-
-    async findByNetName(netName: string): Promise<boolean> {
-      return await ExampleNetServices.findByNetName(netName);
-    },
-
-    async create(): Promise<any> {
-      try {
-        await SaveNetServices.create(this.saveResult);
-      } catch (e: any) {
-        const error = e.response?.status as AxiosError;
-        return error;
-      }
-      return 0;
-    },
-
-    async createExampleNet(): Promise<any> {
-      try {
-        await ExampleNetServices.create(this.exampleNetResult);
-      } catch (e: any) {
-        const error = e.response?.status as AxiosError;
-        return error;
-      }
-
-      return 0;
-    },
-
-    async update(id: number): Promise<ISaveNet> {
-      return await SaveNetServices.update(this.saveResult, id);
-    },
-
-    async updateExampleNet(id: number): Promise<IExampleNet> {
-      return await ExampleNetServices.update(this.exampleEditResult, id);
     },
 
     saveModal() {

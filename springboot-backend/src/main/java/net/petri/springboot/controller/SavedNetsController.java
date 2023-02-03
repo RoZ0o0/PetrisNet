@@ -49,7 +49,7 @@ public class SavedNetsController {
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) { savedNetsService.delete(id); }
+    public void delete(@PathVariable Long id, Authentication authentication) { savedNetsService.delete(id, authentication); }
 
     @GetMapping("/user")
     public List<SavedNetsVM> findByUserEmail(@RequestParam String email, Authentication authentication) { return savedNetsService.findByUserEmail(email, authentication); }
@@ -66,5 +66,15 @@ public class SavedNetsController {
     @PutMapping("/public")
     public SavedNetsVM setPublic(@RequestBody SavedNetsFM newEntity, @RequestParam Long id, Authentication authentication) {
         return savedNetsService.setPublic(newEntity, id, authentication);
+    }
+
+    @GetMapping("/ref")
+    public String createRefLink(@RequestParam Long id, Authentication authentication) {
+        return savedNetsService.createRefLink(id, authentication);
+    }
+
+    @GetMapping("/ref/{ref}")
+    public SavedNetsVM getByRefLink(@PathVariable String ref) {
+        return savedNetsService.findByRefLink(ref);
     }
 }

@@ -57,12 +57,10 @@
 </template>
 
 <script lang="ts">
-import { Vue } from 'vue-class-component';
 import { defineComponent } from 'vue';
 import UserServices, { IUser } from '../../services/UserService';
 import Swal from 'sweetalert2';
 import { AxiosError } from 'axios';
-import { onBeforeRouteLeave } from 'vue-router';
 import LoginServices from '@/services/LoginService';
 
 import EditModal from '../../components/EditModal.vue';

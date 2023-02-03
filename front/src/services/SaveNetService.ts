@@ -109,6 +109,19 @@ export default class SaveNetServices {
   public static async fetchPublicNetsPaginated(page: number, size: number): Promise<Array<ISaveNet>> {
     return (await axios.get<Array<ISaveNet>>('http://localhost:8081/api/saved_nets/public/fetchAll?page=' + page + '&size=' + size)).data;
   }
+
+  public static async createRefLink(id: number): Promise<string> {
+    const token = localStorage.getItem('token');
+    return (await axios.get<string>('http://localhost:8081/api/saved_nets/ref?id=' + id, {
+      headers: {
+        Authorization: `${token}`
+      }
+    })).data;
+  }
+
+  public static async getByRef(ref: string): Promise<ISaveNet> {
+    return (await axios.get<ISaveNet>('http://localhost:8081/api/saved_nets/ref/' + ref)).data;
+  }
 }
 
 export interface ISaveNet {

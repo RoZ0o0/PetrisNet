@@ -3,6 +3,7 @@ package net.petri.springboot.service;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 
 import net.petri.springboot.components.SavedNetsValidator;
 import net.petri.springboot.components.UserValidator;
@@ -96,19 +97,24 @@ public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNet
             newEntity.setUserId(entity.getUser().getId());
         }
 
+        newEntity.setRefLink(entity.getRefLink());
+
         savedNetsMapper.mapToEntity(entity, newEntity);
         savedNetsRepository.save(entity);
 
         return savedNetsMapper.mapToVM(entity);
     }
 
-    public void delete(Long id) {
+    public void delete(Long id, Authentication authentication) {
         Optional<SavedNets> savedNetsOptional = savedNetsRepository.findById(id);
         SavedNets entity;
         if (savedNetsOptional.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
         entity = savedNetsOptional.get();
+        if (!savedNetsValidator.validateDelete(entity, authentication)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
         savedNetsRepository.delete(entity);
     }
 
@@ -180,9 +186,61 @@ public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNet
         newEntity.setNetExport(entity.getNetExport());
         newEntity.setSaveName(entity.getSaveName());
         newEntity.setUserId(entity.getUser().getId());
+        newEntity.setRefLink(entity.getRefLink());
 
         savedNetsMapper.mapToEntity(entity, newEntity);
         savedNetsRepository.save(entity);
+
+        return savedNetsMapper.mapToVM(entity);
+    }
+
+    public String createRefLink(Long id, Authentication authentication) {
+        SavedNetsFM newEntity = new SavedNetsFM();
+        Optional<SavedNets> optionalSavedNets = savedNetsRepository.findById(id);
+        SavedNets entity;
+        if (optionalSavedNets.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        entity = optionalSavedNets.get();
+
+        if (Objects.equals(entity.getRefLink(), null)) {
+            newEntity.setPublic(entity.isPublic());
+            newEntity.setNetExport(entity.getNetExport());
+            newEntity.setSaveName(entity.getSaveName());
+            newEntity.setUserId(entity.getUser().getId());
+
+            if (!savedNetsValidator.checkNetUser(newEntity, authentication)) {
+                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+
+            int leftLimit = 48;
+            int rightLimit = 122;
+            int targetStringLength = 10;
+            Random random = new Random();
+
+            String generatedString = random.ints(leftLimit, rightLimit + 1)
+                    .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97))
+                    .limit(targetStringLength)
+                    .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                    .toString();
+
+            newEntity.setRefLink(generatedString);
+
+            savedNetsMapper.mapToEntity(entity, newEntity);
+            savedNetsRepository.save(entity);
+        }
+        return entity.getRefLink();
+    }
+
+    public SavedNetsVM findByRefLink(String ref) {
+        Optional<SavedNets> optionalSavedNets = savedNetsRepository.findByRefLink(ref);
+        SavedNets entity;
+        if (optionalSavedNets.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        entity = optionalSavedNets.get();
 
         return savedNetsMapper.mapToVM(entity);
     }

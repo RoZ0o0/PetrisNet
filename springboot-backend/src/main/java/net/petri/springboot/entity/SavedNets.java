@@ -28,4 +28,6 @@ public class SavedNets {
     @Column(name = "is_public")
     private boolean isPublic;
 
+    @Column(name = "ref_link")
+    private String refLink;
 }

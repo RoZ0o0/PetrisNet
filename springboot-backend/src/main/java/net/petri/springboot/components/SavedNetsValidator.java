@@ -31,11 +31,20 @@ public class SavedNetsValidator extends Validator {
         return true;
     }
 
-    public boolean checkNetUser(SavedNetsFM savedNetsFM, Authentication authentication){
+    public boolean checkNetUser(SavedNetsFM savedNetsFM, Authentication authentication) {
         if (!Objects.equals(userService.findByEmail(authentication.getName()).getId(), savedNetsFM.getUserId()) &&
                 !Objects.equals(userService.findByEmail(authentication.getName()).getRole(), "ROLE_ADMIN")) {
             return false;
         }
+        return true;
+    }
+
+    public boolean validateDelete(SavedNets savedNets, Authentication authentication) {
+        if (!Objects.equals(userService.findByEmail(authentication.getName()).getId(), savedNets.getUser().getId()) &&
+                !Objects.equals(userService.findByEmail(authentication.getName()).getRole(), "ROLE_ADMIN")) {
+            return false;
+        }
+
         return true;
     }
 }

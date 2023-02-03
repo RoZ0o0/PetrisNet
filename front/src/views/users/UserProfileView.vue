@@ -42,10 +42,16 @@
                   <h1 class='text-center'>Twoje zapisy</h1>
                 </div>
                 <span v-for="save in resultSaves" :key="save">
-                  <div class='mt-2'>
-                    <ShareIcon v-if='!save.public' class='inline-block align-middle float-left pb-1' @click='setPublicAlert(save, save.id)'/>
-                    <span @click='this.$router.push({ name:"creator", state: {redirectExport: save.netExport} })'>{{ save.saveName }}</span>
-                    <PencilIcon class='inline-block align-middle float-right pb-1' @click='editSave(save, save.saveName)'/>
+                  <div class='mt-2 flex flex-row w-full'>
+                    <div class='pl-8'>
+                      <span @click='this.$router.push({ name:"creator", state: {redirectExport: save.netExport} })'>{{ save.saveName }}</span>
+                    </div>
+                    <div class='ml-auto'>
+                      <ShareIcon v-if='!save.public' class='inline-block align-middle pb-1' @click='setPublicAlert(save, save.id)'/>
+                      <LinkIcon class='inline-block align-middle pb-1' @click='showRefLinkModal(save.id)'/>
+                      <PencilIcon class='inline-block align-middle pb-1' @click='editSave(save, save.saveName)'/>
+                      <DeleteIcon class='inline-block align-middle pb-1' @click='deleteSaveNetAlert(save.id)'/>
+                    </div>
                   </div>
                 </span>
                 <HomePaginationBar
@@ -53,6 +59,11 @@
                   class='mt-auto'
                   :size='this.size'
                   :type='this.type'
+                />
+                <RefLinkModal
+                  :net='refSave'
+                  v-show='isModalVisible'
+                  @close='closeRefLinkModal()'
                 />
                 <span v-if='this.resultSaves.length == 0' class='my-auto'>Nie zapisałeś jeszcze żadnych sieci!</span>
               </div>
@@ -74,14 +85,20 @@ import { AxiosError } from 'axios';
 
 import PencilIcon from 'vue-material-design-icons/Pencil.vue';
 import ShareIcon from 'vue-material-design-icons/Share.vue';
+import DeleteIcon from 'vue-material-design-icons/Delete.vue';
+import LinkIcon from 'vue-material-design-icons/Link.vue';
 
 import HomePaginationBar from '../../components/HomePaginationBar.vue';
+import RefLinkModal from '../../components/RefLinkModal.vue';
 
 export default defineComponent({
   components: {
     PencilIcon,
     ShareIcon,
-    HomePaginationBar
+    DeleteIcon,
+    LinkIcon,
+    HomePaginationBar,
+    RefLinkModal
   },
   data() {
     return {
@@ -89,6 +106,8 @@ export default defineComponent({
       resultSaves: [SaveNetServices.getBlankSaveNetTemplate()],
       resultEdit: UserServices.getBlankUserTemplate(),
       resultEditSave: SaveNetServices.getBlankSaveNetTemplate(),
+      isModalVisible: false,
+      refSave: 0,
       size: 0,
       selected: 0,
       pageSize: 6,
@@ -118,6 +137,16 @@ export default defineComponent({
 
     async getSaves(): Promise<Array<ISaveNet>> {
       return (await SaveNetServices.fetchSavedNets((await this.getUser()).email));
+    },
+
+    async deleteSaveNet(saveNetId: number): Promise<any> {
+      try {
+        await SaveNetServices.delete(saveNetId);
+      } catch (e: any) {
+        const error = e.response?.status as AxiosError;
+        return error;
+      }
+      return 200;
     },
 
     async getSavesPaginated(page: number, pageSize: number): Promise<Array<ISaveNet>> {
@@ -249,6 +278,40 @@ export default defineComponent({
       });
     },
 
+    deleteSaveNetAlert(saveNetId: number) {
+      Swal.fire({
+        title: 'Jesteś pewien?',
+        text: 'Nie będziesz w stanie tego cofnąć!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Tak, usuń!',
+        cancelButtonText: 'Anuluj'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.deleteSaveNet(saveNetId).then((response) => {
+            if (response !== 200) {
+              Swal.fire(
+                'Błąd!',
+                'Nie można usunąć sieci.',
+                'error'
+              );
+              this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
+            } else {
+              Swal.fire(
+                'Gotowe!',
+                'Sieć została usunięta.',
+                'success'
+              );
+              this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
+              this.getSaves().then((data) => (this.size = data.length));
+            }
+          });
+        }
+      });
+    },
+
     setPublicAlert(save: ISaveNet, id: number) {
       Swal.fire({
         icon: 'info',
@@ -337,6 +400,15 @@ export default defineComponent({
       const regex = /^(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,16}$/;
       const matches = regex.exec(password);
       return matches;
+    },
+
+    showRefLinkModal(save: number) {
+      this.refSave = save;
+      this.isModalVisible = true;
+    },
+
+    closeRefLinkModal() {
+      this.isModalVisible = false;
     }
   }
 });

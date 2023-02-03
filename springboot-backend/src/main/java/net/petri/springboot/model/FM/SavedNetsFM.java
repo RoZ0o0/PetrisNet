@@ -11,4 +11,5 @@ public class SavedNetsFM {
     private String saveName;
     private String netExport;
     private boolean isPublic;
+    private String refLink;
 }

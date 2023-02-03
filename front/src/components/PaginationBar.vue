@@ -1,5 +1,5 @@
 <template>
-  <div class='border-2 border-slate-400 text-center p-1 rounded-xl bg-slate-500' v-if='calculatePages(this.size) < 10 && this.size > 0'>
+  <div class='border-2 border-slate-400 text-center p-1 rounded-xl bg-slate-500' v-if='calculatePages(this.size) <= 10 && this.size > 0'>
     <PaginationLeft class='bg-white p-1 rounded-md font-bold select-none inline-block align-middle' @click='goLeft()' />
     <ul v-for='(n, i) in calculatePages(this.size)' :key='i' class='inline-block align-middle'>
       <li v-if='i == this.selected' class='text-lg mx-2 px-1 bg-slate-200 rounded-md text-red-600 select-none'> {{ n }} </li>

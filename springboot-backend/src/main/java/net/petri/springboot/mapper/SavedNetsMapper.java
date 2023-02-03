@@ -29,6 +29,7 @@ public record SavedNetsMapper(UserRepository userRepository) {
         dest.setSaveName(src.getSaveName());
         dest.setNetExport(src.getNetExport());
         dest.setPublic(src.isPublic());
+        dest.setRefLink(src.getRefLink());
     }
 
     public SavedNets mapToEntity(SavedNetsFM src) {
@@ -40,6 +41,7 @@ public record SavedNetsMapper(UserRepository userRepository) {
         dest.setSaveName(src.getSaveName());
         dest.setNetExport(src.getNetExport());
         dest.setPublic(src.isPublic());
+        dest.setRefLink(src.getRefLink());
 
         return dest;
     }
