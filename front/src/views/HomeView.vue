@@ -1,7 +1,7 @@
 <template>
   <div class="px-6 py-6 w-full h-full">
-    <div class="overflow-auto rounded-xl w-full h-full">
-      <div class="grid grid-cols-4 gap-10 bg-gray-200 h-full p-4">
+    <div class="overflow-auto rounded-xl w-3/5 h-full mx-auto">
+      <div class="grid grid-cols-2 gap-10 bg-gray-200 h-full p-4">
         <div class="text-center border-2 rounded-xl bg-gray-400 p-6 flex flex-col">
           <span class="border-b-2">Sieci innych użytkowników</span>
           <ul v-for="save in resultPublicNets" :key="save" class="mt-2">
@@ -25,12 +25,6 @@
             :size='this.exampleNetSize'
             :type='this.type'
           />
-        </div>
-        <div class="text-center border-2 rounded-xl bg-gray-400 p-6">
-          <span class="border-b-2">Coś innego</span>
-        </div>
-        <div class="text-center border-2 rounded-xl bg-gray-400 p-6">
-          <span class="border-b-2">Coś innego</span>
         </div>
       </div>
     </div>

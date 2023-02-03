@@ -115,19 +115,31 @@ export default defineComponent({
     };
   },
 
-  mounted() {
-    this.getUser().then((data) => (this.result = data));
-    this.getSaves().then((data) => (this.size = data.length));
-
-    this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
-
-    this.$watch(
-      '$refs.pagination.selected',
-      (newVal: any) => {
-        this.selected = newVal;
-        this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
+  watch: {
+    result() {
+      if (this.result.role === '') {
+        this.$router.push('/');
       }
-    );
+    }
+  },
+
+  mounted() {
+    if (localStorage.getItem('token')) {
+      this.getUser().then((data) => (this.result = data));
+      this.getSaves().then((data) => (this.size = data.length));
+
+      this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
+
+      this.$watch(
+        '$refs.pagination.selected',
+        (newVal: any) => {
+          this.selected = newVal;
+          this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
+        }
+      );
+    } else {
+      this.$router.push('/');
+    }
   },
 
   methods: {

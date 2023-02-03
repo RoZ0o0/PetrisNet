@@ -113,7 +113,7 @@ export default defineComponent({
       isModalVisible: false,
       resultUserNets: [SaveNetServices.getBlankSaveNetTemplate()],
       resultExampleNets: [ExampleNetServices.getBlankExampleNetTemplate()],
-      resultLoggedUser: UserServices.getBlankUserTemplate(),
+      resultLoggedUser: LoginServices.getBlankLoginTemplate(),
       resultUsers: [UserServices.getBlankUserTemplate()],
       selectOption: 'users',
       editedNet: 0,
@@ -122,34 +122,47 @@ export default defineComponent({
       pageSize: 0
     };
   },
+
+  watch: {
+    resultLoggedUser() {
+      if (this.resultLoggedUser.role !== 'ROLE_ADMIN') {
+        this.$router.push('/');
+      }
+    }
+  },
+
   mounted() {
-    this.pageSize = (this.$refs.pagination as any).pageSize;
-    this.getLoggedUser().then((data) => (this.resultLoggedUser = data));
-    this.getUserNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultUserNets = data));
-    this.getUserNets().then((data) => (this.size = data.length));
-    this.getUsers().then((data) => (this.resultUsers = data));
-    this.$watch(
-      '$refs.pagination.selected',
-      (newVal: any) => {
-        this.selected = newVal;
-        if (this.selectOption === 'users') {
-          this.getUserNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultUserNets = data));
-        } else {
-          this.getExampleNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultExampleNets = data));
+    if (localStorage.getItem('token')) {
+      this.getLoggedUser().then((data) => (this.resultLoggedUser = data));
+      this.pageSize = (this.$refs.pagination as any).pageSize;
+      this.getUserNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultUserNets = data));
+      this.getUserNets().then((data) => (this.size = data.length));
+      this.getUsers().then((data) => (this.resultUsers = data));
+      this.$watch(
+        '$refs.pagination.selected',
+        (newVal: any) => {
+          this.selected = newVal;
+          if (this.selectOption === 'users') {
+            this.getUserNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultUserNets = data));
+          } else {
+            this.getExampleNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultExampleNets = data));
+          }
         }
-      }
-    );
-    this.$watch(
-      '$refs.pagination.pageSize',
-      (newVal: any) => {
-        this.pageSize = newVal;
-        if (this.selectOption === 'users') {
-          this.getUserNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultUserNets = data));
-        } else {
-          this.getExampleNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultExampleNets = data));
+      );
+      this.$watch(
+        '$refs.pagination.pageSize',
+        (newVal: any) => {
+          this.pageSize = newVal;
+          if (this.selectOption === 'users') {
+            this.getUserNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultUserNets = data));
+          } else {
+            this.getExampleNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultExampleNets = data));
+          }
         }
-      }
-    );
+      );
+    } else {
+      this.$router.push('/');
+    }
   },
 
   methods: {

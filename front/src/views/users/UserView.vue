@@ -103,28 +103,38 @@ export default defineComponent({
         this.getData(this.selected, this.pageSize).then((data) => (this.result = data));
         this.getUsers().then((data) => (this.size = data.length));
       }
+    },
+
+    resultLoggedUser() {
+      if (this.resultLoggedUser.role !== 'ROLE_ADMIN') {
+        this.$router.push('/');
+      }
     }
   },
 
   mounted() {
-    this.pageSize = (this.$refs.pagination as any).pageSize;
-    this.getData(this.selected, this.pageSize).then((data) => (this.result = data));
-    this.getUser().then((data) => (this.resultLoggedUser = data));
-    this.getUsers().then((data) => (this.size = data.length));
-    this.$watch(
-      '$refs.pagination.selected',
-      (newVal: any) => {
-        this.selected = newVal;
-        this.getData(this.selected, this.pageSize).then((data) => (this.result = data));
-      }
-    );
-    this.$watch(
-      '$refs.pagination.pageSize',
-      (newVal: any) => {
-        this.pageSize = newVal;
-        this.getData(0, this.pageSize).then((data) => (this.result = data));
-      }
-    );
+    if (localStorage.getItem('token')) {
+      this.getUser().then((data) => (this.resultLoggedUser = data));
+      this.pageSize = (this.$refs.pagination as any).pageSize;
+      this.getData(this.selected, this.pageSize).then((data) => (this.result = data));
+      this.getUsers().then((data) => (this.size = data.length));
+      this.$watch(
+        '$refs.pagination.selected',
+        (newVal: any) => {
+          this.selected = newVal;
+          this.getData(this.selected, this.pageSize).then((data) => (this.result = data));
+        }
+      );
+      this.$watch(
+        '$refs.pagination.pageSize',
+        (newVal: any) => {
+          this.pageSize = newVal;
+          this.getData(0, this.pageSize).then((data) => (this.result = data));
+        }
+      );
+    } else {
+      this.$router.push('/');
+    }
   },
 
   methods: {
