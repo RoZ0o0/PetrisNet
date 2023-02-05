@@ -46,6 +46,11 @@
   </div>
   <div class="mx-8 my-4 border-2 border-black rounded-xl h-4/5">
     <svg ref="box" class="bg-gray-300 rounded-xl box" height="100%" width="100%" xmlns="http://www.w3.org/2000/svg" @mouseup='endDrag()' @mouseenter="endDrag()">
+      <defs>
+        <marker id="mkrArrow" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" />
+        </marker>
+      </defs>
       <template v-for="(child, index) in children" :key="child.name">
         <component v-if='this.elements[index+1].name.substring(1,2) == "C"' :id='this.elements[index+1].name' :is="child"
           :cx="this.elements[index+1].x" :cy="this.elements[index+1].y"
@@ -60,10 +65,10 @@
 
         <component v-if='this.elements[index+1].name.substring(1,2) == "A"' :id='this.elements[index+1].name' :is="child"
           @click='selectConnection(index+1)'
-          :x1="this.elements[findFirstConnection(this.elements[index+1].name)].x + offset(this.elements[findFirstConnection(this.elements[index+1].name)].x, this.elements[this.elements.length - 1].x2)"
-          :y1="this.elements[findFirstConnection(this.elements[index+1].name)].y"
-          :x2="this.elements[findSecondConnection(this.elements[index+1].name)].x + offset(this.elements[findSecondConnection(this.elements[index+1].name)].x, this.elements[findFirstConnection(this.elements[index+1].name)].x)"
-          :y2="this.elements[findSecondConnection(this.elements[index+1].name)].y">
+          :x1="this.elements[findFirstConnection(this.elements[index+1].name)].x + offset(this.elements[findFirstConnection(this.elements[index+1].name)].name, this.elements[findSecondConnection(this.elements[index+1].name)].x, this.elements[findFirstConnection(this.elements[index+1].name)].x, 'x')"
+          :y1="this.elements[findFirstConnection(this.elements[index+1].name)].y + offset(this.elements[findFirstConnection(this.elements[index+1].name)].name, this.elements[findSecondConnection(this.elements[index+1].name)].y, this.elements[findFirstConnection(this.elements[index+1].name)].y, 'y')"
+          :x2="this.elements[findSecondConnection(this.elements[index+1].name)].x - offsetX(this.elements[findSecondConnection(this.elements[index+1].name)].x, this.elements[findFirstConnection(this.elements[index+1].name)].x, this.elements[findSecondConnection(this.elements[index+1].name)].name)"
+          :y2="this.elements[findSecondConnection(this.elements[index+1].name)].y - offsetY(this.elements[findSecondConnection(this.elements[index+1].name)].y, this.elements[findFirstConnection(this.elements[index+1].name)].y, this.elements[findSecondConnection(this.elements[index+1].name)].name)">
         </component>
 
         <component v-if='this.elements[index+1].name.substring(1,2) == "E"' :id='this.elements[index+1].name' :is="child"
@@ -138,7 +143,7 @@ const Square = markRaw({
 
 const Connection = markRaw({
   template: `
-    <line class="element" stroke="rgb(0,0,0)" stroke-width="2" fill="rgb(0,0,255)"/>
+    <line class="element" stroke="rgb(0,0,0)" stroke-width="2" marker-end="url(#mkrArrow)" fill="rgb(0,0,255)"/>
   `
 });
 
@@ -321,11 +326,91 @@ export default defineComponent({
       this.current_target = index;
     },
 
-    offset(offset1: number, offset2: number) {
-      if (offset1 > offset2) {
-        return -5;
+    offset(type: string, offset1: number, offset2: number, position: string) {
+      if (type.substring(1, 2) === 'T') {
+        if (position === 'x') {
+          if (offset1 < offset2) {
+            return 0;
+          } else {
+            return 30;
+          }
+        } else {
+          if (offset1 < offset2) {
+            return 0;
+          } else {
+            return 60;
+          }
+        }
       } else {
-        return 5;
+        return 0;
+      }
+    },
+
+    offsetX(offset1: number, offset2: number, type: string) {
+      const roundOffset = Math.min(offset1, offset2) + (Math.max(offset1, offset2) - Math.min(offset1, offset2)) / 2;
+
+      let finalOffset = (roundOffset - offset2) - 7;
+
+      if (finalOffset > 20) {
+        finalOffset = 20;
+      }
+      if (finalOffset < -50) {
+        finalOffset = -50;
+      }
+      if (type.substring(1, 2) === 'T') {
+        return finalOffset;
+      } else if (type.substring(1, 2) === 'A') {
+        return 0;
+      } else {
+        if (offset1 < offset2) {
+          let circleOffset = -(roundOffset - offset1 - 40);
+
+          if (circleOffset < -40) {
+            circleOffset = -40;
+          }
+          return circleOffset;
+        } else {
+          let circleOffset = -(roundOffset - offset1 + 40);
+
+          if (circleOffset > 40) {
+            circleOffset = 40;
+          }
+          return circleOffset;
+        }
+      }
+    },
+
+    offsetY(offset1: number, offset2: number, type: string) {
+      const roundOffset = Math.min(offset1, offset2) + (Math.max(offset1, offset2) - Math.min(offset1, offset2)) / 2;
+      let finalOffset = (roundOffset - offset2) - 15;
+
+      if (finalOffset > 10) {
+        finalOffset = 10;
+      }
+      if (finalOffset < -70) {
+        finalOffset = -70;
+      }
+
+      if (type.substring(1, 2) === 'T') {
+        return finalOffset;
+      } else if (type.substring(1, 2) === 'A') {
+        return 0;
+      } else {
+        if (offset1 < offset2) {
+          let circleOffset = -(roundOffset - offset1 - 40);
+
+          if (circleOffset < -40) {
+            circleOffset = -40;
+          }
+          return circleOffset;
+        } else {
+          let circleOffset = -(roundOffset - offset1 + 40);
+
+          if (circleOffset > 40) {
+            circleOffset = 40;
+          }
+          return circleOffset;
+        }
       }
     },
 
