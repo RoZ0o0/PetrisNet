@@ -15,11 +15,11 @@
         </button>
       </div>
       <div class="ml-4 items-center petri-nav">
-        <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center">
+        <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center" @click='run(); this.running = true;'>
           <RunIcon class="inline-block align-middle" />
           <span class="inline-block align-middle">Run</span>
         </button>
-        <button class="border-2 border-black border-l-0 rounded-br-xl rounded-tr-xl p-2 items-center">
+        <button class="border-2 border-black border-l-0 rounded-br-xl rounded-tr-xl p-2 items-center" @click='stop()'>
           <StopIcon class="inline-block align-middle" />
           <span class="inline-block align-middle">Stop</span>
         </button>
@@ -122,6 +122,7 @@ import { IUser } from '@/services/UserService';
 import axios, { AxiosError } from 'axios';
 import LoginServices, { ILogin } from '@/services/LoginService';
 import ExampleNetServices, { IExampleNet } from '@/services/ExampleNetService';
+import SimulationServices, { ISimulation } from '@/services/SimulationService';
 
 const Circle = markRaw({
   template: `
@@ -197,7 +198,9 @@ export default defineComponent({
       exampleEditResult: ExampleNetServices.getBlankExampleNetTemplate(),
       exampleNetResult: ExampleNetServices.getBlankExampleNetTemplate(),
       loginResult: LoginServices.getBlankLoginTemplate(),
-      resultRef: SaveNetServices.getBlankSaveNetTemplate()
+      resultRef: SaveNetServices.getBlankSaveNetTemplate(),
+      resultSimulation: SimulationServices.getBlankSimulationTemplate(),
+      running: false
     };
   },
   watch: {
@@ -297,6 +300,35 @@ export default defineComponent({
 
     async getByRef(ref: string): Promise<ISaveNet> {
       return await SaveNetServices.getByRef(ref);
+    },
+
+    async simulation(result: ISimulation): Promise<ISimulation> {
+      return await SimulationServices.simulation(result);
+    },
+
+    async run() {
+      this.resultSimulation.elements = this.elements.slice(1);
+      this.resultSimulation.connections = this.connections;
+      this.resultSimulation.tokens = this.tokens;
+
+      await this.simulation(this.resultSimulation).then((data) => (this.resultSimulation = data));
+
+      this.netChangeSimulation();
+
+      this.checkIfTokenEmpty();
+      await this.customTimeout(2000);
+      console.log(this.resultSimulation);
+      if (this.running) {
+        await this.run();
+      }
+    },
+
+    customTimeout(ms: number) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    },
+
+    stop() {
+      this.running = false;
     },
 
     checkIfLogged() {
@@ -461,13 +493,13 @@ export default defineComponent({
           this.elements[this.elements.length - 1].y2 = this.elements[this.hovered_target].y;
           this.elements[this.elements.length - 1].x = this.elements[this.current_target].x;
           this.elements[this.elements.length - 1].y = this.elements[this.current_target].y;
-          this.connections[this.connections.length - 1].ST = this.elements[this.hovered_target].name;
+          this.connections[this.connections.length - 1].st = this.elements[this.hovered_target].name;
           document.getElementById(this.current_connection)?.removeEventListener('mousemove', this.connection_drag);
 
-          if ((this.connections[this.connections.length - 1].FT.substring(1, 2) === 'C' &&
-          this.connections[this.connections.length - 1].ST.substring(1, 2) === 'C') ||
-          (this.connections[this.connections.length - 1].FT.substring(1, 2) === 'T' &&
-          this.connections[this.connections.length - 1].ST.substring(1, 2) === 'T')) {
+          if ((this.connections[this.connections.length - 1].ft.substring(1, 2) === 'C' &&
+          this.connections[this.connections.length - 1].st.substring(1, 2) === 'C') ||
+          (this.connections[this.connections.length - 1].ft.substring(1, 2) === 'T' &&
+          this.connections[this.connections.length - 1].st.substring(1, 2) === 'T')) {
             this.children.splice(-1, 1);
             this.elements.splice(-1, 1);
             this.connections.splice(-1, 1);
@@ -495,7 +527,7 @@ export default defineComponent({
       const target = this.current_target;
       this.counter++;
       this.elements.push({ name: 'EA' + this.counter, x: this.elements[target].x, y: this.elements[target].y, x2: this.elements[target].x, y2: this.elements[target].y });
-      this.connections.push({ name: 'EA' + this.counter, FT: this.elements[target].name, ST: '' });
+      this.connections.push({ name: 'EA' + this.counter, ft: this.elements[target].name, st: '' });
       this.children.push(Connection);
     },
 
@@ -549,6 +581,25 @@ export default defineComponent({
       }
     },
 
+    checkIfTokenEmpty() {
+      this.resultSimulation.tokens.forEach((data, i) => {
+        if (data.token_amount === 0) {
+          for (let j = 0; j < this.elements.length; j++) {
+            if (this.elements[j].name === this.tokens[i].object_name) {
+              this.elements.splice(j, 1);
+              this.children.splice(j - 1, 1);
+            }
+
+            if (this.elements[j].name === this.tokens[i].label_name) {
+              this.elements.splice(j, 1);
+              this.children.splice(j - 1, 1);
+            }
+          }
+          this.tokens.splice(i, 1);
+        }
+      });
+    },
+
     findCircle(index: string) {
       for (let i = 0; i < this.tokens.length; i++) {
         if (this.tokens[i].name === index) {
@@ -574,7 +625,7 @@ export default defineComponent({
       for (let i = 0; i < this.connections.length; i++) {
         if (this.connections[i].name === index) {
           for (let j = 0; j < this.elements.length; j++) {
-            if (this.elements[j].name === this.connections[i].FT) {
+            if (this.elements[j].name === this.connections[i].ft) {
               firstElement = j;
             }
           }
@@ -587,11 +638,11 @@ export default defineComponent({
       let secondElement = 0;
       for (let i = 0; i < this.connections.length; i++) {
         if (this.connections[i].name === index) {
-          if (this.connections[i].ST === 0) {
+          if (this.connections[i].st === 0) {
             secondElement = (this.elements.length - 1);
           } else {
             for (let j = 0; j < this.elements.length; j++) {
-              if (this.elements[j].name === this.connections[i].ST) {
+              if (this.elements[j].name === this.connections[i].st) {
                 secondElement = j;
               }
             }
@@ -614,7 +665,7 @@ export default defineComponent({
         const elements2 = [...this.elements];
         const children2 = [...this.children];
         this.connections.forEach((element: any, index: number) => {
-          if (element.FT === this.elements[this.current_target].name || element.ST === this.elements[this.current_target].name) {
+          if (element.ft === this.elements[this.current_target].name || element.st === this.elements[this.current_target].name) {
             this.elements.forEach((element2: any, index2: number) => {
               if (element2.name === element.name) {
                 elements2.splice(index2 - deletedIndex2, 1);
@@ -713,8 +764,8 @@ export default defineComponent({
               }
             });
 
-            this.connections.forEach((connection: { name: string, FT: string, ST: string }) => {
-              data = data + 'e ' + connection.FT + ' ' + connection.ST + ' 1 n\n';
+            this.connections.forEach((connection: { name: string, ft: string, st: string }) => {
+              data = data + 'e ' + connection.ft + ' ' + connection.st + ' 1 n\n';
             });
 
             data = data + 'h PetriNetExport';
@@ -825,6 +876,44 @@ export default defineComponent({
             break;
           }
           this.elements.push(JSON.parse(netExport)[0][i]);
+        }
+      } catch (e) {
+        this.clear();
+      }
+    },
+
+    netChangeSimulation() {
+      this.clear();
+      try {
+        for (let i = 0; i < this.resultSimulation.connections.length; i++) {
+          this.connections.push(this.resultSimulation.elements[i]);
+        }
+
+        for (let i = 0; i < this.resultSimulation.tokens.length; i++) {
+          this.tokens.push(this.resultSimulation.tokens[i]);
+        }
+        for (let i = 0; i < this.resultSimulation.elements.length; i++) {
+          const objectType = this.resultSimulation.elements[i].name.substring(1, 2);
+          if (objectType === 'C') {
+            this.counter++;
+            this.children.push(Circle);
+          } else if (objectType === 'T') {
+            this.counter++;
+            this.children.push(Square);
+          } else if (objectType === 'A') {
+            this.counter++;
+            this.children.push(Connection);
+          } else if (objectType === 'E') {
+            this.counter++;
+            this.children.push(SmallCircle);
+          } else if (objectType === 'L') {
+            this.counter++;
+            this.children.push(TokenText);
+          } else {
+            this.clear();
+            break;
+          }
+          this.elements.push(this.resultSimulation.elements[i]);
         }
       } catch (e) {
         this.clear();
