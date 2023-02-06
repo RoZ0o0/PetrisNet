@@ -317,7 +317,6 @@ export default defineComponent({
 
       this.checkIfTokenEmpty();
       await this.customTimeout(2000);
-      console.log(this.resultSimulation);
       if (this.running) {
         await this.run();
       }
