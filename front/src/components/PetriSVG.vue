@@ -313,9 +313,11 @@ export default defineComponent({
 
       await this.simulation(this.resultSimulation).then((data) => (this.resultSimulation = data));
 
-      this.netChangeSimulation();
+      console.log(this.resultSimulation);
 
-      this.checkIfTokenEmpty();
+      await this.netChangeSimulation();
+
+      await this.checkIfTokenEmpty();
       await this.customTimeout(2000);
       if (this.running) {
         await this.run();
@@ -544,7 +546,7 @@ export default defineComponent({
           if (!findCircle) {
             this.counter++;
             this.elements.push({ name: 'EE' + this.counter, x: this.elements[this.current_target].x, y: this.elements[this.current_target].y, x2: 0, y2: 0 });
-            this.tokens.push({ name: 'EE' + this.counter, object_name: 'EE' + this.counter, label_name: 'EL' + (this.counter + 1), circle: this.elements[this.current_target].name, token_amount: 1 });
+            this.tokens.push({ name: 'EE' + this.counter, object_name: 'EE' + (this.elements.length - 1), label_name: 'EL' + this.elements.length, circle: this.elements[this.current_target].name, token_amount: 1 });
             this.children.push(SmallCircle);
             this.counter++;
             this.elements.push({ name: 'EL' + this.counter, x: this.elements[this.current_target].x, y: this.elements[this.current_target].y, x2: 0, y2: 0 });
@@ -581,20 +583,22 @@ export default defineComponent({
     },
 
     checkIfTokenEmpty() {
+      let deleteCounter = 0;
       this.resultSimulation.tokens.forEach((data, i) => {
         if (data.token_amount === 0) {
           for (let j = 0; j < this.elements.length; j++) {
-            if (this.elements[j].name === this.tokens[i].object_name) {
+            if (this.elements[j].name === this.tokens[i - deleteCounter].object_name) {
               this.elements.splice(j, 1);
               this.children.splice(j - 1, 1);
             }
 
-            if (this.elements[j].name === this.tokens[i].label_name) {
+            if (this.elements[j].name === this.tokens[i - deleteCounter].label_name) {
               this.elements.splice(j, 1);
               this.children.splice(j - 1, 1);
             }
           }
-          this.tokens.splice(i, 1);
+          this.tokens.splice(i - deleteCounter, 1);
+          deleteCounter++;
         }
       });
     },
@@ -885,7 +889,7 @@ export default defineComponent({
       this.clear();
       try {
         for (let i = 0; i < this.resultSimulation.connections.length; i++) {
-          this.connections.push(this.resultSimulation.elements[i]);
+          this.connections.push(this.resultSimulation.connections[i]);
         }
 
         for (let i = 0; i < this.resultSimulation.tokens.length; i++) {
