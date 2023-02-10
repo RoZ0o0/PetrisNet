@@ -313,12 +313,12 @@ export default defineComponent({
 
       await this.simulation(this.resultSimulation).then((data) => (this.resultSimulation = data));
 
-      console.log(this.resultSimulation);
+      await this.netChangeSimulation(this.resultSimulation);
 
-      await this.netChangeSimulation();
+      await this.checkIfNewToken();
 
-      await this.checkIfTokenEmpty();
       await this.customTimeout(2000);
+
       if (this.running) {
         await this.run();
       }
@@ -328,7 +328,7 @@ export default defineComponent({
       return new Promise(resolve => setTimeout(resolve, ms));
     },
 
-    stop() {
+    async stop() {
       this.running = false;
     },
 
@@ -582,23 +582,34 @@ export default defineComponent({
       }
     },
 
-    checkIfTokenEmpty() {
-      let deleteCounter = 0;
-      this.resultSimulation.tokens.forEach((data, i) => {
-        if (data.token_amount === 0) {
-          for (let j = 0; j < this.elements.length; j++) {
-            if (this.elements[j].name === this.tokens[i - deleteCounter].object_name) {
-              this.elements.splice(j, 1);
-              this.children.splice(j - 1, 1);
+    checkIfNewToken() {
+      this.resultSimulation.changes.forEach((data) => {
+        if (data.includes('Added:')) {
+          const circle = data.split('Added:')[1];
+          let circleIndex = 0;
+          this.elements.forEach((data, i) => {
+            if (data.name === circle) {
+              circleIndex = i;
             }
-
-            if (this.elements[j].name === this.tokens[i - deleteCounter].label_name) {
-              this.elements.splice(j, 1);
-              this.children.splice(j - 1, 1);
+          });
+          if (circleIndex >= 0) {
+            let name = '';
+            let labelName = '';
+            this.resultSimulation.tokens.forEach((data) => {
+              if (data.circle === circle) {
+                name = data.name;
+                labelName = data.label_name;
+              }
+            });
+            if (name !== '' || labelName !== '') {
+              this.counter++;
+              this.elements.push({ name: name, x: this.elements[circleIndex].x, y: this.elements[circleIndex].y, x2: 0, y2: 0 });
+              this.children.push(SmallCircle);
+              this.counter++;
+              this.elements.push({ name: labelName, x: this.elements[circleIndex].x, y: this.elements[circleIndex].y, x2: 0, y2: 0 });
+              this.children.push(TokenText);
             }
           }
-          this.tokens.splice(i - deleteCounter, 1);
-          deleteCounter++;
         }
       });
     },
@@ -885,18 +896,18 @@ export default defineComponent({
       }
     },
 
-    netChangeSimulation() {
+    netChangeSimulation(result: ISimulation) {
       this.clear();
       try {
-        for (let i = 0; i < this.resultSimulation.connections.length; i++) {
-          this.connections.push(this.resultSimulation.connections[i]);
+        for (let i = 0; i < result.connections.length; i++) {
+          this.connections.push(result.connections[i]);
         }
 
-        for (let i = 0; i < this.resultSimulation.tokens.length; i++) {
-          this.tokens.push(this.resultSimulation.tokens[i]);
+        for (let i = 0; i < result.tokens.length; i++) {
+          this.tokens.push(result.tokens[i]);
         }
-        for (let i = 0; i < this.resultSimulation.elements.length; i++) {
-          const objectType = this.resultSimulation.elements[i].name.substring(1, 2);
+        for (let i = 0; i < result.elements.length; i++) {
+          const objectType = result.elements[i].name.substring(1, 2);
           if (objectType === 'C') {
             this.counter++;
             this.children.push(Circle);
@@ -916,7 +927,7 @@ export default defineComponent({
             this.clear();
             break;
           }
-          this.elements.push(this.resultSimulation.elements[i]);
+          this.elements.push(result.elements[i]);
         }
       } catch (e) {
         this.clear();
