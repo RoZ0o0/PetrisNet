@@ -37,7 +37,7 @@
           <RemoveIcon class="inline-block align-middle" />
           <span class="inline-block align-middle">Remove</span>
         </button>
-        <button class="border-2 border-black rounded-br-xl rounded-tr-xl p-2 items-center" v-on:click="clear">
+        <button class="border-2 border-black rounded-br-xl rounded-tr-xl p-2 items-center" v-on:click="clear" :disabled="this.running">
           <ClearIcon class="inline-block align-middle" />
           <span class="inline-block align-middle">Clear</span>
         </button>
@@ -81,6 +81,10 @@
           :x="this.elements[findCircle(this.elements[index].name)].x + textOffset(findToken(this.elements[index].name))" :y="this.elements[findCircle(this.elements[index].name)].y - 15"
           @mouseover="setHoveredID(findCircle(this.elements[index].name))" @mouseleave="setHoveredID(0)">
         </component>
+      </template>
+
+      <template v-for="(animate) in animations" :key="animate">
+        <component :is="animate" />
       </template>
     </svg>
   </div>
@@ -190,6 +194,7 @@ export default defineComponent({
       transition_width: 30,
       transition_height: 60,
       children: [] as any,
+      animations: [] as any,
       counter: 0,
       dest: null as any,
       selecting: false,
@@ -200,6 +205,8 @@ export default defineComponent({
       loginResult: LoginServices.getBlankLoginTemplate(),
       resultRef: SaveNetServices.getBlankSaveNetTemplate(),
       resultSimulation: SimulationServices.getBlankSimulationTemplate(),
+      beforeSimulation: SimulationServices.getBlankSimulationTemplate(),
+      simulationCounter: 0,
       running: false
     };
   },
@@ -207,6 +214,23 @@ export default defineComponent({
     resultRef() {
       if (this.resultRef.id !== 0) {
         this.redirectNetExport(this.resultRef.netExport);
+      }
+    },
+
+    simulationCounter() {
+      if (this.simulationCounter === 1) {
+        this.beforeSimulation.elements.splice(0);
+        this.beforeSimulation.connections.splice(0);
+        this.beforeSimulation.tokens.splice(0);
+        this.elements.slice(1).forEach((data) => {
+          this.beforeSimulation.elements.push(data);
+        });
+        this.connections.forEach((data: any) => {
+          this.beforeSimulation.connections.push(data);
+        });
+        this.tokens.forEach((data: any) => {
+          this.beforeSimulation.tokens.push(data);
+        });
       }
     }
   },
@@ -311,25 +335,89 @@ export default defineComponent({
       this.resultSimulation.connections = this.connections;
       this.resultSimulation.tokens = this.tokens;
 
+      this.simulationCounter++;
+
       await this.simulation(this.resultSimulation).then((data) => (this.resultSimulation = data));
 
       await this.netChangeSimulation(this.resultSimulation);
 
       await this.checkIfNewToken();
 
-      await this.customTimeout(2000);
+      let animationCounter = 0;
+
+      await this.customTimeout(0.5);
+
+      await this.resultSimulation.changes.forEach((data) => {
+        animationCounter++;
+        if (!data.includes('Added:')) {
+          const arc = data.split(' ');
+          let elementName = '';
+          this.connections.forEach((conn: any) => {
+            if (conn.ft === arc[0] && conn.st === arc[1]) {
+              elementName = conn.name;
+            }
+          });
+          this.elements.forEach((ele, i) => {
+            if (ele.name === elementName) {
+              const x1 = this.elements[this.findFirstConnection(this.elements[i].name)].x + this.offset(this.elements[this.findFirstConnection(this.elements[i].name)].name, this.elements[this.findSecondConnection(this.elements[i].name)].x, this.elements[this.findFirstConnection(this.elements[i].name)].x, 'x');
+              const y1 = this.elements[this.findFirstConnection(this.elements[i].name)].y + this.offset(this.elements[this.findFirstConnection(this.elements[i].name)].name, this.elements[this.findSecondConnection(this.elements[i].name)].y, this.elements[this.findFirstConnection(this.elements[i].name)].y, 'y');
+              const x2 = this.elements[this.findSecondConnection(this.elements[i].name)].x - this.offsetX(this.elements[this.findSecondConnection(this.elements[i].name)].x, this.elements[this.findFirstConnection(this.elements[i].name)].x, this.elements[this.findSecondConnection(this.elements[i].name)].name);
+              const y2 = this.elements[this.findSecondConnection(this.elements[i].name)].y - this.offsetY(this.elements[this.findSecondConnection(this.elements[i].name)].y, this.elements[this.findFirstConnection(this.elements[i].name)].y, this.elements[this.findSecondConnection(this.elements[i].name)].name);
+              this.addAnimation(animationCounter, x1, y1, x2, y2);
+            }
+          });
+        }
+      });
+
+      await this.customTimeout(600);
+
+      this.animations.splice(0);
+
+      await this.customTimeout(400);
 
       if (this.running) {
         await this.run();
       }
     },
 
+    async stop() {
+      this.running = false;
+      this.animations.splice(0);
+      this.netChangeSimulation(this.beforeSimulation);
+    },
+
     customTimeout(ms: number) {
       return new Promise(resolve => setTimeout(resolve, ms));
     },
 
-    async stop() {
-      this.running = false;
+    async addAnimation(counter: number, x1: number, y1: number, x2: number, y2: number) {
+      const animationId = 'animation' + counter;
+      const circleId = 'circle' + counter;
+      this.animations.push(
+        markRaw({
+          template: `
+          <animateTransform
+            id="` + animationId + `"
+            begin="indefinite"
+            xlink:href="#` + circleId + `"
+            attributeName="transform"
+            type="translate" from="` + x1 + ',' + y1 + '" to="' + x2 + ',' + y2 + `" dur="0.5s"
+            additive="replace" fill="freeze"
+          />
+        `
+        })
+      );
+      this.animations.push(
+        markRaw({
+          template: `
+            <g id="` + circleId + `">
+              <circle r="10" stroke="#7ac142" fill="#7ac142" />
+            </g>
+          `
+        })
+      );
+      await this.customTimeout(1);
+      (document.getElementById(animationId) as any).beginElement();
     },
 
     checkIfLogged() {
@@ -344,14 +432,16 @@ export default defineComponent({
     },
 
     startDrag(index: number) {
-      this.current_target = index;
-      if (this.ctrl_pressed) {
-        this.addConnection();
-        this.current_connection = this.elements[this.elements.length - 1].name;
-        this.connection_edit = true;
-        (this.$refs.box as any).addEventListener('mousemove', this.connection_drag);
-      } else {
-        (this.$refs.box as any).addEventListener('mousemove', this.drag);
+      if (!this.running) {
+        this.current_target = index;
+        if (this.ctrl_pressed) {
+          this.addConnection();
+          this.current_connection = this.elements[this.elements.length - 1].name;
+          this.connection_edit = true;
+          (this.$refs.box as any).addEventListener('mousemove', this.connection_drag);
+        } else {
+          (this.$refs.box as any).addEventListener('mousemove', this.drag);
+        }
       }
     },
 
@@ -457,125 +547,141 @@ export default defineComponent({
     },
 
     connection_drag(event: any) {
-      try {
-        this.elements[this.elements.length - 1].x = event.offsetX - 5;
-        this.elements[this.elements.length - 1].y = event.offsetY - 5;
-      } catch (error) {
+      if (!this.running) {
+        try {
+          this.elements[this.elements.length - 1].x = event.offsetX - 5;
+          this.elements[this.elements.length - 1].y = event.offsetY - 5;
+        } catch (error) {
+        }
       }
     },
 
     drag(event: any) {
-      const idx = this.current_target;
-      try {
-        if (event.target.nodeName === 'rect') {
-          this.elements[idx].x = event.offsetX - 15;
-          this.elements[idx].y = event.offsetY - 30;
-        } else {
-          this.elements[idx].x = event.offsetX;
-          this.elements[idx].y = event.offsetY;
-        }
-      } catch (error) {
+      if (!this.running) {
+        const idx = this.current_target;
+        try {
+          if (event.target.nodeName === 'rect') {
+            this.elements[idx].x = event.offsetX - 15;
+            this.elements[idx].y = event.offsetY - 30;
+          } else {
+            this.elements[idx].x = event.offsetX;
+            this.elements[idx].y = event.offsetY;
+          }
+        } catch (error) {
 
+        }
       }
     },
 
     endDrag() {
-      (this.$refs.box as any).removeEventListener('mousemove', this.drag);
-      if (this.connection_edit) {
+      if (!this.running) {
         (this.$refs.box as any).removeEventListener('mousemove', this.drag);
-        (this.$refs.box as any).removeEventListener('mousemove', this.connection_drag);
-        if (this.hovered_target === 0 || this.hovered_target === this.current_target) {
-          this.children.splice(-1, 1);
-          this.elements.splice(-1, 1);
-          this.connections.splice(-1, 1);
-          this.counter--;
-        } else {
-          this.elements[this.elements.length - 1].x2 = this.elements[this.hovered_target].x;
-          this.elements[this.elements.length - 1].y2 = this.elements[this.hovered_target].y;
-          this.elements[this.elements.length - 1].x = this.elements[this.current_target].x;
-          this.elements[this.elements.length - 1].y = this.elements[this.current_target].y;
-          this.connections[this.connections.length - 1].st = this.elements[this.hovered_target].name;
-          document.getElementById(this.current_connection)?.removeEventListener('mousemove', this.connection_drag);
-
-          if ((this.connections[this.connections.length - 1].ft.substring(1, 2) === 'C' &&
-          this.connections[this.connections.length - 1].st.substring(1, 2) === 'C') ||
-          (this.connections[this.connections.length - 1].ft.substring(1, 2) === 'T' &&
-          this.connections[this.connections.length - 1].st.substring(1, 2) === 'T')) {
+        if (this.connection_edit) {
+          (this.$refs.box as any).removeEventListener('mousemove', this.drag);
+          (this.$refs.box as any).removeEventListener('mousemove', this.connection_drag);
+          if (this.hovered_target === 0 || this.hovered_target === this.current_target) {
             this.children.splice(-1, 1);
             this.elements.splice(-1, 1);
             this.connections.splice(-1, 1);
             this.counter--;
+          } else {
+            this.elements[this.elements.length - 1].x2 = this.elements[this.hovered_target].x;
+            this.elements[this.elements.length - 1].y2 = this.elements[this.hovered_target].y;
+            this.elements[this.elements.length - 1].x = this.elements[this.current_target].x;
+            this.elements[this.elements.length - 1].y = this.elements[this.current_target].y;
+            this.connections[this.connections.length - 1].st = this.elements[this.hovered_target].name;
+            document.getElementById(this.current_connection)?.removeEventListener('mousemove', this.connection_drag);
+
+            if ((this.connections[this.connections.length - 1].ft.substring(1, 2) === 'C' &&
+            this.connections[this.connections.length - 1].st.substring(1, 2) === 'C') ||
+            (this.connections[this.connections.length - 1].ft.substring(1, 2) === 'T' &&
+            this.connections[this.connections.length - 1].st.substring(1, 2) === 'T')) {
+              this.children.splice(-1, 1);
+              this.elements.splice(-1, 1);
+              this.connections.splice(-1, 1);
+              this.counter--;
+            }
           }
+          this.current_connection = '';
+          this.connection_edit = false;
         }
-        this.current_connection = '';
-        this.connection_edit = false;
       }
     },
 
     addPlace() {
-      this.counter++;
-      this.elements.push({ name: 'EC' + this.counter, x: 100, y: 100, x2: 0, y2: 0 });
-      this.children.push(Circle);
+      if (!this.running) {
+        this.counter++;
+        this.elements.push({ name: 'EC' + this.counter, x: 100, y: 100, x2: 0, y2: 0 });
+        this.children.push(Circle);
+      }
     },
 
     addTransition() {
-      this.counter++;
-      this.elements.push({ name: 'ET' + this.counter, x: 100, y: 100, x2: 0, y2: 0 });
-      this.children.push(Square);
+      if (!this.running) {
+        this.counter++;
+        this.elements.push({ name: 'ET' + this.counter, x: 100, y: 100, x2: 0, y2: 0 });
+        this.children.push(Square);
+      }
     },
 
     addConnection() {
-      const target = this.current_target;
-      this.counter++;
-      this.elements.push({ name: 'EA' + this.counter, x: this.elements[target].x, y: this.elements[target].y, x2: this.elements[target].x, y2: this.elements[target].y });
-      this.connections.push({ name: 'EA' + this.counter, ft: this.elements[target].name, st: '' });
-      this.children.push(Connection);
+      if (!this.running) {
+        const target = this.current_target;
+        this.counter++;
+        this.elements.push({ name: 'EA' + this.counter, x: this.elements[target].x, y: this.elements[target].y, x2: this.elements[target].x, y2: this.elements[target].y });
+        this.connections.push({ name: 'EA' + this.counter, ft: this.elements[target].name, st: '' });
+        this.children.push(Connection);
+      }
     },
 
     addToken() {
-      if (this.current_target > 0) {
-        if (this.elements[this.current_target].name.substring(1, 2) === 'C') {
-          let findCircle = false;
-          for (let i = 0; i < this.tokens.length; i++) {
-            if (this.tokens[i].circle === this.elements[this.current_target].name) {
-              findCircle = true;
-              this.tokens[i].token_amount++;
+      if (!this.running) {
+        if (this.current_target > 0) {
+          if (this.elements[this.current_target].name.substring(1, 2) === 'C') {
+            let findCircle = false;
+            for (let i = 0; i < this.tokens.length; i++) {
+              if (this.tokens[i].circle === this.elements[this.current_target].name) {
+                findCircle = true;
+                this.tokens[i].token_amount++;
+              }
             }
-          }
 
-          if (!findCircle) {
-            this.counter++;
-            this.elements.push({ name: 'EE' + this.counter, x: this.elements[this.current_target].x, y: this.elements[this.current_target].y, x2: 0, y2: 0 });
-            this.tokens.push({ name: 'EE' + this.counter, object_name: 'EE' + (this.elements.length - 1), label_name: 'EL' + this.elements.length, circle: this.elements[this.current_target].name, token_amount: 1 });
-            this.children.push(SmallCircle);
-            this.counter++;
-            this.elements.push({ name: 'EL' + this.counter, x: this.elements[this.current_target].x, y: this.elements[this.current_target].y, x2: 0, y2: 0 });
-            this.children.push(TokenText);
+            if (!findCircle) {
+              this.counter++;
+              this.elements.push({ name: 'EE' + this.counter, x: this.elements[this.current_target].x, y: this.elements[this.current_target].y, x2: 0, y2: 0 });
+              this.tokens.push({ name: 'EE' + this.counter, object_name: 'EE' + (this.elements.length - 1), label_name: 'EL' + this.elements.length, circle: this.elements[this.current_target].name, token_amount: 1 });
+              this.children.push(SmallCircle);
+              this.counter++;
+              this.elements.push({ name: 'EL' + this.counter, x: this.elements[this.current_target].x, y: this.elements[this.current_target].y, x2: 0, y2: 0 });
+              this.children.push(TokenText);
+            }
           }
         }
       }
     },
 
     substractToken() {
-      if (this.current_target > 0) {
-        let findCircle = false;
-        for (let i = 0; i < this.tokens.length; i++) {
-          if (this.tokens[i].circle === this.elements[this.current_target].name) {
-            findCircle = true;
-            this.tokens[i].token_amount--;
-            if (this.tokens[i].token_amount === 0) {
-              for (let j = 0; j < this.elements.length; j++) {
-                if (this.elements[j].name === this.tokens[i].object_name) {
-                  this.elements.splice(j, 1);
-                  this.children.splice(j - 1, 1);
-                }
+      if (!this.running) {
+        if (this.current_target > 0) {
+          let findCircle = false;
+          for (let i = 0; i < this.tokens.length; i++) {
+            if (this.tokens[i].circle === this.elements[this.current_target].name) {
+              findCircle = true;
+              this.tokens[i].token_amount--;
+              if (this.tokens[i].token_amount === 0) {
+                for (let j = 0; j < this.elements.length; j++) {
+                  if (this.elements[j].name === this.tokens[i].object_name) {
+                    this.elements.splice(j, 1);
+                    this.children.splice(j - 1, 1);
+                  }
 
-                if (this.elements[j].name === this.tokens[i].label_name) {
-                  this.elements.splice(j, 1);
-                  this.children.splice(j - 1, 1);
+                  if (this.elements[j].name === this.tokens[i].label_name) {
+                    this.elements.splice(j, 1);
+                    this.children.splice(j - 1, 1);
+                  }
                 }
+                this.tokens.splice(i, 1);
               }
-              this.tokens.splice(i, 1);
             }
           }
         }
@@ -635,7 +741,7 @@ export default defineComponent({
     },
 
     findFirstConnection(index: string) {
-      let firstElement;
+      let firstElement = -1;
       for (let i = 0; i < this.connections.length; i++) {
         if (this.connections[i].name === index) {
           for (let j = 0; j < this.elements.length; j++) {
@@ -672,51 +778,53 @@ export default defineComponent({
     },
 
     deleteElement() {
-      if (this.current_target !== 0) {
-        let deletedIndex = 0;
-        let deletedIndex2 = 0;
-        const connections2 = [...this.connections];
-        const elements2 = [...this.elements];
-        const children2 = [...this.children];
-        this.connections.forEach((element: any, index: number) => {
-          if (element.ft === this.elements[this.current_target].name || element.st === this.elements[this.current_target].name) {
-            this.elements.forEach((element2: any, index2: number) => {
-              if (element2.name === element.name) {
-                elements2.splice(index2 - deletedIndex2, 1);
-                children2.splice((index2 - 1) - deletedIndex2, 1);
-                deletedIndex2++;
-              }
-            });
-            connections2.splice(index - deletedIndex, 1);
-            deletedIndex++;
-          }
-        });
-        this.connections = connections2;
-        this.elements = elements2;
-        this.children = children2;
-        for (let i = 0; i < this.tokens.length; i++) {
-          if (this.tokens[i].circle === this.elements[this.current_target].name) {
-            for (let j = 0; j < this.elements.length; j++) {
-              if (this.elements[j].name === this.tokens[i].object_name) {
-                this.elements.splice(j, 1);
-                this.children.splice(j - 1, 1);
-                this.elements.splice(j, 1);
-                this.children.splice(j - 1, 1);
-              }
+      if (!this.running) {
+        if (this.current_target !== 0) {
+          let deletedIndex = 0;
+          let deletedIndex2 = 0;
+          const connections2 = [...this.connections];
+          const elements2 = [...this.elements];
+          const children2 = [...this.children];
+          this.connections.forEach((element: any, index: number) => {
+            if (element.ft === this.elements[this.current_target].name || element.st === this.elements[this.current_target].name) {
+              this.elements.forEach((element2: any, index2: number) => {
+                if (element2.name === element.name) {
+                  elements2.splice(index2 - deletedIndex2, 1);
+                  children2.splice((index2 - 1) - deletedIndex2, 1);
+                  deletedIndex2++;
+                }
+              });
+              connections2.splice(index - deletedIndex, 1);
+              deletedIndex++;
             }
-            this.tokens.splice(i, 1);
-          }
-        }
-        if (this.elements[this.current_target].name.substring(1, 2) === 'A') {
-          for (let i = 0; i < this.connections.length; i++) {
-            if (this.connections[i].name === this.elements[this.current_target].name) {
-              this.connections.splice(i, 1);
+          });
+          this.connections = connections2;
+          this.elements = elements2;
+          this.children = children2;
+          for (let i = 0; i < this.tokens.length; i++) {
+            if (this.tokens[i].circle === this.elements[this.current_target].name) {
+              for (let j = 0; j < this.elements.length; j++) {
+                if (this.elements[j].name === this.tokens[i].object_name) {
+                  this.elements.splice(j, 1);
+                  this.children.splice(j - 1, 1);
+                  this.elements.splice(j, 1);
+                  this.children.splice(j - 1, 1);
+                }
+              }
+              this.tokens.splice(i, 1);
             }
           }
+          if (this.elements[this.current_target].name.substring(1, 2) === 'A') {
+            for (let i = 0; i < this.connections.length; i++) {
+              if (this.connections[i].name === this.elements[this.current_target].name) {
+                this.connections.splice(i, 1);
+              }
+            }
+          }
+          this.children.splice(this.current_target - 1, 1);
+          this.elements.splice(this.current_target, 1);
+          this.current_target = 0;
         }
-        this.children.splice(this.current_target - 1, 1);
-        this.elements.splice(this.current_target, 1);
-        this.current_target = 0;
       }
     },
 
@@ -730,133 +838,139 @@ export default defineComponent({
     },
 
     exportNet() {
-      if (this.children.length > 0) {
-        Swal.fire({
-          title: 'Wybierz format',
-          showDenyButton: true,
-          confirmButtonText: 'Standardowy',
-          denyButtonText: 'Tina',
-          denyButtonColor: '#7066e0'
-        }).then((result) => {
-          if (result.isConfirmed) {
-            const elements = JSON.stringify(this.elements.slice(1));
-            const connections = JSON.stringify(this.connections);
-            const tokens = JSON.stringify(this.tokens);
-            const data = '[' + elements + ',' + connections + ',' + tokens + ']';
-            const blob = new Blob([data], { type: 'text/plain' });
-            const anchor = document.createElement('a');
-            anchor.download = 'PetriNet_import.txt';
-            anchor.href = window.URL.createObjectURL(blob);
-            anchor.dataset.downloadurl = ['text/plain', anchor.download, anchor.href].join(':');
-            anchor.click();
-          } else if (result.isDenied) {
-            let data = '';
-            this.elements.slice(1).forEach((element) => {
-              if (element.name.substring(1, 2) === 'C') {
-                data = data + 'p ' + element.x + '.0 ' + element.y + '.0 ' + element.name + ' ';
+      if (!this.running) {
+        if (this.children.length > 0) {
+          Swal.fire({
+            title: 'Wybierz format',
+            showDenyButton: true,
+            confirmButtonText: 'Standardowy',
+            denyButtonText: 'Tina',
+            denyButtonColor: '#7066e0'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              const elements = JSON.stringify(this.elements.slice(1));
+              const connections = JSON.stringify(this.connections);
+              const tokens = JSON.stringify(this.tokens);
+              const data = '[' + elements + ',' + connections + ',' + tokens + ']';
+              const blob = new Blob([data], { type: 'text/plain' });
+              const anchor = document.createElement('a');
+              anchor.download = 'PetriNet_import.txt';
+              anchor.href = window.URL.createObjectURL(blob);
+              anchor.dataset.downloadurl = ['text/plain', anchor.download, anchor.href].join(':');
+              anchor.click();
+            } else if (result.isDenied) {
+              let data = '';
+              this.elements.slice(1).forEach((element) => {
+                if (element.name.substring(1, 2) === 'C') {
+                  data = data + 'p ' + element.x + '.0 ' + element.y + '.0 ' + element.name + ' ';
 
-                if (this.tokens.length === 0) {
-                  data = data + '0';
-                } else {
-                  let found = false;
-                  for (let i = 0; i < this.tokens.length; i++) {
-                    if (this.tokens[i].circle === element.name) {
-                      data = data + this.tokens[i].token_amount;
-                      found = true;
+                  if (this.tokens.length === 0) {
+                    data = data + '0';
+                  } else {
+                    let found = false;
+                    for (let i = 0; i < this.tokens.length; i++) {
+                      if (this.tokens[i].circle === element.name) {
+                        data = data + this.tokens[i].token_amount;
+                        found = true;
+                      }
+                    }
+                    if (!found) {
+                      data = data + '0';
                     }
                   }
-                  if (!found) {
-                    data = data + '0';
-                  }
+
+                  data = data + ' n\n';
                 }
 
-                data = data + ' n\n';
-              }
+                if (element.name.substring(1, 2) === 'T') {
+                  data = data + 't ' + element.x + '.0 ' + element.y + '.0 ' + element.name + ' 0 w n\n';
+                }
+              });
 
-              if (element.name.substring(1, 2) === 'T') {
-                data = data + 't ' + element.x + '.0 ' + element.y + '.0 ' + element.name + ' 0 w n\n';
-              }
-            });
+              this.connections.forEach((connection: { name: string, ft: string, st: string }) => {
+                data = data + 'e ' + connection.ft + ' ' + connection.st + ' 1 n\n';
+              });
 
-            this.connections.forEach((connection: { name: string, ft: string, st: string }) => {
-              data = data + 'e ' + connection.ft + ' ' + connection.st + ' 1 n\n';
-            });
+              data = data + 'h PetriNetExport';
 
-            data = data + 'h PetriNetExport';
-
-            const blob = new Blob([data], { type: 'text/plain' });
-            const anchor = document.createElement('a');
-            anchor.download = 'PetriNetExport.ndr';
-            anchor.href = window.URL.createObjectURL(blob);
-            anchor.dataset.downloadurl = ['text/plain', anchor.download, anchor.href].join(':');
-            anchor.click();
-          }
-        });
-      } else {
-        Swal.fire(
-          'Model jest pusty'
-        );
+              const blob = new Blob([data], { type: 'text/plain' });
+              const anchor = document.createElement('a');
+              anchor.download = 'PetriNetExport.ndr';
+              anchor.href = window.URL.createObjectURL(blob);
+              anchor.dataset.downloadurl = ['text/plain', anchor.download, anchor.href].join(':');
+              anchor.click();
+            }
+          });
+        } else {
+          Swal.fire(
+            'Model jest pusty'
+          );
+        }
       }
     },
 
     importNet() {
-      this.selecting = true;
+      if (!this.running) {
+        this.selecting = true;
 
-      window.addEventListener('focus', () => {
-        this.selecting = false;
-      }, { once: true });
+        window.addEventListener('focus', () => {
+          this.selecting = false;
+        }, { once: true });
 
-      (this.$refs.import as any).click();
+        (this.$refs.import as any).click();
+      }
     },
 
     importNetChanged(e: any) {
-      this.selectedFile = e.target.files[0];
-      const reader = new FileReader();
-      if ((this.selectedFile as any).name.includes('.txt')) {
-        reader.onload = (res) => {
-          this.dest = res.target?.result;
-          this.clear();
-          try {
-            for (let i = 0; i < JSON.parse(this.dest)[1].length; i++) {
-              this.connections.push(JSON.parse(this.dest)[1][i]);
-            }
-            for (let i = 0; i < JSON.parse(this.dest)[2].length; i++) {
-              this.tokens.push(JSON.parse(this.dest)[2][i]);
-            }
-            for (let i = 0; i < JSON.parse(this.dest)[0].length; i++) {
-              const objectType = JSON.parse(this.dest)[0][i].name.substring(1, 2);
-              if (objectType === 'C') {
-                this.counter++;
-                this.children.push(Circle);
-              } else if (objectType === 'T') {
-                this.counter++;
-                this.children.push(Square);
-              } else if (objectType === 'A') {
-                this.counter++;
-                this.children.push(Connection);
-              } else if (objectType === 'E') {
-                this.counter++;
-                this.children.push(SmallCircle);
-              } else if (objectType === 'L') {
-                this.counter++;
-                this.children.push(TokenText);
-              } else {
-                console.log('Zły plik');
-                this.clear();
-                break;
-              }
-              this.elements.push(JSON.parse(this.dest)[0][i]);
-            }
-          } catch (e) {
+      if (!this.running) {
+        this.selectedFile = e.target.files[0];
+        const reader = new FileReader();
+        if ((this.selectedFile as any).name.includes('.txt')) {
+          reader.onload = (res) => {
+            this.dest = res.target?.result;
             this.clear();
-            console.log('Zły plik');
+            try {
+              for (let i = 0; i < JSON.parse(this.dest)[1].length; i++) {
+                this.connections.push(JSON.parse(this.dest)[1][i]);
+              }
+              for (let i = 0; i < JSON.parse(this.dest)[2].length; i++) {
+                this.tokens.push(JSON.parse(this.dest)[2][i]);
+              }
+              for (let i = 0; i < JSON.parse(this.dest)[0].length; i++) {
+                const objectType = JSON.parse(this.dest)[0][i].name.substring(1, 2);
+                if (objectType === 'C') {
+                  this.counter++;
+                  this.children.push(Circle);
+                } else if (objectType === 'T') {
+                  this.counter++;
+                  this.children.push(Square);
+                } else if (objectType === 'A') {
+                  this.counter++;
+                  this.children.push(Connection);
+                } else if (objectType === 'E') {
+                  this.counter++;
+                  this.children.push(SmallCircle);
+                } else if (objectType === 'L') {
+                  this.counter++;
+                  this.children.push(TokenText);
+                } else {
+                  console.log('Zły plik');
+                  this.clear();
+                  break;
+                }
+                this.elements.push(JSON.parse(this.dest)[0][i]);
+              }
+            } catch (e) {
+              this.clear();
+              console.log('Zły plik');
+            }
+          };
+          if (this.selectedFile != null) {
+            reader.readAsText(this.selectedFile);
           }
-        };
-        if (this.selectedFile != null) {
-          reader.readAsText(this.selectedFile);
+        } else {
+          console.log('Zły plik');
         }
-      } else {
-        console.log('Zły plik');
       }
     },
 
@@ -935,134 +1049,136 @@ export default defineComponent({
     },
 
     saveModal() {
-      if (history.state.editUserSave || history.state.editExampleNet) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Czy napewno chcesz edytować tą sieć?',
-          text: 'Nie będziesz mógł tego cofnąć!',
-          showCancelButton: true,
-          confirmButtonColor: '#3085d6',
-          cancelButtonColor: '#d33',
-          confirmButtonText: 'Tak, edytuj!',
-          cancelButtonText: 'Anuluj'
-        }).then((result) => {
-          if (result.isConfirmed) {
-            if (history.state.editUserSave) {
-              this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
-              this.update(history.state.editId);
-            } else {
-              this.exampleEditResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
-              this.updateExampleNet(history.state.editId);
+      if (!this.running) {
+        if (history.state.editUserSave || history.state.editExampleNet) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Czy napewno chcesz edytować tą sieć?',
+            text: 'Nie będziesz mógł tego cofnąć!',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Tak, edytuj!',
+            cancelButtonText: 'Anuluj'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              if (history.state.editUserSave) {
+                this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
+                this.update(history.state.editId);
+              } else {
+                this.exampleEditResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
+                this.updateExampleNet(history.state.editId);
+              }
+              Swal.fire(
+                'Zapisane!',
+                'Twój model został zedytowany!',
+                'success'
+              );
             }
-            Swal.fire(
-              'Zapisane!',
-              'Twój model został zedytowany!',
-              'success'
-            );
-          }
-        });
-      } else {
-        Swal.fire({
-          title: 'Podaj nazwę!',
-          input: 'text',
-          cancelButtonText: 'Anuluj',
-          showCancelButton: true,
-          inputPlaceholder: 'Wpisz nazwę!'
-        }).then((result) => {
-          if (result.value === '') {
-            Swal.fire({
-              title: 'Nie podałeś nazwy!'
-            });
-          } else if ((result.value).length < 3) {
-            Swal.fire({
-              title: 'Nazwa jest za krótka!'
-            });
-          } else if ((result.value).length > 16) {
-            Swal.fire({
-              title: 'Nazwa jest za długa!'
-            });
-          } else {
-            if (this.children.length === 0) {
+          });
+        } else {
+          Swal.fire({
+            title: 'Podaj nazwę!',
+            input: 'text',
+            cancelButtonText: 'Anuluj',
+            showCancelButton: true,
+            inputPlaceholder: 'Wpisz nazwę!'
+          }).then((result) => {
+            if (result.value === '') {
               Swal.fire({
-                icon: 'error',
-                title: 'Błąd!',
-                text: 'Nie możesz zapisać pustego modelu!'
+                title: 'Nie podałeś nazwy!'
+              });
+            } else if ((result.value).length < 3) {
+              Swal.fire({
+                title: 'Nazwa jest za krótka!'
+              });
+            } else if ((result.value).length > 16) {
+              Swal.fire({
+                title: 'Nazwa jest za długa!'
               });
             } else {
-              if (!this.checkIfCreateExample()) {
-                this.saveResult.userId = this.loginResult.id;
-                this.saveResult.saveName = result.value;
-                this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
-                this.findByUserAndSaveName(result.value).then((id) => {
-                  if (id !== 0) {
-                    Swal.fire({
-                      icon: 'warning',
-                      title: 'Posiadasz już model z taką nazwą!',
-                      text: 'Czy napewno chcesz nadpisać model? Nie będziesz mógł tego cofnąć!',
-                      showCancelButton: true,
-                      confirmButtonColor: '#d33',
-                      cancelButtonColor: '#3085d6',
-                      confirmButtonText: 'Tak, zapisz!',
-                      cancelButtonText: 'Anuluj'
-                    }).then((result) => {
-                      if (result.isConfirmed) {
-                        this.update(id);
-                        Swal.fire(
-                          'Zapisane!',
-                          'Twój model został zapisany.',
-                          'success'
-                        );
-                      }
-                    });
-                  } else {
-                    this.create().then((result) => {
-                      if (result !== 0) {
-                        Swal.fire({
-                          icon: 'error',
-                          title: 'Błąd!',
-                          text: 'Wystąpił błąd!'
-                        });
-                      } else {
-                        Swal.fire(
-                          'Zapisane!',
-                          'Twój model został zapisany.',
-                          'success'
-                        );
-                      }
-                    });
-                  }
+              if (this.children.length === 0) {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Błąd!',
+                  text: 'Nie możesz zapisać pustego modelu!'
                 });
               } else {
-                this.exampleNetResult.netName = result.value;
-                this.exampleNetResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
-                this.findByNetName(result.value).then((exist) => {
-                  if (exist) {
-                    Swal.fire({
-                      icon: 'warning',
-                      title: 'Istnieje już model z taką nazwą!'
-                    });
-                  } else {
-                    this.createExampleNet().then((result) => {
-                      if (result !== 0) {
-                        Swal.fire({
-                          icon: 'error',
-                          title: 'Błąd!',
-                          text: 'Wystąpił błąd!'
-                        });
-                      } else {
-                        Swal.fire(
-                          'Zapisane!',
-                          'Model przykładowy został zapisany.',
-                          'success'
-                        );
-                      }
-                    });
-                  }
-                });
+                if (!this.checkIfCreateExample()) {
+                  this.saveResult.userId = this.loginResult.id;
+                  this.saveResult.saveName = result.value;
+                  this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
+                  this.findByUserAndSaveName(result.value).then((id) => {
+                    if (id !== 0) {
+                      Swal.fire({
+                        icon: 'warning',
+                        title: 'Posiadasz już model z taką nazwą!',
+                        text: 'Czy napewno chcesz nadpisać model? Nie będziesz mógł tego cofnąć!',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Tak, zapisz!',
+                        cancelButtonText: 'Anuluj'
+                      }).then((result) => {
+                        if (result.isConfirmed) {
+                          this.update(id);
+                          Swal.fire(
+                            'Zapisane!',
+                            'Twój model został zapisany.',
+                            'success'
+                          );
+                        }
+                      });
+                    } else {
+                      this.create().then((result) => {
+                        if (result !== 0) {
+                          Swal.fire({
+                            icon: 'error',
+                            title: 'Błąd!',
+                            text: 'Wystąpił błąd!'
+                          });
+                        } else {
+                          Swal.fire(
+                            'Zapisane!',
+                            'Twój model został zapisany.',
+                            'success'
+                          );
+                        }
+                      });
+                    }
+                  });
+                } else {
+                  this.exampleNetResult.netName = result.value;
+                  this.exampleNetResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
+                  this.findByNetName(result.value).then((exist) => {
+                    if (exist) {
+                      Swal.fire({
+                        icon: 'warning',
+                        title: 'Istnieje już model z taką nazwą!'
+                      });
+                    } else {
+                      this.createExampleNet().then((result) => {
+                        if (result !== 0) {
+                          Swal.fire({
+                            icon: 'error',
+                            title: 'Błąd!',
+                            text: 'Wystąpił błąd!'
+                          });
+                        } else {
+                          Swal.fire(
+                            'Zapisane!',
+                            'Model przykładowy został zapisany.',
+                            'success'
+                          );
+                        }
+                      });
+                    }
+                  });
+                }
               }
             }
-          }
-        });
+          });
+        }
       }
     },
 

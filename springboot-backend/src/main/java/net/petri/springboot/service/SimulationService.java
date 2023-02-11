@@ -82,6 +82,8 @@ public record SimulationService() {
                         } else {
                             checking.put(transitionKey, false);
                         }
+                    } else {
+                        checking.put(transitionKey, false);
                     }
                 }
                 // gdy tranzycja jest drugim celem oraz połączne są do niej wiecej niż 1 miejsce
