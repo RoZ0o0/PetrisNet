@@ -157,6 +157,7 @@ public record SimulationService() {
     }
 
     private void addByOutputArc(SimulationNet net, ArrayList<String> changes, Map<String, ArrayList<String>> connectionsTransitionFT, String transitionKey) {
+        int counter = 0;
         for (int i = 0; i < connectionsTransitionFT.get(transitionKey).size(); i++) {
             if (findCircle(net, connectionsTransitionFT.get(transitionKey).get(i)) == -1) {
                 List<Tokens> listOfTokens;
@@ -164,13 +165,16 @@ public record SimulationService() {
 
                 int lastElementNumber = Integer.parseInt(net.getElements().get(net.getElements().size() - 1).getName().split("\\D+")[1]);
 
-                Tokens newToken = new Tokens("EE" + (lastElementNumber + 1), "EE" + (lastElementNumber + 1),
-                        "EL" + (lastElementNumber + 2), connectionsTransitionFT.get(transitionKey).get(i), 0);
+                Tokens newToken = new Tokens("EE" + (lastElementNumber + 1 + counter), "EE" + (lastElementNumber + 1 + counter),
+                        "EL" + (lastElementNumber + 2 + counter), connectionsTransitionFT.get(transitionKey).get(i), 0);
 
                 listOfTokens.add(newToken);
 
+                System.out.println(newToken.getName());
+
                 net.setTokens(listOfTokens);
                 changes.add("Added:" + connectionsTransitionFT.get(transitionKey).get(i));
+                counter++;
             }
             int numberOfTokens = net.getTokens().get(findCircle(net, connectionsTransitionFT.get(transitionKey).get(i))).getToken_amount();
             net.getTokens().get(findCircle(net, connectionsTransitionFT.get(transitionKey).get(i))).setToken_amount(numberOfTokens + 1);

@@ -5,41 +5,43 @@
     <span v-if='checkIfEdited()' class='inline-block absolute ml-8'>Edytowanie sieci: {{ this.saveResult.saveName }}</span>
     <span v-if='checkIfExampleEdited()' class='inline-block absolute ml-8'>Edytowanie przykładowej sieci: {{ this.exampleEditResult.netName }}</span>
     <div class="flex w-full h-16 items-center justify-center">
-      <div class="items-center petri-nav w-1/12">
+      <div class="items-center petri-nav w-1/12 select-none">
         <button class="border-2 border-black rounded-bl-xl border-r-0 rounded-tl-xl p-1 items-center" v-on:click="addToken">
           <PlusIcon class="inline-block align-middle" />
         </button>
-        <input class="border-2 border-black items-center text-center w-1/3" :value="this.elements[this.current_target].name" disabled>
+        <label class='select-none'>
+          <input class="border-2 border-black items-center text-center w-1/3 pointer-events-none" :value="this.elements[this.current_target].name" disabled>
+        </label>
         <button class="border-2 border-black border-l-0 rounded-br-xl rounded-tr-xl p-1 items-center" v-on:click="substractToken">
           <MinusIcon class="inline-block align-middle" />
         </button>
       </div>
       <div class="ml-4 items-center petri-nav">
-        <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center" @click='run(); this.running = true;'>
+        <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center" @click='run(); this.running = true;' :disabled='this.running'>
           <RunIcon class="inline-block align-middle" />
-          <span class="inline-block align-middle">Run</span>
+          <span class="inline-block align-middle select-none">Run</span>
         </button>
         <button class="border-2 border-black border-l-0 rounded-br-xl rounded-tr-xl p-2 items-center" @click='stop()'>
           <StopIcon class="inline-block align-middle" />
-          <span class="inline-block align-middle">Stop</span>
+          <span class="inline-block align-middle select-none">Stop</span>
         </button>
       </div>
       <div class="ml-4 items-center petri-nav">
         <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center" v-on:click="addPlace">
           <CircleIcon class="inline-block align-middle" />
-          <span class="inline-block align-middle">Place</span>
+          <span class="inline-block align-middle select-none">Place</span>
         </button>
         <button class="border-2 border-black border-l-0 p-2 items-center" v-on:click="addTransition">
           <SquareIcon class="inline-block align-middle" />
-          <span class="inline-block align-middle">Transition</span>
+          <span class="inline-block align-middle select-none">Transition</span>
         </button>
         <button class="border-2 border-black border-l-0 border-r-0 p-2 items-center" v-on:click="deleteElement">
           <RemoveIcon class="inline-block align-middle" />
-          <span class="inline-block align-middle">Remove</span>
+          <span class="inline-block align-middle select-none">Remove</span>
         </button>
         <button class="border-2 border-black rounded-br-xl rounded-tr-xl p-2 items-center" v-on:click="clear" :disabled="this.running">
           <ClearIcon class="inline-block align-middle" />
-          <span class="inline-block align-middle">Clear</span>
+          <span class="inline-block align-middle select-none">Clear</span>
         </button>
       </div>
     </div>
@@ -53,11 +55,13 @@
       </defs>
       <template v-for="(child, index) in children" :key="child.name">
         <component v-if='this.elements[index+1].name.substring(1,2) == "C"' :id='this.elements[index+1].name' :is="child"
+          :stroke="selectedComponent(index+1)"
           :cx="this.elements[index+1].x" :cy="this.elements[index+1].y"
           @start-drag="startDrag(index+1)" @end-drag="endDrag" @mouseover="setHoveredID(index+1)" @mouseleave="setHoveredID(0)">
         </component>
 
         <component v-if='this.elements[index+1].name.substring(1,2) == "T"' :id='this.elements[index+1].name' :is="child"
+          :stroke="selectedComponent(index+1)"
           :x="this.elements[index+1].x" :y="this.elements[index+1].y"
           :width="this.transition_width" :height="this.transition_height"
           @start-drag="startDrag(index+1)" @end-drag="endDrag()" @mouseover="setHoveredID(index+1)" @mouseleave="setHoveredID(0)">
@@ -65,6 +69,7 @@
 
         <component v-if='this.elements[index+1].name.substring(1,2) == "A"' :id='this.elements[index+1].name' :is="child"
           @click='selectConnection(index+1)'
+          :stroke="selectedComponent(index+1)"
           :x1="this.elements[findFirstConnection(this.elements[index+1].name)].x + offset(this.elements[findFirstConnection(this.elements[index+1].name)].name, this.elements[findSecondConnection(this.elements[index+1].name)].x, this.elements[findFirstConnection(this.elements[index+1].name)].x, 'x')"
           :y1="this.elements[findFirstConnection(this.elements[index+1].name)].y + offset(this.elements[findFirstConnection(this.elements[index+1].name)].name, this.elements[findSecondConnection(this.elements[index+1].name)].y, this.elements[findFirstConnection(this.elements[index+1].name)].y, 'y')"
           :x2="this.elements[findSecondConnection(this.elements[index+1].name)].x - offsetX(this.elements[findSecondConnection(this.elements[index+1].name)].x, this.elements[findFirstConnection(this.elements[index+1].name)].x, this.elements[findSecondConnection(this.elements[index+1].name)].name)"
@@ -92,16 +97,16 @@
     <div class="items-center petri-nav">
       <button class="border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center" v-on:click="importNet">
         <ImportIcon class="inline-block align-middle" />
-        <span class="inline-block align-middle">Import</span>
+        <span class="inline-block align-middle select-none">Import</span>
       </button>
       <input ref='import' type='file' class='hidden' @change='importNetChanged'>
       <button class="ml-4 border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center" v-on:click="exportNet">
         <ExportIcon class="inline-block align-middle" />
-        <span class="inline-block align-middle">Export</span>
+        <span class="inline-block align-middle select-none">Export</span>
       </button>
       <button v-if="checkIfLogged()" @click="saveModal()" class="ml-4 border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center" data-bs-toggle="modal" data-bs-target="#saveNetModal">
         <SaveIcon class="inline-block align-middle" />
-        <span class="inline-block align-middle">Save</span>
+        <span class="inline-block align-middle select-none">Save</span>
       </button>
     </div>
   </div>
@@ -130,7 +135,7 @@ import SimulationServices, { ISimulation } from '@/services/SimulationService';
 
 const Circle = markRaw({
   template: `
-    <circle class="element" r="40" stroke="deeppink" stroke-width="2" fill="#ffe6ee" @mousedown="$emit('start-drag')" @mouseup="$emit('end-drag')"/>
+    <circle class="element" r="40" stroke-width="2" fill="#ffe6ee" @mousedown="$emit('start-drag')" @mouseup="$emit('end-drag')"/>
   `
 });
 
@@ -142,19 +147,19 @@ const SmallCircle = markRaw({
 
 const Square = markRaw({
   template: `
-    <rect class="element" stroke="rgb(0,0,0)" stroke-width="2" fill="rgb(0,0,255)" @mousedown="$emit('start-drag')" @mouseup="$emit('end-drag')"/>
+    <rect class="element" stroke-width="2" fill="rgb(0,0,255)" @mousedown="$emit('start-drag')" @mouseup="$emit('end-drag')"/>
   `
 });
 
 const Connection = markRaw({
   template: `
-    <line class="element" stroke="rgb(0,0,0)" stroke-width="2" marker-end="url(#mkrArrow)" fill="rgb(0,0,255)"/>
+    <line class="element" stroke-width="2" marker-end="url(#mkrArrow)" fill="rgb(0,0,255)"/>
   `
 });
 
 const TokenText = markRaw({
   template: `
-    <text class="fill-black text-center" disabled></text>
+    <text class="fill-black text-center select-none" disabled></text>
   `
 });
 
@@ -217,7 +222,7 @@ export default defineComponent({
       }
     },
 
-    simulationCounter() {
+    async simulationCounter() {
       if (this.simulationCounter === 1) {
         this.beforeSimulation.elements.splice(0);
         this.beforeSimulation.connections.splice(0);
@@ -347,7 +352,7 @@ export default defineComponent({
 
       await this.customTimeout(0.5);
 
-      await this.resultSimulation.changes.forEach((data) => {
+      await this.resultSimulation.changes.forEach(async (data, i) => {
         animationCounter++;
         if (!data.includes('Added:')) {
           const arc = data.split(' ');
@@ -411,7 +416,7 @@ export default defineComponent({
         markRaw({
           template: `
             <g id="` + circleId + `">
-              <circle r="10" stroke="#7ac142" fill="#7ac142" />
+              <circle r="10" stroke="#000000" fill="#000000" />
             </g>
           `
         })
@@ -543,6 +548,14 @@ export default defineComponent({
         return -5;
       } else {
         return -10;
+      }
+    },
+
+    selectedComponent(index: number) {
+      if (this.current_target === index) {
+        return '#FF5733';
+      } else {
+        return '#000000';
       }
     },
 
@@ -1182,7 +1195,7 @@ export default defineComponent({
       }
     },
 
-    fetchData: function() {
+    fetchData() {
       return this.children.length;
     },
 
