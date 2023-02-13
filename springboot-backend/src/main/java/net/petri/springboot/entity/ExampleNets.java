@@ -5,12 +5,12 @@ import lombok.*;
 import javax.persistence.*;
 
 @Getter
-
-@Table(name = "example_nets")@Setter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Entity
+@Table(name = "example_nets")
 public class ExampleNets {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
