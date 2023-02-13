@@ -1,7 +1,7 @@
 <template>
   <div class="w-screen max-h-full rounded-b-xl">
     <div class="rounded-b-xl">
-      <ul class="bg-red-500 rounded-b-xl navbar">
+      <ul class="rounded-b-xl navbar">
         <router-link to ="/">
           <li>
             <span>Strona główna</span>

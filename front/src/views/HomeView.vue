@@ -1,10 +1,10 @@
 <template>
   <div class="px-6 py-6 w-full h-full">
     <div class="overflow-auto rounded-xl w-3/5 h-full mx-auto">
-      <div class="grid grid-cols-2 gap-10 bg-gray-200 h-full p-4">
-        <div class="text-center border-2 rounded-xl bg-gray-400 p-6 flex flex-col">
+      <div class="grid grid-cols-2 gap-10 bg-orange-100 h-full p-4">
+        <div class="text-center border-2 rounded-xl color-F6C453  p-6 flex flex-col">
           <span class="border-b-2">Sieci innych użytkowników</span>
-          <ul v-for="save in resultPublicNets" :key="save" class="mt-2">
+          <ul v-for="save in resultPublicNets" :key="save" class="mt-2 font-mono">
             <li @click='this.$router.push({ name:"creator", state: {redirectExport: save.netExport} })'>{{ save.saveName }}</li>
           </ul>
           <HomePaginationBar
@@ -14,9 +14,9 @@
             :type='this.type'
           />
         </div>
-        <div class="text-center border-2 rounded-xl bg-gray-400 p-6 flex flex-col">
+        <div class="text-center border-2 rounded-xl color-F6C453 p-6 flex flex-col">
           <span class="border-b-2">Przykładowe sieci</span>
-          <ul v-for="exampleNets in resultExampleNets" :key="exampleNets" class="mt-2">
+          <ul v-for="exampleNets in resultExampleNets" :key="exampleNets" class="mt-2 font-mono">
             <li @click='this.$router.push({ name:"creator", state: {redirectExport: exampleNets.netExport} })'>{{ exampleNets.netName }}</li>
           </ul>
           <HomePaginationBar

@@ -1,6 +1,6 @@
 <template>
   <div class="modal-backdrop">
-    <div class="modal rounded-xl p-4">
+    <div class="modal rounded-xl p-4 w-3/12">
       <header class="modal-header">
         <slot name="header">
           Edytuj sieć
@@ -16,7 +16,7 @@
 
             <select v-model='this.resultSaveNet.userId' class="shadow appearance-none border-2 border-red-600  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
               <option v-for='user in resultUser' v-bind:value='user.id' v-bind:key='user.id'>
-                {{ user.firstName }} {{ user.lastName }}
+                {{ user.firstName }} {{ user.lastName }} {{ user.email }}
               </option>
             </select>
           </div>

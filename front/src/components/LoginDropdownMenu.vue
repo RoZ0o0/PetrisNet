@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-wrap items-center">
     <el-dropdown class="border-0">
-      <el-button type="primary">
+      <el-button type="primary" class='text-black'>
         Witaj, {{ this.result.firstName }}<el-icon class="el-icon--right"></el-icon>
       </el-button>
       <template #dropdown>

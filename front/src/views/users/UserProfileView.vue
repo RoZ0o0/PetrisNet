@@ -2,7 +2,7 @@
   <div class="px-6 pb-40 pt-40 w-3/5 h-full">
     <div class="overflow-auto rounded-xl h-full">
       <table class="min-w-full h-full">
-        <thead class="bg-gray-800 text-white">
+        <thead class="bg-gray-800 text-white color-F6C453">
           <tr class="rounded-xl">
             <th colspan="2" class="text-center py-3 px-4 uppercase font-semibold text-sm w-1/3">
               Twój profil
@@ -10,10 +10,10 @@
           </tr>
         </thead>
         <tbody class="text-gray-700 h-full">
-          <tr class="bg-white h-full">
+          <tr class="bg-orange-100 h-full">
             <td class="text-center px-10 py-20 h-1/2 w-1/2">
               <div class='border-4 py-4 px-2 rounded-xl border-black'>
-                <div class='border-b-2 border-red-500 bg-gray-800 rounded-xl text-red-50'>
+                <div class='border-b-2 color-F6C453 border-red-500 bg-gray-800 rounded-xl text-black'>
                   <h1 class='text-center'>Edytuj Profil</h1>
                 </div>
                 <div class='mt-10'>
@@ -32,13 +32,13 @@
                   <PencilIcon class='inline-block align-middle float-right pb-1' @click='editProfile(this.result.email, "email")'/>
                 </div>
                 <div class='mt-6 text-center'>
-                  <button class='bg-gray-600 px-4 py-2 text-white rounded-xl' @click='editPassword()'> Edytuj Hasło </button>
+                  <button class='color-F6C453 px-4 py-2 text-black rounded-xl' @click='editPassword()'> Edytuj Hasło </button>
                 </div>
               </div>
             </td>
             <td class="text-center px-10 py-20 h-1/2 w-1/2">
               <div class='border-4 py-4 px-2 rounded-xl border-black flex flex-col h-full'>
-                <div class='border-b-2 border-red-500 bg-gray-800 rounded-xl text-red-50'>
+                <div class='color-F6C453 border-b-2 border-red-500 bg-gray-800 rounded-xl text-black'>
                   <h1 class='text-center'>Twoje zapisy</h1>
                 </div>
                 <span v-for="save in resultSaves" :key="save">
@@ -56,7 +56,7 @@
                 </span>
                 <HomePaginationBar
                   ref='pagination'
-                  class='mt-auto'
+                  class='mt-auto color-F6C453'
                   :size='this.size'
                   :type='this.type'
                 />
@@ -337,12 +337,12 @@ export default defineComponent({
       }).then((result) => {
         if (result.isConfirmed) {
           this.setPublic(save, id);
-          this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
           Swal.fire(
             'Gotowe!',
             'Twój model został udostępniony.',
             'success'
           );
+          this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
         }
       });
     },

@@ -1,8 +1,8 @@
 <template>
-  <div class='border-2 border-slate-400 text-center p-1 rounded-xl bg-slate-500' v-if='calculatePages(this.size) <= 10 && this.size > 0'>
+  <div class='border-2 pagination text-center p-1 rounded-xl bg-orange-300' v-if='calculatePages(this.size) <= 10 && this.size > 0'>
     <PaginationLeft class='bg-white p-1 rounded-md font-bold select-none inline-block align-middle' @click='goLeft()' />
     <ul v-for='(n, i) in calculatePages(this.size)' :key='i' class='inline-block align-middle'>
-      <li v-if='i == this.selected' class='text-lg mx-2 px-1 bg-slate-200 rounded-md text-red-600 select-none'> {{ n }} </li>
+      <li v-if='i == this.selected' class='text-lg mx-2 px-1 bg-slate-200 rounded-md text-yellow-600 select-none'> {{ n }} </li>
       <li v-else @click='this.selected = i' class='px-2 select-none'> {{ n }} </li>
     </ul>
     <PaginationRight class='bg-white p-1 rounded-md font-bold select-none inline-block align-middle' @click='goRight()' />
@@ -13,16 +13,16 @@
       <option value=15>15</option>
     </select>
   </div>
-  <div class='border-2 border-slate-400 text-center p-1 rounded-xl bg-slate-500' v-else-if='calculatePages(this.size) > 10 && this.size > 0'>
+  <div class='border-2 pagination text-center p-1 rounded-xl bg-orange-300' v-else-if='calculatePages(this.size) > 10 && this.size > 0'>
     <PaginationLeft class='bg-white p-1 rounded-md font-bold select-none inline-block align-middle' @click='goLeft()' />
     <ul v-for='(n, i) in calculatePages(this.size)' :key='i' class='inline-block align-middle'>
-      <li v-if='i == this.selected && (i == 0 || i == 1)' class='text-lg mx-2 px-1 bg-slate-200 rounded-md text-red-600 select-none'> {{ n }} </li>
-      <li v-else-if='i == this.selected && (i != 0 && i != 1 && i != (calculatePages(this.size) - 1))' class='text-lg mx-2 px-1 bg-slate-200 rounded-md text-red-600 select-none'> {{ n }} </li>
+      <li v-if='i == this.selected && (i == 0 || i == 1)' class='text-lg mx-2 px-1 bg-slate-200 rounded-md text-yellow-600 select-none'> {{ n }} </li>
+      <li v-else-if='i == this.selected && (i != 0 && i != 1 && i != (calculatePages(this.size) - 1))' class='text-lg mx-2 px-1 bg-slate-200 rounded-md text-yellow-600 select-none'> {{ n }} </li>
       <li v-else-if='i == 0 || i == 1' @click='this.selected = i' class='px-2 select-none'> {{ n }} </li>
     </ul>
     <span v-if='this.selected == 0 || this.selected == 1 || this.selected == (calculatePages(this.size) - 1)' class='px-2 select-none'>...</span>
     <ul class='inline-block align-middle'>
-      <li v-if='this.selected == calculatePages(this.size) - 1' class='text-lg mx-2 px-1 bg-slate-200 rounded-md text-red-600 select-none'> {{ calculatePages(this.size) }} </li>
+      <li v-if='this.selected == calculatePages(this.size) - 1' class='text-lg mx-2 px-1 bg-slate-200 rounded-md text-yellow-600 select-none'> {{ calculatePages(this.size) }} </li>
       <li v-else class='px-2 select-none' @click='this.selected = calculatePages(this.size) - 1'> {{ calculatePages(this.size) }} </li>
     </ul>
     <PaginationRight class='bg-white p-1 rounded-md font-bold select-none inline-block align-middle' @click='goRight()' />

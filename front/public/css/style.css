@@ -8,22 +8,33 @@
     border-bottom-left-radius: 0.75rem;
     border-bottom-right-radius: 0.75rem;
     border-width: 2px;
-    border-color: rgb(239, 68, 68);
+    border-color: #f6c453;
 }
 
 .navbar .router-link-active li {
-    background: rgb(239, 68, 68);
+    /* background: rgb(239, 68, 68);
     background: linear-gradient(90deg, rgba(239, 68, 68, 1) 0%, rgba(239, 63, 63, 1) 20%, rgba(239, 33, 33, 1) 50%, rgba(239, 63, 63, 1) 80%, rgba(239, 68, 68, 1) 100%);
-    border-width: 2px;
-    border-color: rgb(236, 117, 117);
+    border-width: 2px; */
+    border-bottom-color: black;
+    border-radius: 0.75rem;
+    border-bottom-width: 4px;
+}
+
+.navbar {
+    background-color: #f6c453;
+}
+
+.pagination {
+    background-color: #f6c453;
 }
 
 .navbar li:hover {
-    background-color: rgb(196, 86, 86);
+    background-color: #f6c453;
+    color: black;
 }
 
 .router-link-active {
-    color: white;
+    color: #183a1d;
 }
 
 html {
@@ -31,15 +42,15 @@ html {
 }
 
 #app {
-    background-color: rgb(228, 184, 126);
+    background-color: #e1eedd;
 }
 
 .petri-nav button {
-    background-color: rgb(165, 165, 165);
+    background-color: #f6c453;
 }
 
 .petri-nav button:hover {
-    background-color: white;
+    background-color: #f6c453;
 }
 
 .draggable {
@@ -52,4 +63,25 @@ html {
 
 .petri-nav input {
     padding: 0.30rem;
+}
+
+.table-height {
+    max-height: 80vh;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    height: 8px;
+    width: 0px;
+}
+
+.wrap-last tr:last-child td:last-child {
+    border-bottom-right-radius: 0.75rem;
+}
+
+.table-style {
+    background-color: #f6c453;
+}
+
+.color-F6C453 {
+    background-color: #F6C453;
 }

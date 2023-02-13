@@ -1,7 +1,7 @@
 <template>
   <div class="px-6 py-6 w-full h-full">
     <div class="overflow-auto rounded-xl w-full h-full">
-      <div class=" bg-gray-200 h-full p-4">
+      <div class=" bg-orange-100 h-full p-4">
         <PetriSVG ref='petriSVG'/>
       </div>
     </div>

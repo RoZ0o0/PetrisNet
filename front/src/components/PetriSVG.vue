@@ -1,22 +1,24 @@
 <!-- eslint-disable vue/no-v-text-v-html-on-component -->
 <template>
   <div class="flex w-full h-16 items-center">
-    <span v-if='checkIfCreateExample()' class='inline-block absolute ml-8'>Tworzenie przykładowej sieci</span>
-    <span v-if='checkIfEdited()' class='inline-block absolute ml-8'>Edytowanie sieci: {{ this.saveResult.saveName }}</span>
-    <span v-if='checkIfExampleEdited()' class='inline-block absolute ml-8'>Edytowanie przykładowej sieci: {{ this.exampleEditResult.netName }}</span>
-    <div class="flex w-full h-16 items-center justify-center">
-      <div class="items-center petri-nav w-1/12 select-none">
+    <div class="flex flex-row w-full h-16 items-center justify-start">
+      <div class="flex items-center petri-nav w-3/12 select-none ml-8 justify-center">
+        <span v-if='checkIfCreateExample()' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>Tworzenie przykładowej sieci</span>
+        <span v-if='checkIfEdited()' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>Edytowanie sieci: {{ this.saveResult.saveName }} <br> Użytkownika: {{ this.editedSaveUserEmail }} </span>
+        <span v-if='checkIfExampleEdited()' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>Edytowanie przykładowej sieci: {{ this.exampleEditResult.netName }}</span>
+      </div>
+      <div class="flex items-center petri-nav w-2/12 select-none justify-center">
         <button class="border-2 border-black rounded-bl-xl border-r-0 rounded-tl-xl p-1 items-center" v-on:click="addToken">
           <PlusIcon class="inline-block align-middle" />
         </button>
         <label class='select-none'>
-          <input class="border-2 border-black items-center text-center w-1/3 pointer-events-none" :value="this.elements[this.current_target].name" disabled>
+          <input class="border-2 border-black items-center text-center pointer-events-none w-12" :value="this.elements[this.current_target].name" disabled>
         </label>
         <button class="border-2 border-black border-l-0 rounded-br-xl rounded-tr-xl p-1 items-center" v-on:click="substractToken">
           <MinusIcon class="inline-block align-middle" />
         </button>
       </div>
-      <div class="ml-4 items-center petri-nav">
+      <div class="flex ml-4 items-center petri-nav">
         <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center" @click='run(); this.running = true;' :disabled='this.running'>
           <RunIcon class="inline-block align-middle" />
           <span class="inline-block align-middle select-none">Run</span>
@@ -26,7 +28,7 @@
           <span class="inline-block align-middle select-none">Stop</span>
         </button>
       </div>
-      <div class="ml-4 items-center petri-nav">
+      <div class="flex ml-4 items-center petri-nav">
         <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center" v-on:click="addPlace">
           <CircleIcon class="inline-block align-middle" />
           <span class="inline-block align-middle select-none">Place</span>
@@ -94,7 +96,7 @@
     </svg>
   </div>
   <div class="flex w-full h-16 items-center justify-center">
-    <div class="items-center petri-nav">
+    <div class="flex items-center petri-nav">
       <button class="border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center" v-on:click="importNet">
         <ImportIcon class="inline-block align-middle" />
         <span class="inline-block align-middle select-none">Import</span>
@@ -127,7 +129,7 @@ import PlusIcon from 'vue-material-design-icons/Plus.vue';
 import MinusIcon from 'vue-material-design-icons/Minus.vue';
 import SaveNetServices, { ISaveNet } from '@/services/SaveNetService';
 import Swal from 'sweetalert2';
-import { IUser } from '@/services/UserService';
+import UserServices, { IUser } from '@/services/UserService';
 import axios, { AxiosError } from 'axios';
 import LoginServices, { ILogin } from '@/services/LoginService';
 import ExampleNetServices, { IExampleNet } from '@/services/ExampleNetService';
@@ -206,6 +208,7 @@ export default defineComponent({
       selectedFile: null,
       saveResult: SaveNetServices.getBlankSaveNetTemplate(),
       exampleEditResult: ExampleNetServices.getBlankExampleNetTemplate(),
+      editedSaveUserEmail: '',
       exampleNetResult: ExampleNetServices.getBlankExampleNetTemplate(),
       loginResult: LoginServices.getBlankLoginTemplate(),
       resultRef: SaveNetServices.getBlankSaveNetTemplate(),
@@ -251,6 +254,7 @@ export default defineComponent({
 
     if (history.state.editUserSave) {
       this.getUserNet().then((data) => (this.saveResult = data));
+      this.findUser().then((data) => (this.editedSaveUserEmail = data.email));
       this.redirectNetExport(history.state.editUserSave);
     }
 
@@ -284,6 +288,10 @@ export default defineComponent({
 
     async getUserNet(): Promise<ISaveNet> {
       return await SaveNetServices.find(history.state.editId);
+    },
+
+    async findUser(): Promise<IUser> {
+      return await UserServices.findById(history.state.userId);
     },
 
     async getExampleNet(): Promise<IExampleNet> {

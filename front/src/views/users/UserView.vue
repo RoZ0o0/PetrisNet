@@ -5,9 +5,9 @@
       class='w-1/2 m-auto'
       :size='this.size'
     />
-    <div class="overflow-auto rounded-xl mt-8">
+    <div class="overflow-auto rounded-xl mt-8 block table-height overflow-y-scroll hide-scrollbar">
       <table class="min-w-full">
-        <thead class="bg-gray-800 text-white">
+        <thead class="table-style text-white">
           <tr class="rounded-xl">
             <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-3/12">
               Imię
@@ -21,13 +21,13 @@
             <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-2/12">
               Rola
             </th>
-            <th class="text-center py-3 px-4 uppercase font-semibold text-sm w-1/12">
+            <th class="text-center py-3 px-4 uppercase font-semibold text-sm w-1/12 rounded-tr-xl">
               Akcja
             </th>
           </tr>
         </thead>
-        <tbody class="text-gray-700">
-          <tr v-for="user in result" :key="user" class="bg-white">
+        <tbody class="text-gray-700 wrap-last">
+          <tr v-for="user in result" :key="user" class="bg-orange-100">
             <td class="text-left py-2 px-4">
               {{ user.firstName }}
             </td>
