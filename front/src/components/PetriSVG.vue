@@ -8,13 +8,13 @@
         <span v-if='checkIfExampleEdited()' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>Edytowanie przykładowej sieci: {{ this.exampleEditResult.netName }}</span>
       </div>
       <div class="flex items-center petri-nav w-2/12 select-none justify-center">
-        <button class="border-2 border-black rounded-bl-xl border-r-0 rounded-tl-xl p-1 items-center" v-on:click="addToken">
+        <button class="border-2 border-black rounded-bl-xl border-r-0 rounded-tl-xl p-1 items-center" v-on:click="addToken(); addConnectionWeight()">
           <PlusIcon class="inline-block align-middle" />
         </button>
         <label class='select-none'>
           <input class="border-2 border-black items-center text-center pointer-events-none w-12" :value="this.elements[this.current_target].name" disabled>
         </label>
-        <button class="border-2 border-black border-l-0 rounded-br-xl rounded-tr-xl p-1 items-center" v-on:click="substractToken">
+        <button class="border-2 border-black border-l-0 rounded-br-xl rounded-tr-xl p-1 items-center" v-on:click="substractToken(); substractConnectionWeight()">
           <MinusIcon class="inline-block align-middle" />
         </button>
       </div>
@@ -88,6 +88,13 @@
           :x="this.elements[findCircle(this.elements[index].name)].x + textOffset(findToken(this.elements[index].name))" :y="this.elements[findCircle(this.elements[index].name)].y - 15"
           @mouseover="setHoveredID(findCircle(this.elements[index].name))" @mouseleave="setHoveredID(0)">
         </component>
+
+        <component v-if='this.elements[index+1].name.substring(1,2) == "W"' :id='this.elements[index+1].name' :is="child"
+          v-text="findConnectionText(this.elements[index+1].name)"
+          :x="this.elements[findFirstConnection(findConnection(this.elements[index+1].name))].x - ((this.elements[findFirstConnection(findConnection(this.elements[index+1].name))].x - this.elements[findSecondConnection(findConnection(this.elements[index+1].name))].x) / 2)"
+          :y="this.elements[findFirstConnection(findConnection(this.elements[index+1].name))].y - ((this.elements[findFirstConnection(findConnection(this.elements[index+1].name))].y - this.elements[findSecondConnection(findConnection(this.elements[index+1].name))].y) / 2)"
+          @mouseover="setHoveredID(findConnection(this.elements[index+1].name))" @mouseleave="setHoveredID(0)">
+        </component>
       </template>
 
       <template v-for="(animate) in animations" :key="animate">
@@ -97,7 +104,11 @@
   </div>
   <div class="flex w-full h-16 items-center justify-center">
     <div class="flex items-center petri-nav">
-      <button class="border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center" v-on:click="importNet">
+      <button class="border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center" v-on:click="checkNetAlert">
+        <CheckNetIcon class="inline-block align-middle" />
+        <span class="inline-block align-middle select-none">Check Net</span>
+      </button>
+      <button class="ml-4 border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center" v-on:click="importNet">
         <ImportIcon class="inline-block align-middle" />
         <span class="inline-block align-middle select-none">Import</span>
       </button>
@@ -127,6 +138,7 @@ import ExportIcon from 'vue-material-design-icons/ArrowTopRight.vue';
 import SaveIcon from 'vue-material-design-icons/ContentSaveAll.vue';
 import PlusIcon from 'vue-material-design-icons/Plus.vue';
 import MinusIcon from 'vue-material-design-icons/Minus.vue';
+import CheckNetIcon from 'vue-material-design-icons/CheckNetwork.vue';
 import SaveNetServices, { ISaveNet } from '@/services/SaveNetService';
 import Swal from 'sweetalert2';
 import UserServices, { IUser } from '@/services/UserService';
@@ -155,13 +167,19 @@ const Square = markRaw({
 
 const Connection = markRaw({
   template: `
-    <line class="element" stroke-width="2" marker-end="url(#mkrArrow)" fill="rgb(0,0,255)"/>
+    <line class="element" stroke-width="3" marker-end="url(#mkrArrow)" fill="rgb(0,0,255)"/>
   `
 });
 
 const TokenText = markRaw({
   template: `
     <text class="fill-black text-center select-none" disabled></text>
+  `
+});
+
+const WeightText = markRaw({
+  template: `
+    <text class="text-center select-none" fill="rgb(255,87,51)" disabled></text>
   `
 });
 
@@ -178,7 +196,8 @@ export default defineComponent({
     ExportIcon,
     SaveIcon,
     PlusIcon,
-    MinusIcon
+    MinusIcon,
+    CheckNetIcon
   },
   data() {
     return {
@@ -193,6 +212,7 @@ export default defineComponent({
       ],
       tokens: [] as any,
       connections: [] as any,
+      connection_weight: [] as any,
       connection_edit: false,
       current_connection: '',
       ctrl_pressed: false,
@@ -230,6 +250,7 @@ export default defineComponent({
         this.beforeSimulation.elements.splice(0);
         this.beforeSimulation.connections.splice(0);
         this.beforeSimulation.tokens.splice(0);
+        this.beforeSimulation.connectionWeights.splice(0);
         this.elements.slice(1).forEach((data) => {
           this.beforeSimulation.elements.push(data);
         });
@@ -238,6 +259,9 @@ export default defineComponent({
         });
         this.tokens.forEach((data: any) => {
           this.beforeSimulation.tokens.push(data);
+        });
+        this.connection_weight.forEach((data: any) => {
+          this.beforeSimulation.connectionWeights.push(data);
         });
       }
     }
@@ -339,6 +363,10 @@ export default defineComponent({
       return await SaveNetServices.getByRef(ref);
     },
 
+    async checkNet(result: ISimulation): Promise<boolean> {
+      return await SimulationServices.checkNet(result);
+    },
+
     async simulation(result: ISimulation): Promise<ISimulation> {
       return await SimulationServices.simulation(result);
     },
@@ -347,10 +375,13 @@ export default defineComponent({
       this.resultSimulation.elements = this.elements.slice(1);
       this.resultSimulation.connections = this.connections;
       this.resultSimulation.tokens = this.tokens;
+      this.resultSimulation.connectionWeights = this.connection_weight;
 
       this.simulationCounter++;
 
       await this.simulation(this.resultSimulation).then((data) => (this.resultSimulation = data));
+
+      console.log(this.resultSimulation);
 
       await this.netChangeSimulation(this.resultSimulation);
 
@@ -431,6 +462,29 @@ export default defineComponent({
       );
       await this.customTimeout(1);
       (document.getElementById(animationId) as any).beginElement();
+    },
+
+    checkNetAlert() {
+      this.resultSimulation.elements = this.elements.slice(1);
+      this.resultSimulation.connections = this.connections;
+      this.resultSimulation.tokens = this.tokens;
+      this.resultSimulation.connectionWeights = this.connection_weight;
+
+      this.checkNet(this.resultSimulation).then((data) => {
+        if (data) {
+          Swal.fire(
+            'Sprawdzenie!',
+            'Symulacja sieci zostanie wykonana!',
+            'success'
+          );
+        } else {
+          Swal.fire(
+            'Sprawdzenie!',
+            'Symulacja sieci nie wykona się!',
+            'error'
+          );
+        }
+      });
     },
 
     checkIfLogged() {
@@ -709,6 +763,52 @@ export default defineComponent({
       }
     },
 
+    addConnectionWeight() {
+      if (!this.running) {
+        if (this.current_target > 0) {
+          if (this.elements[this.current_target].name.substring(1, 2) === 'A') {
+            let findConnection = false;
+            for (let i = 0; i < this.connection_weight.length; i++) {
+              if (this.connection_weight[i].name === this.elements[this.current_target].name) {
+                findConnection = true;
+                this.connection_weight[i].weight++;
+              }
+            }
+
+            if (!findConnection) {
+              this.counter++;
+              const offsetX = Math.round((this.elements[this.current_target].x - this.elements[this.current_target].x2) / 2);
+              const offsetY = Math.round((this.elements[this.current_target].y - this.elements[this.current_target].y2) / 2);
+              this.elements.push({ name: 'EW' + this.counter, x: this.elements[this.current_target].x2, y: this.elements[this.current_target].y2, x2: 0, y2: 0 });
+              this.connection_weight.push({ name: this.elements[this.current_target].name, element: 'EW' + this.counter, weight: 2 });
+              this.children.push(WeightText);
+            }
+          }
+        }
+      }
+    },
+
+    substractConnectionWeight() {
+      if (!this.running) {
+        if (this.current_target > 0) {
+          for (let i = 0; i < this.connection_weight.length; i++) {
+            if (this.connection_weight[i].name === this.elements[this.current_target].name) {
+              this.connection_weight[i].weight--;
+              if (this.connection_weight[i].weight === 1) {
+                for (let j = 0; j < this.elements.length; j++) {
+                  if (this.elements[j].name === this.connection_weight[i].element) {
+                    this.elements.splice(j, 1);
+                    this.children.splice(j - 1, 1);
+                  }
+                }
+                this.connection_weight.splice(i, 1);
+              }
+            }
+          }
+        }
+      }
+    },
+
     checkIfNewToken() {
       this.resultSimulation.changes.forEach((data) => {
         if (data.includes('Added:')) {
@@ -757,6 +857,26 @@ export default defineComponent({
       for (let i = 0; i < this.tokens.length; i++) {
         if (this.tokens[i].name === index) {
           return this.tokens[i].token_amount;
+        }
+      }
+    },
+
+    findConnection(index: string) {
+      for (let i = 0; i < this.connection_weight.length; i++) {
+        if (this.connection_weight[i].element === index) {
+          for (let j = 0; j < this.elements.length; j++) {
+            if (this.connection_weight[i].name === this.elements[j].name) {
+              return this.elements[j].name;
+            }
+          }
+        }
+      }
+    },
+
+    findConnectionText(index: string) {
+      for (let i = 0; i < this.connection_weight.length; i++) {
+        if (this.connection_weight[i].element === index) {
+          return this.connection_weight[i].weight;
         }
       }
     },
@@ -855,6 +975,7 @@ export default defineComponent({
       this.current_target = 0;
       this.connections.splice(0);
       this.tokens.splice(0);
+      this.connection_weight.splice(0);
       this.counter = 0;
     },
 
@@ -872,7 +993,8 @@ export default defineComponent({
               const elements = JSON.stringify(this.elements.slice(1));
               const connections = JSON.stringify(this.connections);
               const tokens = JSON.stringify(this.tokens);
-              const data = '[' + elements + ',' + connections + ',' + tokens + ']';
+              const connectionWeights = JSON.stringify(this.connection_weight);
+              const data = '[' + elements + ',' + connections + ',' + tokens + ',' + connectionWeights + ']';
               const blob = new Blob([data], { type: 'text/plain' });
               const anchor = document.createElement('a');
               anchor.download = 'PetriNet_import.txt';
@@ -957,6 +1079,9 @@ export default defineComponent({
               for (let i = 0; i < JSON.parse(this.dest)[2].length; i++) {
                 this.tokens.push(JSON.parse(this.dest)[2][i]);
               }
+              for (let i = 0; i < JSON.parse(this.dest)[3].length; i++) {
+                this.connection_weight.push(JSON.parse(this.dest)[3][i]);
+              }
               for (let i = 0; i < JSON.parse(this.dest)[0].length; i++) {
                 const objectType = JSON.parse(this.dest)[0][i].name.substring(1, 2);
                 if (objectType === 'C') {
@@ -974,6 +1099,9 @@ export default defineComponent({
                 } else if (objectType === 'L') {
                   this.counter++;
                   this.children.push(TokenText);
+                } else if (objectType === 'W') {
+                  this.counter++;
+                  this.children.push(WeightText);
                 } else {
                   console.log('Zły plik');
                   this.clear();
@@ -1003,6 +1131,9 @@ export default defineComponent({
         for (let i = 0; i < JSON.parse(netExport)[2].length; i++) {
           this.tokens.push(JSON.parse(netExport)[2][i]);
         }
+        for (let i = 0; i < JSON.parse(this.dest)[3].length; i++) {
+          this.connection_weight.push(JSON.parse(this.dest)[3][i]);
+        }
         for (let i = 0; i < JSON.parse(netExport)[0].length; i++) {
           const objectType = JSON.parse(netExport)[0][i].name.substring(1, 2);
           if (objectType === 'C') {
@@ -1020,6 +1151,9 @@ export default defineComponent({
           } else if (objectType === 'L') {
             this.counter++;
             this.children.push(TokenText);
+          } else if (objectType === 'W') {
+            this.counter++;
+            this.children.push(WeightText);
           } else {
             this.clear();
             break;
@@ -1041,6 +1175,9 @@ export default defineComponent({
         for (let i = 0; i < result.tokens.length; i++) {
           this.tokens.push(result.tokens[i]);
         }
+        for (let i = 0; i < result.connectionWeights.length; i++) {
+          this.connection_weight.push(result.connectionWeights[i]);
+        }
         for (let i = 0; i < result.elements.length; i++) {
           const objectType = result.elements[i].name.substring(1, 2);
           if (objectType === 'C') {
@@ -1058,6 +1195,9 @@ export default defineComponent({
           } else if (objectType === 'L') {
             this.counter++;
             this.children.push(TokenText);
+          } else if (objectType === 'W') {
+            this.counter++;
+            this.children.push(WeightText);
           } else {
             this.clear();
             break;
@@ -1084,10 +1224,10 @@ export default defineComponent({
           }).then((result) => {
             if (result.isConfirmed) {
               if (history.state.editUserSave) {
-                this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
+                this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + JSON.stringify(this.connection_weight) + ']';
                 this.update(history.state.editId);
               } else {
-                this.exampleEditResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
+                this.exampleEditResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + JSON.stringify(this.connection_weight) + ']';
                 this.updateExampleNet(history.state.editId);
               }
               Swal.fire(
@@ -1128,7 +1268,7 @@ export default defineComponent({
                 if (!this.checkIfCreateExample()) {
                   this.saveResult.userId = this.loginResult.id;
                   this.saveResult.saveName = result.value;
-                  this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
+                  this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + JSON.stringify(this.connection_weight) + ']';
                   this.findByUserAndSaveName(result.value).then((id) => {
                     if (id !== 0) {
                       Swal.fire({
@@ -1170,7 +1310,7 @@ export default defineComponent({
                   });
                 } else {
                   this.exampleNetResult.netName = result.value;
-                  this.exampleNetResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ']';
+                  this.exampleNetResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + JSON.stringify(this.connection_weight) + ']';
                   this.findByNetName(result.value).then((exist) => {
                     if (exist) {
                       Swal.fire({

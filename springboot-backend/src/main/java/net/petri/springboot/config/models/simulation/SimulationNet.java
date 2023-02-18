@@ -19,6 +19,8 @@ public class SimulationNet {
 
     private List<Tokens> tokens;
 
+    private List<ConnectionWeight> connectionWeights;
+
     private List<String> changes;
 
 }

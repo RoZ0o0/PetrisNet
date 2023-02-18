@@ -13,16 +13,15 @@ import java.util.*;
 public record SimulationService() {
 
     public SimulationNet simulation(SimulationNet net) {
-
-        ArrayList<String> changes = new ArrayList<>();
-
         if (!Objects.equals(net.getConnections().toString(), "[]")) {
+            Random random = new Random();
+            ArrayList<String> changes = new ArrayList<>();
+            net.setChanges(changes);
             ArrayList<String> transitions = new ArrayList<>();
             ArrayList<String> circles = new ArrayList<>();
             Map<String, ArrayList<String>> connectionsTransitionST = new HashMap<>();
             Map<String, ArrayList<String>> connectionsCircles = new HashMap<>();
             Map<String, ArrayList<String>> connectionsTransitionFT = new HashMap<>();
-            Map<String, Boolean> checking = new HashMap<>();
             for (int i = 0; i < net.getElements().size(); i++) {
                 if (net.getElements().get(i).getName().charAt(1) == 'T') {
                     transitions.add(net.getElements().get(i).getName());
@@ -32,117 +31,138 @@ public record SimulationService() {
                 }
             }
 
-            for(String transition: transitions) {
-                checking.put(transition, true);
-            }
-
             getConnectionMap(net, transitions, connectionsTransitionST, false);
 
             getConnectionMap(net, circles, connectionsCircles, true);
 
             getConnectionMap(net, transitions, connectionsTransitionFT, true);
 
-            Random random = new Random();
 
-            while (changes.isEmpty()) {
+            ArrayList<String> enabledTransitions = new ArrayList<>();
+            for (String transitionKey: connectionsTransitionST.keySet()) {
+                boolean isEnabled = checkTransition(net, connectionsTransitionST, transitionKey);
+                if (isEnabled) {
+                    enabledTransitions.add(transitionKey);
+                }
+            }
 
-                int indexTransition = random.nextInt(connectionsTransitionST.size());
+            if (!enabledTransitions.isEmpty()) {
 
-                String transitionKey = "";
+                String chosenTransition = "";
+
+                int indexTransition = random.nextInt(enabledTransitions.size());
 
                 int counter = 0;
 
-                for (String key : connectionsTransitionST.keySet()) {
+                for (String key : enabledTransitions) {
                     if (counter == indexTransition) {
-                        transitionKey = key;
+                        chosenTransition = key;
                     }
 
                     counter++;
                 }
 
-                // gdy tranzycja nie jest podłączona jako drugi cel
-                if (connectionsTransitionST.get(transitionKey).size() == 0) {
-                    // gdy tranzycja jest podłączona jako pierwszy cel
-                    if (connectionsTransitionFT.get(transitionKey).size() > 0) {
-                        addByOutputArc(net, changes, connectionsTransitionFT, transitionKey);
-                    }
-                }
-                // gdy tranzycja jest drugim celem oraz podłączone jest do niej jedno miejsce
-                if (connectionsTransitionST.get(transitionKey).size() == 1) {
-                    // gdy podłączone miejsce do tranzycji nie jest podłączone do innej tranzycji
-                    if (findCircle(net, connectionsTransitionST.get(transitionKey).get(0)) >= 0) {
-                        int numberOfTokens = net.getTokens().get(findCircle(net, connectionsTransitionST.get(transitionKey).get(0))).getToken_amount();
-                        if (numberOfTokens > 0) {
-                            net.getTokens().get(findCircle(net, connectionsTransitionST.get(transitionKey).get(0))).setToken_amount(numberOfTokens - 1);
-                            if (net.getTokens().get(findCircle(net, connectionsTransitionST.get(transitionKey).get(0))).getToken_amount() == 0) {
-                                deleteRedundantElements(net, connectionsTransitionST, transitionKey, 0);
-                            }
-                            changes.add(connectionsTransitionST.get(transitionKey).get(0) + " " + transitionKey);
-                            addByOutputArc(net, changes, connectionsTransitionFT, transitionKey);
-                        } else {
-                            checking.put(transitionKey, false);
-                        }
-                    } else {
-                        checking.put(transitionKey, false);
-                    }
-                }
-                // gdy tranzycja jest drugim celem oraz połączne są do niej wiecej niż 1 miejsce
-                if (connectionsTransitionST.get(transitionKey).size() > 1) {
-                    ArrayList<Integer> tokens = new ArrayList<>();
-                    for (int i = 0; i < connectionsTransitionST.get(transitionKey).size(); i++) {
-                        if (findCircle(net, connectionsTransitionST.get(transitionKey).get(i)) == -1) {
-                            tokens.add(0);
-                        } else {
-                            int numberOfTokens = net.getTokens().get(findCircle(net, connectionsTransitionST.get(transitionKey).get(i))).getToken_amount();
-                            tokens.add(numberOfTokens);
-                        }
-                    }
-                    boolean canSubstract = true;
-                    for (Integer token : tokens) {
-                        if (token < 1) {
-                            canSubstract = false;
-                            break;
-                        }
-                    }
-                    if (canSubstract) {
-                        for (int i = 0; i < connectionsTransitionST.get(transitionKey).size(); i++) {
-                            net.getTokens().get(findCircle(net, connectionsTransitionST.get(transitionKey).get(i))).setToken_amount(tokens.get(i) - 1);
-                            if (net.getTokens().get(findCircle(net, connectionsTransitionST.get(transitionKey).get(i))).getToken_amount() == 0) {
-                                deleteRedundantElements(net, connectionsTransitionST, transitionKey, i);
-                            }
-                            changes.add(connectionsTransitionST.get(transitionKey).get(i) + " " + transitionKey);
-                        }
-                        addByOutputArc(net, changes, connectionsTransitionFT, transitionKey);
-                    } else {
-                        checking.put(transitionKey, false);
+                fireTransition(net, chosenTransition, changes, connectionsTransitionST, connectionsTransitionFT);
+
+                ArrayList<Tokens> newTokens = new ArrayList<>();
+                for (int i = 0; i < net.getTokens().size(); i++) {
+                    if (net.getTokens().get(i).getToken_amount() != 0) {
+                        newTokens.add(net.getTokens().get(i));
                     }
                 }
 
-                int checkCounter = 0;
-                for (String key: checking.keySet()) {
-                    if (!checking.get(key)) {
-                        checkCounter++;
-                    }
-                }
+                net.setTokens(newTokens);
 
-                if (checkCounter == checking.size()) {
-                    break;
-                }
+                net.setChanges(changes);
             }
         }
-
-        ArrayList<Tokens> newTokens = new ArrayList<>();
-        for (int i = 0; i < net.getTokens().size(); i++) {
-            if (net.getTokens().get(i).getToken_amount() != 0) {
-                newTokens.add(net.getTokens().get(i));
-            }
-        }
-
-        net.setTokens(newTokens);
-
-        net.setChanges(changes);
 
         return net;
+    }
+
+    public boolean checkNetRun(SimulationNet net) {
+
+        if (!Objects.equals(net.getConnections().toString(), "[]")) {
+            ArrayList<String> transitions = new ArrayList<>();
+            Map<String, ArrayList<String>> connectionsTransitionST = new HashMap<>();
+            for (int i = 0; i < net.getElements().size(); i++) {
+                if (net.getElements().get(i).getName().charAt(1) == 'T') {
+                    transitions.add(net.getElements().get(i).getName());
+                }
+            }
+
+            getConnectionMap(net, transitions, connectionsTransitionST, false);
+
+            ArrayList<String> enabledTransitions = new ArrayList<>();
+            for (String transitionKey : connectionsTransitionST.keySet()) {
+                boolean isEnabled = checkTransition(net, connectionsTransitionST, transitionKey);
+                if (isEnabled) {
+                    enabledTransitions.add(transitionKey);
+                }
+            }
+
+            return !enabledTransitions.isEmpty();
+        }
+
+        return false;
+    }
+
+    private void fireTransition(SimulationNet net, String transitionKey, ArrayList<String> changes,
+                                Map<String, ArrayList<String>> connectionsTransitionST,
+                                Map<String, ArrayList<String>> connectionsTransitionFT) {
+
+        boolean isEnabled = checkTransition(net, connectionsTransitionST, transitionKey);
+
+        if (isEnabled) {
+            for (int i = 0; i < connectionsTransitionST.get(transitionKey).size(); i++) {
+                int numberOfTokens = net.getTokens().get(findCircle(net, connectionsTransitionST.get(transitionKey).get(i))).getToken_amount();
+
+                int connectionWeight = getConnectionWeight(net, transitionKey, connectionsTransitionST, i);
+
+                net.getTokens().get(findCircle(net, connectionsTransitionST.get(transitionKey).get(i))).setToken_amount(numberOfTokens - connectionWeight);
+
+                if (net.getTokens().get(findCircle(net, connectionsTransitionST.get(transitionKey).get(i))).getToken_amount() == 0) {
+                    deleteRedundantElements(net, connectionsTransitionST, transitionKey, i);
+                }
+                changes.add(connectionsTransitionST.get(transitionKey).get(i) + " " + transitionKey);
+            }
+
+            addByOutputArc(net, changes, connectionsTransitionFT, transitionKey);
+        }
+
+    }
+
+    private boolean checkTransition(SimulationNet net, Map<String, ArrayList<String>> connectionsTransitionST, String transitionKey) {
+        for (int i = 0; i < connectionsTransitionST.get(transitionKey).size(); i++) {
+            int numberOfTokens = 0;
+            if (findCircle(net, connectionsTransitionST.get(transitionKey).get(i)) >= 0) {
+                numberOfTokens = net.getTokens().get(findCircle(net, connectionsTransitionST.get(transitionKey).get(i))).getToken_amount();
+            }
+
+            int connectionWeight = getConnectionWeight(net, transitionKey, connectionsTransitionST, i);
+
+            if (numberOfTokens < connectionWeight) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private int getConnectionWeight(SimulationNet net, String transitionKey, Map<String, ArrayList<String>> connectionsTransitionST, int i) {
+        int connectionWeight = 1;
+
+        for (int j = 0; j < net.getConnections().size(); j++) {
+            if (Objects.equals(net.getConnections().get(j).getFT(), connectionsTransitionST.get(transitionKey).get(i))
+                    && Objects.equals(net.getConnections().get(j).getST(), transitionKey)) {
+                for (int z = 0; z < net.getConnectionWeights().size(); z++) {
+                    if (Objects.equals(net.getConnectionWeights().get(z).getName(), net.getConnections().get(j).getName())) {
+                        connectionWeight = net.getConnectionWeights().get(z).getWeight();
+                    }
+                }
+            }
+        }
+
+        return connectionWeight;
     }
 
     private void deleteRedundantElements(SimulationNet net, Map<String, ArrayList<String>> connectionsTransitionST, String transitionKey, int i) {
@@ -170,14 +190,25 @@ public record SimulationService() {
 
                 listOfTokens.add(newToken);
 
-                System.out.println(newToken.getName());
-
                 net.setTokens(listOfTokens);
                 changes.add("Added:" + connectionsTransitionFT.get(transitionKey).get(i));
                 counter++;
             }
+
+            int connectionWeight = 1;
+
+            for (int j = 0; j < net.getConnections().size(); j++) {
+                if (Objects.equals(net.getConnections().get(j).getST(), connectionsTransitionFT.get(transitionKey).get(i))
+                        && Objects.equals(net.getConnections().get(j).getFT(), transitionKey)) {
+                    for (int z = 0; z < net.getConnectionWeights().size(); z++) {
+                        if (Objects.equals(net.getConnectionWeights().get(z).getName(), net.getConnections().get(j).getName())) {
+                            connectionWeight = net.getConnectionWeights().get(z).getWeight();
+                        }
+                    }
+                }
+            }
             int numberOfTokens = net.getTokens().get(findCircle(net, connectionsTransitionFT.get(transitionKey).get(i))).getToken_amount();
-            net.getTokens().get(findCircle(net, connectionsTransitionFT.get(transitionKey).get(i))).setToken_amount(numberOfTokens + 1);
+            net.getTokens().get(findCircle(net, connectionsTransitionFT.get(transitionKey).get(i))).setToken_amount(numberOfTokens + connectionWeight);
             changes.add(transitionKey + " " + connectionsTransitionFT.get(transitionKey).get(i));
         }
     }

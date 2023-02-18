@@ -24,10 +24,17 @@ export default class SimulationServices {
       token_amount: 0
     };
 
+    const tempConnectionWeight: IConnectionWeight = {
+      name: '',
+      element: '',
+      weight: 0
+    };
+
     const tempSimulation: ISimulation = {
       elements: [tempElement],
       connections: [tempConnection],
       tokens: [tempToken],
+      connectionWeights: [tempConnectionWeight],
       changes: ['']
     };
 
@@ -37,12 +44,17 @@ export default class SimulationServices {
   public static async simulation(simulation: ISimulation): Promise<ISimulation> {
     return (await axios.post<ISimulation>('http://localhost:8081/api/simulation', simulation)).data;
   }
+
+  public static async checkNet(simulation: ISimulation): Promise<boolean> {
+    return (await axios.post<boolean>('http://localhost:8081/api/simulation/check', simulation)).data;
+  }
 }
 
 export interface ISimulation {
     elements: Array<IElements>;
     connections: Array<IConnections>;
     tokens: Array<ITokens>;
+    connectionWeights: Array<IConnectionWeight>;
     changes: Array<string>;
 }
 
@@ -66,4 +78,10 @@ export interface ITokens {
     name: string;
     object_name: string;
     token_amount: number;
+}
+
+export interface IConnectionWeight {
+  name: string;
+  element: string;
+  weight: number;
 }
