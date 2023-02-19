@@ -85,6 +85,7 @@ public record SimulationService() {
         if (!Objects.equals(net.getConnections().toString(), "[]")) {
             ArrayList<String> transitions = new ArrayList<>();
             Map<String, ArrayList<String>> connectionsTransitionST = new HashMap<>();
+            Map<String, ArrayList<String>> connectionsTransitionFT = new HashMap<>();
             for (int i = 0; i < net.getElements().size(); i++) {
                 if (net.getElements().get(i).getName().charAt(1) == 'T') {
                     transitions.add(net.getElements().get(i).getName());
@@ -93,11 +94,32 @@ public record SimulationService() {
 
             getConnectionMap(net, transitions, connectionsTransitionST, false);
 
+            getConnectionMap(net, transitions, connectionsTransitionFT, true);
+
+            for (int i = 0; i < net.getTokens().size(); i++) {
+                if (net.getTokens().get(i).getToken_amount() < 0) {
+                    return false;
+                }
+            }
+
             ArrayList<String> enabledTransitions = new ArrayList<>();
             for (String transitionKey : connectionsTransitionST.keySet()) {
+                boolean hasInput = false;
+                boolean hasOutput = false;
                 boolean isEnabled = checkTransition(net, connectionsTransitionST, transitionKey);
+
                 if (isEnabled) {
                     enabledTransitions.add(transitionKey);
+                }
+                if (connectionsTransitionFT.get(transitionKey).size() > 0) {
+                    hasInput = true;
+                }
+                if (connectionsTransitionST.get(transitionKey).size() > 0) {
+                    hasOutput = true;
+                }
+
+                if (!hasInput || !hasOutput) {
+                    return false;
                 }
             }
 
