@@ -1,7 +1,7 @@
 <template>
   <div class="w-full max-h-max max-w-md m-auto">
     <div
-      class="bg-red-500 border border-red-600 shadow-md rounded pl-4 pr-6 pt-8 pb-8 mb-4"
+      class="color-F6C453 border border-orange-100 shadow-md rounded pl-4 pr-6 pt-8 pb-8 mb-4"
       style="margin-bottom: auto"
     >
       <form @submit.prevent="validateRegister">
@@ -17,7 +17,7 @@
           </label>
 
           <input
-            class="shadow appearance-none border-2 border-red-600  rounded w-3/5 py-2 px-3 pb-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            class="shadow appearance-none border-2 border-orange-100  rounded w-3/5 py-2 px-3 pb-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             id="firstname"
             type="text"
             v-model="this.result.firstName"
@@ -32,7 +32,7 @@
           </label>
 
           <input
-            class="shadow appearance-none border-2 border-red-600  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            class="shadow appearance-none border-2 border-orange-100  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             id="lastname"
             type="text"
             v-model="this.result.lastName"
@@ -47,7 +47,7 @@
           </label>
 
           <input
-            class="shadow appearance-none border-2 border-red-600  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            class="shadow appearance-none border-2 border-orange-100  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             id="email"
             type="text"
             v-model="this.result.email"
@@ -62,7 +62,7 @@
           </label>
 
           <input
-            class="shadow appearance-none border-2 border-red-600  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            class="shadow appearance-none border-2 border-orange-100  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             id="chck_email"
             type="text"
             v-model="this.chck_email"
@@ -89,7 +89,7 @@
               py-2
               px-3
               text-gray-700
-              border-red-600
+              border-orange-100
               leading-tight
               focus:outline-none focus:shadow-outline
             "
@@ -120,7 +120,7 @@
               py-2
               px-3
               text-gray-700
-              border-red-600
+              border-orange-100
               leading-tight
               focus:outline-none focus:shadow-outline
             "
@@ -135,7 +135,7 @@
 
         <div class="grid place-items-center md:divide-y-8">
           <button
-            class="bg-white hover:bg-red-300 text-black border-2 border-red-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline
+            class="bg-white hover:bg-red-300 text-black border-2 border-orange-100 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline
             "
           >
             Zarejestruj

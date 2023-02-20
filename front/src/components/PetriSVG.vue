@@ -268,6 +268,7 @@ export default defineComponent({
   },
   mounted() {
     if (history.state.redirectExport) {
+      console.log(history.state.redirectExport);
       this.redirectNetExport(history.state.redirectExport);
     }
 
@@ -1131,8 +1132,8 @@ export default defineComponent({
         for (let i = 0; i < JSON.parse(netExport)[2].length; i++) {
           this.tokens.push(JSON.parse(netExport)[2][i]);
         }
-        for (let i = 0; i < JSON.parse(this.dest)[3].length; i++) {
-          this.connection_weight.push(JSON.parse(this.dest)[3][i]);
+        for (let i = 0; i < JSON.parse(netExport)[3].length; i++) {
+          this.connection_weight.push(JSON.parse(netExport)[3][i]);
         }
         for (let i = 0; i < JSON.parse(netExport)[0].length; i++) {
           const objectType = JSON.parse(netExport)[0][i].name.substring(1, 2);
@@ -1268,7 +1269,7 @@ export default defineComponent({
                 if (!this.checkIfCreateExample()) {
                   this.saveResult.userId = this.loginResult.id;
                   this.saveResult.saveName = result.value;
-                  this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + JSON.stringify(this.connection_weight) + ']';
+                  this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ',' + JSON.stringify(this.connection_weight) + ']';
                   this.findByUserAndSaveName(result.value).then((id) => {
                     if (id !== 0) {
                       Swal.fire({

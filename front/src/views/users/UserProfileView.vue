@@ -90,6 +90,7 @@ import LinkIcon from 'vue-material-design-icons/Link.vue';
 
 import HomePaginationBar from '../../components/HomePaginationBar.vue';
 import RefLinkModal from '../../components/RefLinkModal.vue';
+import SimulationServices, { ISimulation } from '@/services/SimulationService';
 
 export default defineComponent({
   components: {
@@ -106,6 +107,11 @@ export default defineComponent({
       resultSaves: [SaveNetServices.getBlankSaveNetTemplate()],
       resultEdit: UserServices.getBlankUserTemplate(),
       resultEditSave: SaveNetServices.getBlankSaveNetTemplate(),
+      resultSimulation: SimulationServices.getBlankSimulationTemplate(),
+      elements: [] as any,
+      connections: [] as any,
+      tokens: [] as any,
+      connection_weight: [] as any,
       isModalVisible: false,
       refSave: 0,
       size: 0,
@@ -185,6 +191,10 @@ export default defineComponent({
 
     async setPublic(save: ISaveNet, id: number): Promise<ISaveNet> {
       return await SaveNetServices.setPublic(save, id);
+    },
+
+    async checkNet(result: ISimulation): Promise<boolean> {
+      return await SimulationServices.checkNet(result);
     },
 
     logout(): void {
@@ -325,26 +335,72 @@ export default defineComponent({
     },
 
     setPublicAlert(save: ISaveNet, id: number) {
-      Swal.fire({
-        icon: 'info',
-        title: 'Czy napewno chcesz ustawić swój model jako publiczny?',
-        text: 'Bo zmianie, będzie on widoczny dla innych użytkowników na stronie głównej!',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Tak',
-        cancelButtonText: 'Anuluj'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          this.setPublic(save, id);
+      console.log(save.netExport);
+      this.getNetFromExport(save.netExport);
+
+      this.resultSimulation.elements = this.elements;
+      this.resultSimulation.connections = this.connections;
+      this.resultSimulation.tokens = this.tokens;
+      this.resultSimulation.connectionWeights = this.connection_weight;
+
+      this.checkNet(this.resultSimulation).then((data) => {
+        if (data) {
+          Swal.fire({
+            icon: 'info',
+            title: 'Czy napewno chcesz ustawić swój model jako publiczny?',
+            text: 'Bo zmianie, będzie on widoczny dla innych użytkowników na stronie głównej!',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Tak',
+            cancelButtonText: 'Anuluj'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              this.setPublic(save, id);
+              Swal.fire(
+                'Gotowe!',
+                'Twój model został udostępniony.',
+                'success'
+              );
+              this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
+            }
+          });
+        } else {
           Swal.fire(
-            'Gotowe!',
-            'Twój model został udostępniony.',
-            'success'
+            'Sprawdzenie!',
+            'Niepoprawna sieć!',
+            'error'
           );
-          this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
         }
       });
+    },
+
+    getNetFromExport(netExport: string) {
+      try {
+        for (let i = 0; i < JSON.parse(netExport)[1].length; i++) {
+          this.connections.push(JSON.parse(netExport)[1][i]);
+        }
+        for (let i = 0; i < JSON.parse(netExport)[2].length; i++) {
+          this.tokens.push(JSON.parse(netExport)[2][i]);
+        }
+        for (let i = 0; i < JSON.parse(netExport)[3].length; i++) {
+          this.connection_weight.push(JSON.parse(netExport)[3][i]);
+        }
+        for (let i = 0; i < JSON.parse(netExport)[0].length; i++) {
+          const objectType = JSON.parse(netExport)[0][i].name.substring(1, 2);
+          if (objectType !== 'C' && objectType !== 'T' && objectType !== 'A' && objectType !== 'E' && objectType !== 'L' && objectType !== 'W') {
+            this.connections = [];
+            this.tokens = [];
+            this.connection_weight = [];
+            this.elements = [];
+            return false;
+          }
+          this.elements.push(JSON.parse(netExport)[0][i]);
+        }
+      } catch (e) {
+      }
+
+      return true;
     },
 
     editPassword() {

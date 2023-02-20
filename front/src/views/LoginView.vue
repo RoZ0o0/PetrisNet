@@ -1,7 +1,7 @@
 <template>
   <div class="w-full max-h-max max-w-sm m-auto">
     <div
-      class="bg-red-500 border border-red-600 shadow-md rounded px-8 pt-6 pb-8 mb-4"
+      class="color-F6C453 border border-orange-100 shadow-md rounded px-8 pt-6 pb-8 mb-4"
       style="margin-bottom: auto"
     >
       <div class="mb-4">
@@ -10,7 +10,7 @@
         </label>
 
         <input
-          class="shadow appearance-none border-2 border-red-600  rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          class="shadow appearance-none border-2 border-orange-100  rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           id="email"
           type="text"
           v-model="this.result.email"
@@ -36,7 +36,7 @@
             py-2
             px-3
             text-gray-700
-            border-red-600
+            border-orange-100
             leading-tight
             focus:outline-none focus:shadow-outline
           "
@@ -50,7 +50,7 @@
       <div class="grid place-items-center md:divide-y-8">
         <button
           @click="login()"
-          class="bg-white hover:bg-red-300 text-black border-2 border-red-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline
+          class="bg-white hover:bg-red-300 text-black border-2 border-orange-100 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline
           "
         >
           Zaloguj
@@ -59,9 +59,9 @@
         <hr />
       </div>
       <div class='text-center'>
-        <p>Nie posiadasz konta? <router-link to='/register' class='text-white'>Zarejestruj się!</router-link></p>
+        <p>Nie posiadasz konta? <router-link to='/register' class='text-red-600'>Zarejestruj się!</router-link></p>
       </div>
-      <p id="err" class="text-center hidden"></p>
+      <p id="err" class="text-center hidden mt-2"></p>
     </div>
   </div>
 </template>
@@ -79,17 +79,16 @@ export default defineComponent({
   },
   methods: {
     async login(): Promise<void> {
-      try {
-        if (await LoginServices.login(this.result)) {
+      await LoginServices.login(this.result).then((data) => {
+        if (data.request.status === 200) {
           this.$router.push('/');
-        } else {
-          document.getElementById('err')?.classList.remove('hidden');
-          document.getElementById('err')?.replaceChildren(document.createTextNode('Niepoprawne dane logowania'));
-          this.result.email = '';
-          this.result.password = '';
         }
-      } catch (e) {
-      }
+      }).catch(() => {
+        document.getElementById('err')?.classList.remove('hidden');
+        document.getElementById('err')?.replaceChildren(document.createTextNode('Niepoprawne dane logowania'));
+        this.result.email = '';
+        this.result.password = '';
+      });
     }
   }
 });
