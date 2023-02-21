@@ -31,11 +31,11 @@
       <div class="flex ml-4 items-center petri-nav">
         <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center" v-on:click="addPlace">
           <CircleIcon class="inline-block align-middle" />
-          <span class="inline-block align-middle select-none">Place</span>
+          <span class="inline-block align-middle select-none">Place [1]</span>
         </button>
         <button class="border-2 border-black border-l-0 p-2 items-center" v-on:click="addTransition">
           <SquareIcon class="inline-block align-middle" />
-          <span class="inline-block align-middle select-none">Transition</span>
+          <span class="inline-block align-middle select-none">Transition [2]</span>
         </button>
         <button class="border-2 border-black border-l-0 border-r-0 p-2 items-center" v-on:click="deleteElement">
           <RemoveIcon class="inline-block align-middle" />
@@ -48,8 +48,9 @@
       </div>
     </div>
   </div>
-  <div class="mx-8 my-4 border-2 border-black rounded-xl h-4/5">
-    <svg ref="box" class="bg-gray-300 rounded-xl box" height="100%" width="100%" xmlns="http://www.w3.org/2000/svg" @mouseup='endDrag()' @mouseenter="endDrag()">
+  <div class="mx-8 my-4 border-2 border-black rounded-xl h-4/5 paper-container">
+    <div ref="petriEditor" class='rounded-xl'></div>
+    <!-- <svg ref="box" class="bg-gray-300 rounded-xl box" height="100%" width="100%" xmlns="http://www.w3.org/2000/svg" @mouseup='endDrag()' @mouseenter="endDrag()">
       <defs>
         <marker id="mkrArrow" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
           <polygon points="0 0, 10 3.5, 0 7" />
@@ -100,7 +101,7 @@
       <template v-for="(animate) in animations" :key="animate">
         <component :is="animate" />
       </template>
-    </svg>
+    </svg> -->
   </div>
   <div class="flex w-full h-16 items-center justify-center">
     <div class="flex items-center petri-nav">
@@ -146,6 +147,7 @@ import axios, { AxiosError } from 'axios';
 import LoginServices, { ILogin } from '@/services/LoginService';
 import ExampleNetServices, { IExampleNet } from '@/services/ExampleNetService';
 import SimulationServices, { ISimulation } from '@/services/SimulationService';
+import * as joint from 'jointjs';
 
 const Circle = markRaw({
   template: `
@@ -183,7 +185,23 @@ const WeightText = markRaw({
   `
 });
 
+const placeSettings = {
+  circle: {
+    fill: '#ffffff',
+    r: 20
+  }
+};
+
+const transitionSettings = {
+  rect: {
+    fill: '#ffffff',
+    width: 20,
+    height: 60
+  }
+};
+
 export default defineComponent({
+  paper: null as joint.dia.Paper | null,
   name: 'PetriSVG',
   components: {
     CircleIcon,
@@ -201,6 +219,15 @@ export default defineComponent({
   },
   data() {
     return {
+      paper: null as any,
+      graph: null as any,
+      pn: null,
+      selectedElement: '',
+      selectedLink: null,
+      mode: 'pointer',
+      commandKeyDown: false,
+      placeCounter: 0,
+      transitionCounter: 0,
       elements: [
         {
           name: '',
@@ -266,7 +293,153 @@ export default defineComponent({
       }
     }
   },
+
   mounted() {
+    const container = this.$refs.petriEditor;
+
+    this.graph = new joint.dia.Graph();
+
+    const paper = new joint.dia.Paper({
+      el: container,
+      model: this.graph,
+      width: '100%',
+      height: '100%',
+      gridSize: 10,
+      drawGrid: true,
+      interactive: function(cellView) {
+        if ((cellView as any).model.get('locked')) {
+          return { elementMove: false, linkMove: false };
+        } else {
+          return { linkMove: false };
+        }
+      },
+      background: {
+        color: 'white',
+        gridWidth: 2,
+        gridColor: '#000000'
+      }
+    } as joint.dia.Paper.Options);
+
+    let currentScale = 1;
+
+    paper.on('blank:mousewheel', function(event: MouseEvent, x: number, y: number, delta: number) {
+      event.preventDefault();
+      const direction = delta > 0 ? 1 : -1;
+      const increment = 0.05;
+      const zoomLevel = direction * increment;
+      const maxZoom = 2;
+      const minZoom = 0.2;
+      const newScale = currentScale + zoomLevel;
+      if (newScale >= minZoom && newScale <= maxZoom) {
+        currentScale = newScale;
+        paper.scale(newScale, newScale);
+      }
+    });
+
+    paper.on('blank:pointerdown', (evt: any, x: number, y: number) => {
+      if (this.selectedElement === 'place') {
+        this.addPlace(x, y);
+      } else if (this.selectedElement === 'transition') {
+        this.addTransition(x, y);
+      }
+    });
+
+    window.addEventListener('keydown', (evt: KeyboardEvent) => {
+      if (evt.key === '1') {
+        if (this.selectedElement === 'place') {
+          this.selectedElement = '';
+        } else {
+          this.selectedElement = 'place';
+        }
+      }
+      if (evt.key === '2') {
+        if (this.selectedElement === 'transition') {
+          this.selectedElement = '';
+        } else {
+          this.selectedElement = 'transition';
+        }
+      }
+    });
+
+    paper.on('cell:contextmenu', (cellView, evt) => {
+      evt.preventDefault();
+
+      if ((cellView as any).model.get('type') === 'pn.Place') {
+        const editWindow = document.createElement('div');
+        editWindow.style.position = 'absolute';
+        editWindow.style.left = evt.pageX + 'px';
+        editWindow.style.top = evt.pageY + 'px';
+        editWindow.style.background = 'white';
+        editWindow.style.border = '1px solid black';
+        editWindow.style.padding = '10px';
+
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.value = (cellView as any).model.get('attrs')['.label'].text;
+
+        const tokenInput = document.createElement('input');
+        tokenInput.type = 'number';
+        tokenInput.value = (cellView as any).model.get('tokens');
+
+        const sizeInput = document.createElement('input');
+        sizeInput.type = 'text';
+        sizeInput.value = (cellView as any).model.get('attrs').circle.r;
+
+        const saveButton = document.createElement('button');
+        saveButton.innerHTML = 'Save';
+        saveButton.onclick = () => {
+          (cellView as any).model.attr('.label/text', nameInput.value);
+          (cellView as any).model.set('tokens', tokenInput.value);
+          (cellView as any).model.attr('circle/r', sizeInput.value);
+          console.log((cellView as any).model.position().x);
+          const tokensText = new joint.shapes.basic.Text({
+            position: { x: (cellView as any).model.position().x, y: (cellView as any).model.position().y },
+            size: { width: 9, height: 15 },
+            attrs: {
+              text: {
+                text: (cellView as any).model.get('tokens').toString(),
+                'font-size': 18,
+                'text-anchor': 'middle',
+                'ref-x': '50%',
+                'ref-y': 0.5,
+                'y-alignment': 'middle',
+                'x-alignment': 'middle'
+              }
+            },
+            place: (cellView as any).model.get('id'),
+            locked: true
+          });
+          this.graph.addCell(tokensText);
+          (cellView as any).model.on('change:position', () => {
+            const tokens = (cellView as any).model.get('tokens');
+            let offset = 0;
+            for (let i = 1; i < tokens.toString().length; i++) {
+              offset += 4;
+            }
+            tokensText.position(
+              (cellView as any).model.position().x,
+              (cellView as any).model.position().y
+            );
+          });
+          editWindow.remove();
+        };
+
+        const cancelButton = document.createElement('button');
+        cancelButton.innerHTML = 'Cancel';
+        cancelButton.onclick = () => {
+          editWindow.remove();
+        };
+
+        editWindow.appendChild(nameInput);
+        editWindow.appendChild(tokenInput);
+        editWindow.appendChild(sizeInput);
+        editWindow.appendChild(saveButton);
+        editWindow.appendChild(cancelButton);
+
+        (container as any).appendChild(editWindow);
+      }
+    });
+
     if (history.state.redirectExport) {
       console.log(history.state.redirectExport);
       this.redirectNetExport(history.state.redirectExport);
@@ -684,20 +857,152 @@ export default defineComponent({
       }
     },
 
-    addPlace() {
-      if (!this.running) {
-        this.counter++;
-        this.elements.push({ name: 'EC' + this.counter, x: 100, y: 100, x2: 0, y2: 0 });
-        this.children.push(Circle);
-      }
+    addPlace(x: number, y: number) {
+      // if (!this.running) {
+      //   this.counter++;
+      //   this.elements.push({ name: 'EC' + this.counter, x: 100, y: 100, x2: 0, y2: 0 });
+      //   this.children.push(Circle);
+      // }
+      this.placeCounter++;
+      const place = new joint.shapes.pn.Place({
+        position: { x, y },
+        attrs: {
+          '.label': { text: 'P' + this.placeCounter, 'ref-x': 0.5, 'ref-y': -15 },
+          circle: placeSettings.circle
+        },
+        text: {
+          '.label': { text: 'jd' + this.placeCounter, 'ref-x': 0.5, 'ref-y': 0.5 }
+        },
+        tokens: 1
+      });
+
+      // const tokensText = new joint.shapes.basic.Text({
+      //   position: { x: place.position().x + (place as any).attributes.attrs.circle.r + 8, y: place.position().y + (place as any).attributes.attrs.circle.r + 10 },
+      //   size: { width: 9, height: 15 },
+      //   attrs: {
+      //     text: {
+      //       text: (place as any).get('tokens').toString(),
+      //       'font-size': 18,
+      //       'text-anchor': 'middle',
+      //       'ref-x': '50%',
+      //       'ref-y': 0.5,
+      //       'y-alignment': 'middle',
+      //       'x-alignment': 'middle'
+      //     }
+      //   },
+      //   place: (place as any).get('id'),
+      //   locked: true
+      // });
+
+      // if (parseInt(tokensText.attr('text/text').value) === 0) {
+      //   tokensText.attr('text/text', '');
+      // }
+
+      this.graph.addCell(place);
+
+      // this.graph.addCell(tokensText);
+
+      console.log((place as any).get('id'));
+
+      // this.updateTokensTextPosition(tokensText, place);
+
+      // (place as any).on('change:size', () => {
+      //   this.updateTokensTextPosition(tokensText, place);
+      // });
+
+      // (place as any).on('change:tokens', () => {
+      //   tokensText.attr({
+      //     text: {
+      //       text: (place as any).get('tokens').toString()
+      //     }
+      //   });
+      // });
+
+      // (place as any).on('change:position', () => {
+      //   const tokens = (place as any).get('tokens');
+      //   let offset = 0;
+      //   for (let i = 1; i < tokens.toString().length; i++) {
+      //     offset += 4;
+      //   }
+      //   tokensText.position(
+      //     place.position().x + (place as any).attributes.attrs.circle.r + 6 - offset,
+      //     place.position().y + (place as any).attributes.attrs.circle.r + 2
+      //   );
+      // });
+
+      // (place as any).on('change:tokens', () => {
+      //   const tokens = (place as any).get('tokens');
+      //   if (tokens === 0) {
+      //     tokensText.remove();
+      //   } else {
+      //     tokensText.remove();
+      //     const tokensTextAttrs = (tokensText as any).attributes.attrs.text;
+      //     let tokenWidth = 9;
+      //     let offset = 0;
+      //     for (let i = 1; i < tokens.toString().length; i++) {
+      //       tokenWidth += 9;
+      //       offset += 4;
+      //     }
+      //     const newPosition = {
+      //       x: place.position().x + (place as any).attributes.attrs.circle.r + 6 - offset,
+      //       y: place.position().y + (place as any).attributes.attrs.circle.r + 2
+      //     };
+      //     tokensText.translate(newPosition.x - tokensText.position().x, newPosition.y - tokensText.position().y);
+      //     tokensTextAttrs.text = tokens.toString();
+      //     tokensText.prop('size/width', tokenWidth);
+      //     tokensText.attr('text', tokensTextAttrs);
+      //     this.graph.addCell(tokensText);
+      //   }
+      // });
     },
 
-    addTransition() {
-      if (!this.running) {
-        this.counter++;
-        this.elements.push({ name: 'ET' + this.counter, x: 100, y: 100, x2: 0, y2: 0 });
-        this.children.push(Square);
+    addTokenText(place: any) {
+      const tokensText = new joint.shapes.basic.Text({
+        position: { x: place.position().x + (place as any).attributes.attrs.circle.r + 8, y: place.position().y + (place as any).attributes.attrs.circle.r + 10 },
+        size: { width: 9, height: 15 },
+        attrs: {
+          text: {
+            text: (place as any).get('tokens').toString(),
+            'font-size': 18,
+            'text-anchor': 'middle',
+            'ref-x': '50%',
+            'ref-y': 0.5,
+            'y-alignment': 'middle',
+            'x-alignment': 'middle'
+          }
+        },
+        locked: true
+      });
+
+      if (parseInt(tokensText.attr('text/text').value) === 0) {
+        tokensText.attr('text/text', '');
       }
+
+      return tokensText;
+    },
+
+    updateTokensTextPosition(tokensText: any, place: any) {
+      const x = place.position().x + (place as any).attributes.attrs.circle.r + 8;
+      const y = place.position().y + (place as any).attributes.attrs.circle.r + 10;
+      tokensText.position(x, y, { transition: 'none' });
+    },
+
+    addTransition(x: number, y: number) {
+      // if (!this.running) {
+      //   this.counter++;
+      //   this.elements.push({ name: 'ET' + this.counter, x: 100, y: 100, x2: 0, y2: 0 });
+      //   this.children.push(Square);
+      // }
+      this.transitionCounter++;
+      const transition = new joint.shapes.pn.Transition({
+        position: { x, y },
+        attrs: {
+          '.label': { text: 'T' + this.transitionCounter, 'ref-x': 0.5, 'ref-y': -15 },
+          rect: transitionSettings.rect
+        }
+      });
+
+      this.graph.addCell(transition);
     },
 
     addConnection() {

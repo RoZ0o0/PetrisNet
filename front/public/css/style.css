@@ -85,3 +85,8 @@ html {
 .color-F6C453 {
     background-color: #F6C453;
 }
+
+svg {
+    background-image: linear-gradient(to right, rgb(201, 201, 201) 1px, transparent 1px), linear-gradient(to bottom, rgb(201, 201, 201) 1px, transparent 1px);
+    background-size: 15px 15px;
+}

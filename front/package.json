@@ -9,6 +9,7 @@
         "lint": "vue-cli-service lint"
     },
     "dependencies": {
+        "@types/jointjs": "^2.0.0",
         "@types/jquery": "^3.5.14",
         "@vue/eslint-config-standard": "^8.0.1",
         "axios": "^0.27.2",
@@ -17,6 +18,7 @@
         "eslint-plugin-import": "^2.26.0",
         "eslint-plugin-node": "^11.1.0",
         "eslint-plugin-promise": "^6.0.1",
+        "jointjs": "^3.6.5",
         "jquery": "^3.6.1",
         "sweetalert2": "^11.7.0",
         "tailwindcss": "^3.1.8",
