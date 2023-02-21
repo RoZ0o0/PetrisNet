@@ -148,6 +148,7 @@ import LoginServices, { ILogin } from '@/services/LoginService';
 import ExampleNetServices, { IExampleNet } from '@/services/ExampleNetService';
 import SimulationServices, { ISimulation } from '@/services/SimulationService';
 import * as joint from 'jointjs';
+import _ from 'lodash';
 
 const Circle = markRaw({
   template: `
@@ -199,6 +200,10 @@ const transitionSettings = {
     height: 60
   }
 };
+
+interface CustomPaper extends joint.dia.Paper {
+  selection: any;
+}
 
 export default defineComponent({
   paper: null as joint.dia.Paper | null,
@@ -320,6 +325,9 @@ export default defineComponent({
       }
     } as joint.dia.Paper.Options);
 
+    let startPoint: any;
+    let endPoint: any;
+
     let currentScale = 1;
 
     paper.on('blank:mousewheel', function(event: MouseEvent, x: number, y: number, delta: number) {
@@ -336,11 +344,161 @@ export default defineComponent({
       }
     });
 
+    let rect: any;
+
+    paper.on('cell:pointerup', (event: any, x, y) => {
+      this.graph.getCells().forEach((element: any) => {
+        element.attributes.selected = false;
+        if (element.attributes.type === 'pn.Place') {
+          element.attr({
+            circle: {
+              stroke: 'black'
+            }
+          });
+        } else if (element.attributes.type === 'pn.Transition') {
+          element.attr({
+            rect: {
+              stroke: 'black'
+            }
+          });
+        }
+      });
+      event.model.attributes.selected = true;
+      if (event.model.attributes.type === 'pn.Place') {
+        event.model.attr({
+          circle: {
+            stroke: 'red'
+          }
+        });
+      } else if (event.model.attributes.type === 'pn.Transition') {
+        event.model.attr({
+          rect: {
+            stroke: 'red'
+          }
+        });
+      }
+    });
+
+    let startX: any, startY: any;
+    let moveX: any, moveY: any;
+
+    paper.on('cell:pointerdown', (cellView: any, event, x, y) => {
+      startX = cellView.model.get('position').x;
+      startY = cellView.model.get('position').y;
+    });
+
+    paper.on('cell:pointermove', (cellView: any, event, x, y) => {
+      if (cellView.model.attributes.selected) {
+        moveX = cellView.model.get('position').x - startX;
+        moveY = cellView.model.get('position').y - startY;
+        this.graph.getCells().forEach((element: any) => {
+          if ((element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition') && element.attributes.selected && element.cid !== cellView.model.cid) {
+            const position = element.get('position');
+            element.set('position', { x: position.x + moveX, y: position.y + moveY });
+          }
+        });
+        startX = startX + moveX;
+        startY = startY + moveY;
+      }
+    });
+
     paper.on('blank:pointerdown', (evt: any, x: number, y: number) => {
       if (this.selectedElement === 'place') {
         this.addPlace(x, y);
       } else if (this.selectedElement === 'transition') {
         this.addTransition(x, y);
+      } else if (this.selectedElement === '') {
+        startPoint = { x, y };
+
+        rect = new joint.shapes.basic.Rect({
+          position: {
+            x: Math.min(startPoint.x, startPoint.x),
+            y: Math.min(startPoint.y, startPoint.y)
+          },
+          size: {
+            width: Math.abs(startPoint.x - startPoint.x),
+            height: Math.abs(startPoint.y - startPoint.y)
+          },
+          attrs: {
+            rect: {
+              stroke: 'black',
+              'stroke-width': 1,
+              fill: 'gray',
+              opacity: 0.2
+            }
+          }
+        });
+
+        this.graph.addCell(rect);
+
+        paper.on('blank:pointermove', (event, x, y) => {
+          endPoint = { x, y };
+
+          (rect as any).set('size', {
+            width: Math.abs(startPoint.x - endPoint.x),
+            height: Math.abs(startPoint.y - endPoint.y)
+          });
+
+          (rect as any).set('position', {
+            x: Math.min(startPoint.x, endPoint.x),
+            y: Math.min(startPoint.y, endPoint.y)
+          });
+        });
+      }
+    });
+
+    paper.on('blank:pointerup', () => {
+      if (this.selectedElement === '') {
+        this.graph.getCells().forEach((element: any) => {
+          element.attributes.selected = false;
+          if (element.attributes.type === 'pn.Place') {
+            element.attr({
+              circle: {
+                stroke: 'black'
+              }
+            });
+          } else if (element.attributes.type === 'pn.Transition') {
+            element.attr({
+              rect: {
+                stroke: 'black'
+              }
+            });
+          }
+        });
+        this.graph.getCells().forEach((element: any) => {
+          if (element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition') {
+            const placeX = element.position().x;
+            const placeY = element.position().y;
+            const placeWidth = element.get('size').width;
+            const placeHeight = element.get('size').height;
+
+            const rectX = rect.position().x;
+            const rectY = rect.position().y;
+            const rectWidth = rect.get('size').width;
+            const rectHeight = rect.get('size').height;
+
+            const topLeft = placeX >= rectX && placeY >= rectY;
+            const bottomRight = placeX + placeWidth <= rectX + rectWidth && placeY + placeHeight <= rectY + rectHeight;
+
+            if (topLeft && bottomRight) {
+              element.attributes.selected = true;
+              if (element.attributes.type === 'pn.Place') {
+                element.attr({
+                  circle: {
+                    stroke: 'red'
+                  }
+                });
+              } else if (element.attributes.type === 'pn.Transition') {
+                element.attr({
+                  rect: {
+                    stroke: 'red'
+                  }
+                });
+              }
+            }
+          }
+        });
+        rect.remove();
       }
     });
 
@@ -389,38 +547,58 @@ export default defineComponent({
         saveButton.innerHTML = 'Save';
         saveButton.onclick = () => {
           (cellView as any).model.attr('.label/text', nameInput.value);
-          (cellView as any).model.set('tokens', tokenInput.value);
           (cellView as any).model.attr('circle/r', sizeInput.value);
-          console.log((cellView as any).model.position().x);
-          const tokensText = new joint.shapes.basic.Text({
-            position: { x: (cellView as any).model.position().x, y: (cellView as any).model.position().y },
-            size: { width: 9, height: 15 },
-            attrs: {
-              text: {
-                text: (cellView as any).model.get('tokens').toString(),
-                'font-size': 18,
-                'text-anchor': 'middle',
-                'ref-x': '50%',
-                'ref-y': 0.5,
-                'y-alignment': 'middle',
-                'x-alignment': 'middle'
+          (cellView as any).model.set('tokens', tokenInput.value);
+          if (parseInt(tokenInput.value) === 0) {
+            this.graph.getCells().forEach((element: any) => {
+              if (element.attributes.place === (cellView as any).model.get('id')) {
+                element.remove();
               }
-            },
-            place: (cellView as any).model.get('id'),
-            locked: true
-          });
-          this.graph.addCell(tokensText);
-          (cellView as any).model.on('change:position', () => {
+            });
+          }
+
+          if (parseInt(tokenInput.value) > 0 && tokenInput.value.length <= 4) {
+            this.graph.getCells().forEach((element: any) => {
+              if (element.attributes.place === (cellView as any).model.get('id')) {
+                element.remove();
+              }
+            });
             const tokens = (cellView as any).model.get('tokens');
+
             let offset = 0;
+            let tokenWidth = 9;
+
             for (let i = 1; i < tokens.toString().length; i++) {
               offset += 4;
+              tokenWidth += 9;
             }
-            tokensText.position(
-              (cellView as any).model.position().x,
-              (cellView as any).model.position().y
-            );
-          });
+
+            const tokensText = new joint.shapes.basic.Text({
+              position: { x: (cellView as any).model.position().x + 26 - offset, y: (cellView as any).model.position().y + 22 },
+              size: { width: tokenWidth, height: 15 },
+              attrs: {
+                text: {
+                  text: (cellView as any).model.get('tokens').toString(),
+                  'font-size': 18,
+                  'text-anchor': 'middle',
+                  'ref-x': '50%',
+                  'ref-y': 0.5,
+                  'y-alignment': 'middle',
+                  'x-alignment': 'middle'
+                }
+              },
+              place: (cellView as any).model.get('id'),
+              locked: true
+            });
+
+            this.graph.addCell(tokensText);
+            (cellView as any).model.on('change:position', () => {
+              tokensText.position(
+                (cellView as any).model.position().x + 26 - offset,
+                (cellView as any).model.position().y + 22
+              );
+            });
+          }
           editWindow.remove();
         };
 
@@ -480,6 +658,7 @@ export default defineComponent({
   },
 
   methods: {
+
     async getUser(): Promise<ILogin> {
       return await LoginServices.fetch();
     },
@@ -870,121 +1049,11 @@ export default defineComponent({
           '.label': { text: 'P' + this.placeCounter, 'ref-x': 0.5, 'ref-y': -15 },
           circle: placeSettings.circle
         },
-        text: {
-          '.label': { text: 'jd' + this.placeCounter, 'ref-x': 0.5, 'ref-y': 0.5 }
-        },
-        tokens: 1
+        selected: false,
+        tokens: 0
       });
-
-      // const tokensText = new joint.shapes.basic.Text({
-      //   position: { x: place.position().x + (place as any).attributes.attrs.circle.r + 8, y: place.position().y + (place as any).attributes.attrs.circle.r + 10 },
-      //   size: { width: 9, height: 15 },
-      //   attrs: {
-      //     text: {
-      //       text: (place as any).get('tokens').toString(),
-      //       'font-size': 18,
-      //       'text-anchor': 'middle',
-      //       'ref-x': '50%',
-      //       'ref-y': 0.5,
-      //       'y-alignment': 'middle',
-      //       'x-alignment': 'middle'
-      //     }
-      //   },
-      //   place: (place as any).get('id'),
-      //   locked: true
-      // });
-
-      // if (parseInt(tokensText.attr('text/text').value) === 0) {
-      //   tokensText.attr('text/text', '');
-      // }
 
       this.graph.addCell(place);
-
-      // this.graph.addCell(tokensText);
-
-      console.log((place as any).get('id'));
-
-      // this.updateTokensTextPosition(tokensText, place);
-
-      // (place as any).on('change:size', () => {
-      //   this.updateTokensTextPosition(tokensText, place);
-      // });
-
-      // (place as any).on('change:tokens', () => {
-      //   tokensText.attr({
-      //     text: {
-      //       text: (place as any).get('tokens').toString()
-      //     }
-      //   });
-      // });
-
-      // (place as any).on('change:position', () => {
-      //   const tokens = (place as any).get('tokens');
-      //   let offset = 0;
-      //   for (let i = 1; i < tokens.toString().length; i++) {
-      //     offset += 4;
-      //   }
-      //   tokensText.position(
-      //     place.position().x + (place as any).attributes.attrs.circle.r + 6 - offset,
-      //     place.position().y + (place as any).attributes.attrs.circle.r + 2
-      //   );
-      // });
-
-      // (place as any).on('change:tokens', () => {
-      //   const tokens = (place as any).get('tokens');
-      //   if (tokens === 0) {
-      //     tokensText.remove();
-      //   } else {
-      //     tokensText.remove();
-      //     const tokensTextAttrs = (tokensText as any).attributes.attrs.text;
-      //     let tokenWidth = 9;
-      //     let offset = 0;
-      //     for (let i = 1; i < tokens.toString().length; i++) {
-      //       tokenWidth += 9;
-      //       offset += 4;
-      //     }
-      //     const newPosition = {
-      //       x: place.position().x + (place as any).attributes.attrs.circle.r + 6 - offset,
-      //       y: place.position().y + (place as any).attributes.attrs.circle.r + 2
-      //     };
-      //     tokensText.translate(newPosition.x - tokensText.position().x, newPosition.y - tokensText.position().y);
-      //     tokensTextAttrs.text = tokens.toString();
-      //     tokensText.prop('size/width', tokenWidth);
-      //     tokensText.attr('text', tokensTextAttrs);
-      //     this.graph.addCell(tokensText);
-      //   }
-      // });
-    },
-
-    addTokenText(place: any) {
-      const tokensText = new joint.shapes.basic.Text({
-        position: { x: place.position().x + (place as any).attributes.attrs.circle.r + 8, y: place.position().y + (place as any).attributes.attrs.circle.r + 10 },
-        size: { width: 9, height: 15 },
-        attrs: {
-          text: {
-            text: (place as any).get('tokens').toString(),
-            'font-size': 18,
-            'text-anchor': 'middle',
-            'ref-x': '50%',
-            'ref-y': 0.5,
-            'y-alignment': 'middle',
-            'x-alignment': 'middle'
-          }
-        },
-        locked: true
-      });
-
-      if (parseInt(tokensText.attr('text/text').value) === 0) {
-        tokensText.attr('text/text', '');
-      }
-
-      return tokensText;
-    },
-
-    updateTokensTextPosition(tokensText: any, place: any) {
-      const x = place.position().x + (place as any).attributes.attrs.circle.r + 8;
-      const y = place.position().y + (place as any).attributes.attrs.circle.r + 10;
-      tokensText.position(x, y, { transition: 'none' });
     },
 
     addTransition(x: number, y: number) {
@@ -999,7 +1068,8 @@ export default defineComponent({
         attrs: {
           '.label': { text: 'T' + this.transitionCounter, 'ref-x': 0.5, 'ref-y': -15 },
           rect: transitionSettings.rect
-        }
+        },
+        selected: false
       });
 
       this.graph.addCell(transition);
