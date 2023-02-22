@@ -86,7 +86,30 @@ html {
     background-color: #F6C453;
 }
 
-svg {
+div>svg {
     background-image: linear-gradient(to right, rgb(201, 201, 201) 1px, transparent 1px), linear-gradient(to bottom, rgb(201, 201, 201) 1px, transparent 1px);
     background-size: 15px 15px;
+}
+
+.editElements {
+    display: flex;
+    flex-direction: column;
+}
+
+.editElements>div {
+    display: flex;
+    flex-direction: row;
+    margin-bottom: 10px;
+}
+
+.editElements>div>p {
+    margin-right: 10px;
+}
+
+.editElements>div>input {
+    width: 100px;
+}
+
+.editElements>button {
+    margin-left: 10px;
 }
