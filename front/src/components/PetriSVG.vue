@@ -243,6 +243,7 @@ export default defineComponent({
       connection_weight: [] as any,
       connection_edit: false,
       current_connection: null as any,
+      current_connections: [] as any,
       ctrl_pressed: false,
       current_target: 0,
       hovered_target: 0,
@@ -309,12 +310,8 @@ export default defineComponent({
       height: '100%',
       gridSize: 10,
       drawGrid: true,
-      interactive: function(cellView) {
-        if ((cellView as any).model.get('locked')) {
-          return { elementMove: false, linkMove: false };
-        } else {
-          return { linkMove: false };
-        }
+      interactive: {
+        linkMoveable: false
       },
       background: {
         color: 'white',
@@ -349,10 +346,12 @@ export default defineComponent({
 
     paper.on('cell:pointerdown', (cellView: any, event, x, y) => {
       if (!this.ctrl_pressed) {
-        startX = cellView.model.get('position').x;
-        startY = cellView.model.get('position').y;
-        const lastStep = this.graph.toJSON();
-        modelState = lastStep;
+        if (cellView.model.attributes.type !== 'pn.Link') {
+          startX = cellView.model.get('position').x;
+          startY = cellView.model.get('position').y;
+          const lastStep = this.graph.toJSON();
+          modelState = lastStep;
+        }
 
         if (!cellView.model.attributes.selected) {
           this.graph.getCells().forEach((element: any) => {
@@ -369,6 +368,10 @@ export default defineComponent({
                   stroke: 'black'
                 }
               });
+            } else if (element.attributes.type === 'pn.Link') {
+              const link = this.graph.getCell(element.id);
+
+              element.attr('.marker-arrowhead[end=target]', { style: { 'background-color': 'black' } });
             }
           });
           cellView.model.attributes.selected = true;
@@ -384,24 +387,165 @@ export default defineComponent({
                 stroke: 'red'
               }
             });
+          } else if (cellView.model.attributes.type === 'pn.Link') {
+            cellView.model.attr('.marker-arrowhead[end=target]', { style: { 'background-color': 'red' } });
           }
         }
       } else {
-        const link = new joint.shapes.pn.Link({
-          source: { id: cellView.model.id },
-          target: { x: x, y: y },
-          attrs: {
-            '.marker-target': { display: 'none' },
-            '.marker-source': { display: 'none' },
-            '.link-tools': { display: 'none' },
-            '.connection': { stroke: 'black' }
+        if (!cellView.model.attributes.selected) {
+          const link = new joint.shapes.pn.Link({
+            source: { id: cellView.model.id },
+            target: { x: x, y: y },
+            attrs: {
+              '.marker-target': { display: 'none' },
+              '.marker-source': { display: 'none' },
+              '.link-tools': { display: 'none' },
+              '.connection': { stroke: 'black', 'pointer-events': 'none' }
+            },
+            weight: 1,
+            selected: false
+          });
+
+          const lastStep = this.graph.toJSON();
+          modelState = lastStep;
+          this.graph.addCell(link);
+
+          link.appendLabel({
+            attrs: {
+              text: {
+                text: '1',
+                'pointer-events': 'none',
+                'font-size': 20,
+                'font-weight': 'bold',
+                fill: 'black',
+                stroke: 'white',
+                'stroke-width': 1
+              },
+              rect: {
+                fill: 'white',
+                'fill-opacity': 0,
+                stroke: 'none',
+                'pointer-events': 'none'
+              }
+            },
+            position: {
+              distance: -22
+            }
+          });
+
+          link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
+          link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
+
+          this.current_connection = link.id;
+        } else {
+          let checkIfPlacesSelected = true;
+          let checkIfTransitionsSelected = true;
+          this.graph.getCells().forEach((element: any) => {
+            if (element.attributes.selected) {
+              if (element.attributes.type !== 'pn.Place') {
+                checkIfPlacesSelected = false;
+              }
+              if (element.attributes.type !== 'pn.Transition') {
+                checkIfTransitionsSelected = false;
+              }
+            }
+          });
+          if (!checkIfPlacesSelected && !checkIfTransitionsSelected) {
+            const link = new joint.shapes.pn.Link({
+              source: { id: cellView.model.id },
+              target: { x: x, y: y },
+              attrs: {
+                '.marker-target': { display: 'none' },
+                '.marker-source': { display: 'none' },
+                '.link-tools': { display: 'none' },
+                '.connection': { stroke: 'black', 'pointer-events': 'none' }
+              },
+              weight: 1,
+              selected: false
+            });
+
+            const lastStep = this.graph.toJSON();
+            modelState = lastStep;
+            this.graph.addCell(link);
+
+            link.appendLabel({
+              attrs: {
+                text: {
+                  text: '1',
+                  'pointer-events': 'none',
+                  'font-size': 20,
+                  'font-weight': 'bold',
+                  fill: 'black',
+                  stroke: 'white',
+                  'stroke-width': 1
+                },
+                rect: {
+                  fill: 'white',
+                  'fill-opacity': 0,
+                  stroke: 'none',
+                  'pointer-events': 'none'
+                }
+              },
+              position: {
+                distance: -22
+              }
+            });
+
+            link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
+            link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
+
+            this.current_connection = link.id;
+          } else {
+            const lastStep = this.graph.toJSON();
+            modelState = lastStep;
+            this.graph.getCells().forEach((element: any) => {
+              if ((element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition') && element.attributes.selected) {
+                const link = new joint.shapes.pn.Link({
+                  source: { id: element.id },
+                  target: { x: x, y: y },
+                  attrs: {
+                    '.marker-target': { display: 'none' },
+                    '.marker-source': { display: 'none' },
+                    '.link-tools': { display: 'none' },
+                    '.connection': { stroke: 'black', 'pointer-events': 'none' }
+                  },
+                  weight: 1,
+                  selected: false
+                });
+
+                this.graph.addCell(link);
+
+                link.appendLabel({
+                  attrs: {
+                    text: {
+                      text: '1',
+                      'pointer-events': 'none',
+                      'font-size': 20,
+                      'font-weight': 'bold',
+                      fill: 'black',
+                      stroke: 'white',
+                      'stroke-width': 1
+                    },
+                    rect: {
+                      fill: 'white',
+                      'fill-opacity': 0,
+                      stroke: 'none',
+                      'pointer-events': 'none'
+                    }
+                  },
+                  position: {
+                    distance: -22
+                  }
+                });
+
+                link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
+                link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
+
+                this.current_connections.push(link.id);
+              }
+            });
           }
-        });
-        this.graph.addCell(link);
-
-        link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z' });
-
-        this.current_connection = link.id;
+        }
       }
     });
 
@@ -455,22 +599,33 @@ export default defineComponent({
     });
 
     paper.on('cell:pointermove', (cellView: any, event, x, y) => {
-      if (!this.ctrl_pressed) {
-        if (cellView.model.attributes.selected) {
-          moveX = cellView.model.get('position').x - startX;
-          moveY = cellView.model.get('position').y - startY;
-          this.graph.getCells().forEach((element: any) => {
-            if ((element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition') && element.attributes.selected && element.cid !== cellView.model.cid) {
-              const position = element.get('position');
-              element.set('position', { x: position.x + moveX, y: position.y + moveY });
-            }
-          });
-          startX = startX + moveX;
-          startY = startY + moveY;
+      if (cellView.model.attributes.type !== 'pn.Link') {
+        if (!this.ctrl_pressed) {
+          if (cellView.model.attributes.selected) {
+            moveX = cellView.model.get('position').x - startX;
+            moveY = cellView.model.get('position').y - startY;
+            this.graph.getCells().forEach((element: any) => {
+              if ((element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition') && element.attributes.selected && element.cid !== cellView.model.cid) {
+                const position = element.get('position');
+                element.set('position', { x: position.x + moveX, y: position.y + moveY });
+              }
+            });
+            startX = startX + moveX;
+            startY = startY + moveY;
+          }
+        } else {
+          if (this.current_connections.length === 0) {
+            const link = this.graph.getCell(this.current_connection);
+            link.prop('target', { x: x, y: y });
+          } else {
+            this.current_connections.forEach((element: any) => {
+              const link = this.graph.getCell(element);
+              link.prop('target', { x: x, y: y });
+            });
+          }
         }
       } else {
-        const link = this.graph.getCell(this.current_connection);
-        link.prop('target', { x: x, y: y });
+        event.preventDefault();
       }
     });
 
@@ -483,33 +638,76 @@ export default defineComponent({
         });
         cellView.model.remove();
       }
-      if (this.current_connection !== null) {
-        const paperOffset = (paper as any).el.getBoundingClientRect();
-        const link = this.graph.getCell(this.current_connection);
-        let found = false;
-        this.graph.getCells().forEach((element: any) => {
-          const bbox = element.getBBox();
-          if ((event.clientX - paperOffset.left) >= bbox.x && (event.clientX - paperOffset.left) <= bbox.x + bbox.width && (event.clientY - paperOffset.top) >= bbox.y && (event.clientY - paperOffset.top) <= bbox.y + bbox.height) {
-            if (element instanceof joint.shapes.pn.Place) {
-              found = true;
-              if (element.id === cellView.model.id) {
-                link.remove();
-                this.current_connection = null;
-              } else {
-                link.prop('target', { id: element.id });
-                this.current_connection = null;
+      if (this.current_connections.length === 0) {
+        if (this.current_connection !== null) {
+          const paperOffset = (paper as any).el.getBoundingClientRect();
+          const link = this.graph.getCell(this.current_connection);
+          let found = false;
+          this.graph.getCells().forEach((element: any) => {
+            const bbox = element.getBBox();
+            if ((event.clientX - paperOffset.left) >= bbox.x && (event.clientX - paperOffset.left) <= bbox.x + bbox.width && (event.clientY - paperOffset.top) >= bbox.y && (event.clientY - paperOffset.top) <= bbox.y + bbox.height) {
+              if (element instanceof joint.shapes.pn.Place || element instanceof joint.shapes.pn.Transition) {
+                found = true;
+                if (element.id === cellView.model.id) {
+                  link.remove();
+                  this.current_connection = null;
+                } else if ((element as any).attributes.type === cellView.model.attributes.type) {
+                  link.remove();
+                  this.current_connection = null;
+                } else {
+                  this.graph.getCells().forEach((exist: any) => {
+                    if (exist.attributes.type === 'pn.Link') {
+                      if (exist.attributes.source.id === cellView.model.id && exist.attributes.target.id === element.id) {
+                        link.remove();
+                        this.current_connection = null;
+                      }
+                    }
+                  });
+                  link.prop('target', { id: element.id });
+                  this.current_connection = null;
+                }
               }
-              // if ((element as any).attributes.type === cellView.model.attributes.type) {
-              //   link.remove();
-              //   this.current_connection = null;
-              // }
             }
+          });
+          if (!found) {
+            link.remove();
+            this.current_connection = null;
+          }
+        }
+      } else if (this.current_connections.length > 0) {
+        const paperOffset = (paper as any).el.getBoundingClientRect();
+        this.current_connections.forEach((place: any) => {
+          const link = this.graph.getCell(place);
+          let found = false;
+          this.graph.getCells().forEach((element: any) => {
+            const bbox = element.getBBox();
+            if ((event.clientX - paperOffset.left) >= bbox.x && (event.clientX - paperOffset.left) <= bbox.x + bbox.width && (event.clientY - paperOffset.top) >= bbox.y && (event.clientY - paperOffset.top) <= bbox.y + bbox.height) {
+              if (element instanceof joint.shapes.pn.Place || element instanceof joint.shapes.pn.Transition) {
+                found = true;
+                if (element.id === cellView.model.id) {
+                  link.remove();
+                } else if ((element as any).attributes.type === cellView.model.attributes.type) {
+                  link.remove();
+                } else {
+                  this.graph.getCells().forEach((exist: any) => {
+                    if (exist.attributes.type === 'pn.Link') {
+                      if (exist.attributes.source.id === place && exist.attributes.target.id === element.id) {
+                        console.log('jd');
+                        link.remove();
+                      }
+                    }
+                  });
+                  console.log(bbox);
+                  link.prop('target', { id: element.id });
+                }
+              }
+            }
+          });
+          if (!found) {
+            link.remove();
           }
         });
-        if (!found) {
-          link.remove();
-          this.current_connection = null;
-        }
+        this.current_connections = [];
       }
     });
 
@@ -565,6 +763,372 @@ export default defineComponent({
           }
         });
         rect.remove();
+      }
+    });
+
+    paper.on('cell:contextmenu', (cellView, evt) => {
+      evt.preventDefault();
+      this.contextShow = true;
+
+      if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition' || (cellView as any).model.get('type') === 'pn.Link') {
+        let nameDiv: any;
+        let nameInput: any;
+        let textName: any;
+
+        let tokenDiv: any;
+        let tokenInput: any;
+        let textToken: any;
+
+        let sizeDiv: any;
+        let sizeInput: any;
+        let textSize: any;
+
+        let weightDiv: any;
+        let weightInput: any;
+        let textWeight: any;
+
+        let widthDiv: any;
+        let widthInput: any;
+        let textWidth: any;
+
+        let heightDiv: any;
+        let heightInput: any;
+        let textHeight: any;
+
+        const editWindow = document.createElement('div');
+        if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition') {
+          nameDiv = document.createElement('div');
+        }
+        if ((cellView as any).model.get('type') === 'pn.Place') {
+          tokenDiv = document.createElement('div');
+          sizeDiv = document.createElement('div');
+        }
+        if ((cellView as any).model.get('type') === 'pn.Transition') {
+          widthDiv = document.createElement('div');
+          heightDiv = document.createElement('div');
+        }
+        if ((cellView as any).model.get('type') === 'pn.Link') {
+          weightDiv = document.createElement('div');
+        }
+        editWindow.classList.add('editElements');
+        editWindow.style.position = 'absolute';
+        editWindow.style.left = evt.pageX + 'px';
+        editWindow.style.top = evt.pageY + 'px';
+        editWindow.style.background = 'white';
+        editWindow.style.border = '1px solid black';
+        editWindow.style.borderRadius = '0.75rem';
+        editWindow.style.padding = '10px';
+
+        if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition') {
+          nameInput = document.createElement('input');
+          nameInput.type = 'text';
+          nameInput.value = (cellView as any).model.get('attrs')['.label'].text;
+
+          textName = document.createElement('p');
+          textName.innerHTML = 'Nazwa';
+        }
+
+        if ((cellView as any).model.get('type') === 'pn.Place') {
+          tokenInput = document.createElement('input');
+          tokenInput.type = 'number';
+          tokenInput.setAttribute('min', '0');
+          tokenInput.value = (cellView as any).model.get('tokens');
+
+          tokenInput.addEventListener('input', () => {
+            if (parseInt(tokenInput.value) < 0) {
+              tokenInput.value = '0';
+            }
+          });
+
+          textToken = document.createElement('p');
+          textToken.innerHTML = 'Tokeny';
+
+          sizeInput = document.createElement('input');
+          sizeInput.type = 'number';
+          sizeInput.setAttribute('min', '0');
+          sizeInput.value = (cellView as any).model.get('attrs').circle.r;
+
+          sizeInput.addEventListener('input', () => {
+            if (parseInt(sizeInput.value) < 0) {
+              sizeInput.value = '10';
+            }
+          });
+
+          textSize = document.createElement('p');
+          textSize.innerHTML = 'Rozmiar';
+        }
+
+        if ((cellView as any).model.get('type') === 'pn.Transition') {
+          widthInput = document.createElement('input');
+          widthInput.type = 'number';
+          widthInput.setAttribute('min', '0');
+          widthInput.value = (cellView as any).model.get('attrs').rect.width;
+
+          widthInput.addEventListener('input', () => {
+            if (parseInt(widthInput.value) < 0) {
+              widthInput.value = '20';
+            }
+          });
+
+          textWidth = document.createElement('p');
+          textWidth.innerHTML = 'Szerokość';
+
+          heightInput = document.createElement('input');
+          heightInput.type = 'number';
+          heightInput.setAttribute('min', '0');
+          heightInput.value = (cellView as any).model.get('attrs').rect.height;
+
+          heightInput.addEventListener('input', () => {
+            if (parseInt(heightInput.value) < 0) {
+              heightInput.value = '20';
+            }
+          });
+
+          textHeight = document.createElement('p');
+          textHeight.innerHTML = 'Wysokość';
+        }
+
+        if ((cellView as any).model.get('type') === 'pn.Link') {
+          weightInput = document.createElement('input');
+          weightInput.type = 'number';
+          weightInput.setAttribute('min', '1');
+          weightInput.value = (cellView as any).model.get('weight');
+
+          weightInput.addEventListener('input', () => {
+            if (parseInt(weightInput.value) < 1) {
+              weightInput.value = '0';
+            }
+          });
+
+          textWeight = document.createElement('p');
+          textWeight.innerHTML = 'Waga';
+        }
+
+        const saveButton = document.createElement('button');
+        saveButton.innerHTML = 'Save';
+        saveButton.onclick = () => {
+          const lastStep = this.graph.toJSON();
+          modelState = lastStep;
+          if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition') {
+            let nameExist = false;
+            this.graph.getCells().forEach((element: any) => {
+              if (element.attributes.type !== 'pn.Link' && element.attributes.type !== 'basic.Text') {
+                if (!element.attributes.attrs['.label']) {
+                  if ((cellView as any).model.id !== element.id && element.attributes.attrs['.label'].text === nameInput.value) {
+                    nameExist = true;
+                  }
+                }
+              }
+            });
+            if (!nameExist) {
+              (cellView as any).model.attr('.label/text', nameInput.value);
+            }
+          }
+          if ((cellView as any).model.get('type') === 'pn.Place') {
+            if (tokenInput.value === '') {
+              tokenInput.value = '0';
+            }
+            if (sizeInput.value === '') {
+              sizeInput.value = '20';
+            }
+            if (sizeInput.value < 10) {
+              sizeInput.value = '10';
+            }
+            (cellView as any).model.attr('circle/r', sizeInput.value);
+            (cellView as any).model.set('tokens', tokenInput.value);
+            if (parseInt(tokenInput.value) === 0) {
+              this.graph.getCells().forEach((element: any) => {
+                if (element.attributes.place === (cellView as any).model.get('id')) {
+                  element.remove();
+                }
+              });
+            }
+
+            if (parseInt(tokenInput.value) > 0 && tokenInput.value.length <= 4) {
+              this.graph.getCells().forEach((element: any) => {
+                if (element.attributes.place === (cellView as any).model.get('id')) {
+                  element.remove();
+                }
+              });
+              const tokens = (cellView as any).model.get('tokens');
+
+              let offset = 0;
+              let tokenWidth = 9;
+
+              for (let i = 1; i < tokens.toString().length; i++) {
+                offset += 4;
+                tokenWidth += 9;
+              }
+
+              const tokensText = new joint.shapes.basic.Text({
+                position: { x: (cellView as any).model.position().x + 26 - offset, y: (cellView as any).model.position().y + 22 },
+                size: { width: tokenWidth, height: 15 },
+                attrs: {
+                  text: {
+                    text: (cellView as any).model.get('tokens').toString(),
+                    'pointer-events': 'none',
+                    'font-size': 18,
+                    'text-anchor': 'middle',
+                    'ref-x': '50%',
+                    'ref-y': 0.5,
+                    'y-alignment': 'middle',
+                    'x-alignment': 'middle'
+                  }
+                },
+                place: (cellView as any).model.get('id'),
+                locked: true
+              });
+
+              this.graph.addCell(tokensText);
+              (cellView as any).model.on('change:position', () => {
+                tokensText.position(
+                  (cellView as any).model.position().x + 26 - offset,
+                  (cellView as any).model.position().y + 22
+                );
+              });
+
+              // const circle = new joint.shapes.basic.Circle({
+              //   position: { x: (cellView as any).model.position().x, y: (cellView as any).model.position().y },
+              //   size: { width: 25, height: 25 },
+              //   attrs: {
+              //     circle: {
+              //       fill: 'blue',
+              //       'pointer-events': 'none',
+              //       r: 20
+              //     }
+              //   }
+              // });
+              // this.graph.addCell(circle);
+              // (cellView as any).model.on('change:position', () => {
+              //   circle.position(
+              //     (cellView as any).model.position().x,
+              //     (cellView as any).model.position().y
+              //   );
+              // });
+            }
+          }
+          if ((cellView as any).model.get('type') === 'pn.Transition') {
+            if (widthInput.value === '') {
+              widthInput.value = '20';
+            }
+            if (heightInput.value === '') {
+              heightInput.value = '60';
+            }
+            if (widthInput.value < 10) {
+              widthInput.value = '10';
+            }
+            if (heightInput.value < 10) {
+              heightInput.value = '10';
+            }
+            (cellView as any).model.attr('rect/width', widthInput.value);
+            (cellView as any).model.attr('rect/height', heightInput.value);
+          }
+          if ((cellView as any).model.get('type') === 'pn.Link') {
+            const link = new joint.shapes.pn.Link({
+              source: { id: (cellView as any).model.attributes.source.id },
+              target: { id: (cellView as any).model.attributes.target.id },
+              attrs: {
+                '.marker-target': { display: 'none' },
+                '.marker-source': { display: 'none' },
+                '.link-tools': { display: 'none' },
+                '.connection': { stroke: 'black', 'pointer-events': 'none' }
+              },
+              weight: weightInput.value,
+              selected: false
+            });
+
+            this.graph.addCell(link);
+
+            const distance = 18 + (4 * weightInput.value.toString().length);
+
+            link.appendLabel({
+              attrs: {
+                text: {
+                  text: weightInput.value,
+                  'pointer-events': 'none',
+                  'font-size': 20,
+                  'font-weight': 'bold',
+                  fill: 'black',
+                  stroke: 'white',
+                  'stroke-width': 1
+                },
+                rect: {
+                  fill: 'white',
+                  'fill-opacity': 0,
+                  stroke: 'none',
+                  'pointer-events': 'none'
+                }
+              },
+              position: {
+                distance: -distance
+              }
+            });
+
+            link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
+            link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
+            (cellView as any).model.remove();
+          }
+          editWindow.remove();
+          this.contextShow = false;
+        };
+
+        const cancelButton = document.createElement('button');
+        cancelButton.innerHTML = 'Cancel';
+        cancelButton.onclick = () => {
+          editWindow.remove();
+          this.contextShow = false;
+        };
+
+        paper.on('blank:pointerdown', (evt) => {
+          editWindow.remove();
+          this.contextShow = false;
+        });
+
+        paper.on('cell:pointerdown', (evt) => {
+          editWindow.remove();
+          this.contextShow = false;
+        });
+
+        paper.on('cell:contextmenu', (cellView, evt) => {
+          editWindow.remove();
+        });
+
+        if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition') {
+          nameDiv.appendChild(textName);
+          nameDiv.appendChild(nameInput);
+          editWindow.appendChild(nameDiv);
+        }
+
+        if ((cellView as any).model.get('type') === 'pn.Place') {
+          tokenDiv.appendChild(textToken);
+          tokenDiv.appendChild(tokenInput);
+          editWindow.appendChild(tokenDiv);
+
+          sizeDiv.appendChild(textSize);
+          sizeDiv.appendChild(sizeInput);
+          editWindow.appendChild(sizeDiv);
+        }
+
+        if ((cellView as any).model.get('type') === 'pn.Transition') {
+          widthDiv.appendChild(textWidth);
+          widthDiv.appendChild(widthInput);
+          editWindow.appendChild(widthDiv);
+
+          heightDiv.appendChild(textHeight);
+          heightDiv.appendChild(heightInput);
+          editWindow.appendChild(heightDiv);
+        }
+
+        if ((cellView as any).model.get('type') === 'pn.Link') {
+          weightDiv.appendChild(textWeight);
+          weightDiv.appendChild(weightInput);
+          editWindow.appendChild(weightDiv);
+        }
+
+        editWindow.appendChild(saveButton);
+        editWindow.appendChild(cancelButton);
+
+        (container as any).appendChild(editWindow);
       }
     });
 
@@ -653,7 +1217,6 @@ export default defineComponent({
                     attrs: {
                       text: {
                         text: element.get('tokens').toString(),
-                        'pointer-events': 'none',
                         'font-size': 18,
                         'text-anchor': 'middle',
                         'ref-x': '50%',
@@ -687,6 +1250,7 @@ export default defineComponent({
                     height: 60
                   }
                 },
+                id: modelState.cells[i].id,
                 selected: false
               });
 
@@ -694,147 +1258,54 @@ export default defineComponent({
 
               transition.attr('rect/width', parseInt(modelState.cells[i].attrs.rect.width));
               transition.attr('rect/height', parseInt(modelState.cells[i].attrs.rect.height));
+            } else if (modelState.cells[i].type === 'pn.Link') {
+              const link = new joint.shapes.pn.Link({
+                source: { id: modelState.cells[i].source.id },
+                target: { id: modelState.cells[i].target.id },
+                id: modelState.cells[i].id,
+                attrs: {
+                  '.marker-target': { display: 'none', style: { 'pointer-events': 'none' } },
+                  '.marker-source': { display: 'none', style: { 'pointer-events': 'none' } },
+                  '.link-tools': { display: 'none' },
+                  '.connection': { stroke: 'black', 'pointer-events': 'none' }
+                },
+                weight: modelState.cells[i].weight,
+                selected: false
+              });
+              this.graph.addCell(link);
+
+              console.log();
+
+              const distance = 18 + (4 * modelState.cells[i].labels[0].attrs.text.text.toString().length);
+
+              link.appendLabel({
+                attrs: {
+                  text: {
+                    text: modelState.cells[i].labels[0].attrs.text.text,
+                    'pointer-events': 'none',
+                    'font-size': 20,
+                    'font-weight': 'bold',
+                    fill: 'black',
+                    stroke: 'white',
+                    'stroke-width': 1
+                  },
+                  rect: {
+                    fill: 'white',
+                    'fill-opacity': 0,
+                    stroke: 'none',
+                    'pointer-events': 'none'
+                  }
+                },
+                position: {
+                  distance: -distance
+                }
+              });
+
+              link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
+              link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
             }
           }
         }
-      }
-    });
-
-    paper.on('cell:contextmenu', (cellView, evt) => {
-      evt.preventDefault();
-
-      if ((cellView as any).model.get('type') === 'pn.Place') {
-        this.contextShow = true;
-        const editWindow = document.createElement('div');
-        const nameDiv = document.createElement('div');
-        const tokenDiv = document.createElement('div');
-        const sizeDiv = document.createElement('div');
-        editWindow.classList.add('editElements');
-        editWindow.style.position = 'absolute';
-        editWindow.style.left = evt.pageX + 'px';
-        editWindow.style.top = evt.pageY + 'px';
-        editWindow.style.background = 'white';
-        editWindow.style.border = '1px solid black';
-        editWindow.style.borderRadius = '0.75rem';
-        editWindow.style.padding = '10px';
-
-        const nameInput = document.createElement('input');
-        nameInput.type = 'text';
-        nameInput.value = (cellView as any).model.get('attrs')['.label'].text;
-
-        const textName = document.createElement('p');
-        textName.innerHTML = 'Nazwa';
-
-        const tokenInput = document.createElement('input');
-        tokenInput.type = 'number';
-        tokenInput.value = (cellView as any).model.get('tokens');
-
-        const textToken = document.createElement('p');
-        textToken.innerHTML = 'Tokeny';
-
-        const sizeInput = document.createElement('input');
-        sizeInput.type = 'text';
-        sizeInput.value = (cellView as any).model.get('attrs').circle.r;
-
-        const textSize = document.createElement('p');
-        textSize.innerHTML = 'Rozmiar';
-
-        const saveButton = document.createElement('button');
-        saveButton.innerHTML = 'Save';
-        saveButton.onclick = () => {
-          const lastStep = this.graph.toJSON();
-          modelState = lastStep;
-          (cellView as any).model.attr('.label/text', nameInput.value);
-          (cellView as any).model.attr('circle/r', sizeInput.value);
-          (cellView as any).model.set('tokens', tokenInput.value);
-          if (parseInt(tokenInput.value) === 0) {
-            this.graph.getCells().forEach((element: any) => {
-              if (element.attributes.place === (cellView as any).model.get('id')) {
-                element.remove();
-              }
-            });
-          }
-
-          if (parseInt(tokenInput.value) > 0 && tokenInput.value.length <= 4) {
-            this.graph.getCells().forEach((element: any) => {
-              if (element.attributes.place === (cellView as any).model.get('id')) {
-                element.remove();
-              }
-            });
-            const tokens = (cellView as any).model.get('tokens');
-
-            let offset = 0;
-            let tokenWidth = 9;
-
-            for (let i = 1; i < tokens.toString().length; i++) {
-              offset += 4;
-              tokenWidth += 9;
-            }
-
-            const tokensText = new joint.shapes.basic.Text({
-              position: { x: (cellView as any).model.position().x + 26 - offset, y: (cellView as any).model.position().y + 22 },
-              size: { width: tokenWidth, height: 15 },
-              attrs: {
-                text: {
-                  text: (cellView as any).model.get('tokens').toString(),
-                  'pointer-events': 'none',
-                  'font-size': 18,
-                  'text-anchor': 'middle',
-                  'ref-x': '50%',
-                  'ref-y': 0.5,
-                  'y-alignment': 'middle',
-                  'x-alignment': 'middle'
-                }
-              },
-              place: (cellView as any).model.get('id'),
-              locked: true
-            });
-
-            this.graph.addCell(tokensText);
-            (cellView as any).model.on('change:position', () => {
-              tokensText.position(
-                (cellView as any).model.position().x + 26 - offset,
-                (cellView as any).model.position().y + 22
-              );
-            });
-          }
-          editWindow.remove();
-          this.contextShow = false;
-        };
-
-        const cancelButton = document.createElement('button');
-        cancelButton.innerHTML = 'Cancel';
-        cancelButton.onclick = () => {
-          editWindow.remove();
-          this.contextShow = false;
-        };
-
-        paper.on('blank:pointerdown', (evt) => {
-          editWindow.remove();
-          this.contextShow = false;
-        });
-
-        paper.on('cell:pointerdown', (evt) => {
-          editWindow.remove();
-          this.contextShow = false;
-        });
-
-        nameDiv.appendChild(textName);
-        nameDiv.appendChild(nameInput);
-        editWindow.appendChild(nameDiv);
-
-        tokenDiv.appendChild(textToken);
-        tokenDiv.appendChild(tokenInput);
-        editWindow.appendChild(tokenDiv);
-
-        sizeDiv.appendChild(textSize);
-        sizeDiv.appendChild(sizeInput);
-        editWindow.appendChild(sizeDiv);
-
-        editWindow.appendChild(saveButton);
-        editWindow.appendChild(cancelButton);
-
-        (container as any).appendChild(editWindow);
       }
     });
 
