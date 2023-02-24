@@ -7,21 +7,10 @@
         <span v-if='checkIfEdited()' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>Edytowanie sieci: {{ this.saveResult.saveName }} <br> Użytkownika: {{ this.editedSaveUserEmail }} </span>
         <span v-if='checkIfExampleEdited()' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>Edytowanie przykładowej sieci: {{ this.exampleEditResult.netName }}</span>
       </div>
-      <div class="flex items-center petri-nav w-2/12 select-none justify-center">
-        <button class="border-2 border-black rounded-bl-xl border-r-0 rounded-tl-xl p-1 items-center" v-on:click="addToken(); addConnectionWeight()">
-          <PlusIcon class="inline-block align-middle" />
-        </button>
-        <label class='select-none'>
-          <input class="border-2 border-black items-center text-center pointer-events-none w-12" :value="this.elements[this.current_target].name" disabled>
-        </label>
-        <button class="border-2 border-black border-l-0 rounded-br-xl rounded-tr-xl p-1 items-center" v-on:click="substractToken(); substractConnectionWeight()">
-          <MinusIcon class="inline-block align-middle" />
-        </button>
-      </div>
       <div class="flex ml-4 items-center petri-nav">
         <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center" @click='run(); this.running = true;' :disabled='this.running'>
-          <RunIcon class="inline-block align-middle" />
-          <span class="inline-block align-middle select-none">Run</span>
+          <RunIcon class="inline-block align-middle" :disabled='this.running' />
+          <span class="inline-block align-middle select-none" :disabled='this.running'>Run</span>
         </button>
         <button class="border-2 border-black border-l-0 rounded-br-xl rounded-tr-xl p-2 items-center" @click='stop()'>
           <StopIcon class="inline-block align-middle" />
@@ -50,58 +39,6 @@
   </div>
   <div class="mx-8 my-4 border-2 border-black rounded-xl h-4/5 paper-container">
     <div ref="petriEditor" class='rounded-xl petriEditor'></div>
-    <!-- <svg ref="box" class="bg-gray-300 rounded-xl box" height="100%" width="100%" xmlns="http://www.w3.org/2000/svg" @mouseup='endDrag()' @mouseenter="endDrag()">
-      <defs>
-        <marker id="mkrArrow" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-          <polygon points="0 0, 10 3.5, 0 7" />
-        </marker>
-      </defs>
-      <template v-for="(child, index) in children" :key="child.name">
-        <component v-if='this.elements[index+1].name.substring(1,2) == "C"' :id='this.elements[index+1].name' :is="child"
-          :stroke="selectedComponent(index+1)"
-          :cx="this.elements[index+1].x" :cy="this.elements[index+1].y"
-          @start-drag="startDrag(index+1)" @end-drag="endDrag" @mouseover="setHoveredID(index+1)" @mouseleave="setHoveredID(0)">
-        </component>
-
-        <component v-if='this.elements[index+1].name.substring(1,2) == "T"' :id='this.elements[index+1].name' :is="child"
-          :stroke="selectedComponent(index+1)"
-          :x="this.elements[index+1].x" :y="this.elements[index+1].y"
-          :width="this.transition_width" :height="this.transition_height"
-          @start-drag="startDrag(index+1)" @end-drag="endDrag()" @mouseover="setHoveredID(index+1)" @mouseleave="setHoveredID(0)">
-        </component>
-
-        <component v-if='this.elements[index+1].name.substring(1,2) == "A"' :id='this.elements[index+1].name' :is="child"
-          @click='selectConnection(index+1)'
-          :stroke="selectedComponent(index+1)"
-          :x1="this.elements[findFirstConnection(this.elements[index+1].name)].x + offset(this.elements[findFirstConnection(this.elements[index+1].name)].name, this.elements[findSecondConnection(this.elements[index+1].name)].x, this.elements[findFirstConnection(this.elements[index+1].name)].x, 'x')"
-          :y1="this.elements[findFirstConnection(this.elements[index+1].name)].y + offset(this.elements[findFirstConnection(this.elements[index+1].name)].name, this.elements[findSecondConnection(this.elements[index+1].name)].y, this.elements[findFirstConnection(this.elements[index+1].name)].y, 'y')"
-          :x2="this.elements[findSecondConnection(this.elements[index+1].name)].x - offsetX(this.elements[findSecondConnection(this.elements[index+1].name)].x, this.elements[findFirstConnection(this.elements[index+1].name)].x, this.elements[findSecondConnection(this.elements[index+1].name)].name)"
-          :y2="this.elements[findSecondConnection(this.elements[index+1].name)].y - offsetY(this.elements[findSecondConnection(this.elements[index+1].name)].y, this.elements[findFirstConnection(this.elements[index+1].name)].y, this.elements[findSecondConnection(this.elements[index+1].name)].name)">
-        </component>
-
-        <component v-if='this.elements[index+1].name.substring(1,2) == "E"' :id='this.elements[index+1].name' :is="child"
-          :cx="this.elements[findCircle(this.elements[index+1].name)].x" :cy="this.elements[findCircle(this.elements[index+1].name)].y"
-          @start-drag="startDrag(findCircle(this.elements[index+1].name))" @end-drag="endDrag" @mouseover="setHoveredID(findCircle(this.elements[index+1].name))" @mouseleave="setHoveredID(0)">
-        </component>
-
-        <component v-if='this.elements[index+1].name.substring(1,2) == "L"' :id='this.elements[index+1].name' :is="child"
-          v-text="findToken(this.elements[index].name)"
-          :x="this.elements[findCircle(this.elements[index].name)].x + textOffset(findToken(this.elements[index].name))" :y="this.elements[findCircle(this.elements[index].name)].y - 15"
-          @mouseover="setHoveredID(findCircle(this.elements[index].name))" @mouseleave="setHoveredID(0)">
-        </component>
-
-        <component v-if='this.elements[index+1].name.substring(1,2) == "W"' :id='this.elements[index+1].name' :is="child"
-          v-text="findConnectionText(this.elements[index+1].name)"
-          :x="this.elements[findFirstConnection(findConnection(this.elements[index+1].name))].x - ((this.elements[findFirstConnection(findConnection(this.elements[index+1].name))].x - this.elements[findSecondConnection(findConnection(this.elements[index+1].name))].x) / 2)"
-          :y="this.elements[findFirstConnection(findConnection(this.elements[index+1].name))].y - ((this.elements[findFirstConnection(findConnection(this.elements[index+1].name))].y - this.elements[findSecondConnection(findConnection(this.elements[index+1].name))].y) / 2)"
-          @mouseover="setHoveredID(findConnection(this.elements[index+1].name))" @mouseleave="setHoveredID(0)">
-        </component>
-      </template>
-
-      <template v-for="(animate) in animations" :key="animate">
-        <component :is="animate" />
-      </template>
-    </svg> -->
   </div>
   <div class="flex w-full h-16 items-center justify-center">
     <div class="flex items-center petri-nav">
@@ -127,7 +64,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, markRaw } from 'vue';
+import Vue, { defineComponent, markRaw } from 'vue';
 import CircleIcon from 'vue-material-design-icons/CircleOutline.vue';
 import SquareIcon from 'vue-material-design-icons/SquareOutline.vue';
 import RemoveIcon from 'vue-material-design-icons/Close.vue';
@@ -137,8 +74,6 @@ import StopIcon from 'vue-material-design-icons/Stop.vue';
 import ImportIcon from 'vue-material-design-icons/ArrowBottomRight.vue';
 import ExportIcon from 'vue-material-design-icons/ArrowTopRight.vue';
 import SaveIcon from 'vue-material-design-icons/ContentSaveAll.vue';
-import PlusIcon from 'vue-material-design-icons/Plus.vue';
-import MinusIcon from 'vue-material-design-icons/Minus.vue';
 import CheckNetIcon from 'vue-material-design-icons/CheckNetwork.vue';
 import SaveNetServices, { ISaveNet } from '@/services/SaveNetService';
 import Swal from 'sweetalert2';
@@ -148,42 +83,7 @@ import LoginServices, { ILogin } from '@/services/LoginService';
 import ExampleNetServices, { IExampleNet } from '@/services/ExampleNetService';
 import SimulationServices, { ISimulation } from '@/services/SimulationService';
 import * as joint from 'jointjs';
-
-const Circle = markRaw({
-  template: `
-    <circle class="element" r="40" stroke-width="2" fill="#ffe6ee" @mousedown="$emit('start-drag')" @mouseup="$emit('end-drag')"/>
-  `
-});
-
-const SmallCircle = markRaw({
-  template: `
-    <circle class="element" r="10" fill="black" @mousedown="$emit('start-drag')" @mouseup="$emit('end-drag')"/>
-  `
-});
-
-const Square = markRaw({
-  template: `
-    <rect class="element" stroke-width="2" fill="rgb(0,0,255)" @mousedown="$emit('start-drag')" @mouseup="$emit('end-drag')"/>
-  `
-});
-
-const Connection = markRaw({
-  template: `
-    <line class="element" stroke-width="3" marker-end="url(#mkrArrow)" fill="rgb(0,0,255)"/>
-  `
-});
-
-const TokenText = markRaw({
-  template: `
-    <text class="fill-black text-center select-none" disabled></text>
-  `
-});
-
-const WeightText = markRaw({
-  template: `
-    <text class="text-center select-none" fill="rgb(255,87,51)" disabled></text>
-  `
-});
+import _ from 'lodash';
 
 const placeSettings = {
   circle: {
@@ -213,8 +113,6 @@ export default defineComponent({
     ImportIcon,
     ExportIcon,
     SaveIcon,
-    PlusIcon,
-    MinusIcon,
     CheckNetIcon
   },
   data() {
@@ -222,34 +120,12 @@ export default defineComponent({
       paper: null as any,
       graph: null as any,
       contextShow: false,
-      pn: null,
       selectedElement: '',
-      selectedLink: null,
-      mode: 'pointer',
-      commandKeyDown: false,
       placeCounter: 0,
       transitionCounter: 0,
-      elements: [
-        {
-          name: '',
-          x: 100,
-          y: 100,
-          x2: 0,
-          y2: 0
-        }
-      ],
-      tokens: [] as any,
-      connections: [] as any,
-      connection_weight: [] as any,
-      connection_edit: false,
       current_connection: null as any,
       current_connections: [] as any,
       ctrl_pressed: false,
-      current_target: 0,
-      hovered_target: 0,
-      transition_width: 30,
-      transition_height: 60,
-      children: [] as any,
       animations: [] as any,
       counter: 0,
       dest: null as any,
@@ -276,23 +152,17 @@ export default defineComponent({
 
     async simulationCounter() {
       if (this.simulationCounter === 1) {
-        this.beforeSimulation.elements.splice(0);
-        this.beforeSimulation.connections.splice(0);
-        this.beforeSimulation.tokens.splice(0);
-        this.beforeSimulation.connectionWeights.splice(0);
-        this.elements.slice(1).forEach((data) => {
-          this.beforeSimulation.elements.push(data);
-        });
-        this.connections.forEach((data: any) => {
-          this.beforeSimulation.connections.push(data);
-        });
-        this.tokens.forEach((data: any) => {
-          this.beforeSimulation.tokens.push(data);
-        });
-        this.connection_weight.forEach((data: any) => {
-          this.beforeSimulation.connectionWeights.push(data);
-        });
+        const elements = [] as any;
+        const connections = [] as any;
+        this.getGraphData(elements, connections);
+
+        this.beforeSimulation.elements = elements;
+        this.beforeSimulation.connections = connections;
       }
+    },
+
+    running() {
+      this.updatePaperInteractivity();
     }
   },
 
@@ -301,9 +171,9 @@ export default defineComponent({
 
     this.graph = new joint.dia.Graph();
 
-    let modelState: any;
+    const modelStates = [] as any;
 
-    const paper = new joint.dia.Paper({
+    this.paper = new joint.dia.Paper({
       el: container,
       model: this.graph,
       width: '100%',
@@ -325,7 +195,7 @@ export default defineComponent({
 
     let currentScale = 1;
 
-    paper.on('blank:mousewheel', function(event: MouseEvent, x: number, y: number, delta: number) {
+    (this.paper as any).on('blank:mousewheel', (event: MouseEvent, x: number, y: number, delta: number) => {
       event.preventDefault();
       const direction = delta > 0 ? 1 : -1;
       const increment = 0.05;
@@ -335,22 +205,24 @@ export default defineComponent({
       const newScale = currentScale + zoomLevel;
       if (newScale >= minZoom && newScale <= maxZoom) {
         currentScale = newScale;
-        paper.scale(newScale, newScale);
+        this.paper.scale(newScale, newScale);
       }
     });
+
+    this.updatePaperInteractivity();
 
     let rect: any;
 
     let startX: any, startY: any;
     let moveX: any, moveY: any;
 
-    paper.on('cell:pointerdown', (cellView: any, event, x, y) => {
+    (this.paper as any).on('cell:pointerdown', (cellView: any, event: any, x: any, y: any) => {
       if (!this.ctrl_pressed) {
         if (cellView.model.attributes.type !== 'pn.Link') {
           startX = cellView.model.get('position').x;
           startY = cellView.model.get('position').y;
           const lastStep = this.graph.toJSON();
-          modelState = lastStep;
+          modelStates.push(lastStep);
         }
 
         if (!cellView.model.attributes.selected) {
@@ -407,7 +279,7 @@ export default defineComponent({
           });
 
           const lastStep = this.graph.toJSON();
-          modelState = lastStep;
+          modelStates.push(lastStep);
           this.graph.addCell(link);
 
           link.appendLabel({
@@ -424,8 +296,7 @@ export default defineComponent({
               rect: {
                 fill: 'white',
                 'fill-opacity': 0,
-                stroke: 'none',
-                'pointer-events': 'none'
+                stroke: 'none'
               }
             },
             position: {
@@ -465,7 +336,7 @@ export default defineComponent({
             });
 
             const lastStep = this.graph.toJSON();
-            modelState = lastStep;
+            modelStates.push(lastStep);
             this.graph.addCell(link);
 
             link.appendLabel({
@@ -482,8 +353,7 @@ export default defineComponent({
                 rect: {
                   fill: 'white',
                   'fill-opacity': 0,
-                  stroke: 'none',
-                  'pointer-events': 'none'
+                  stroke: 'none'
                 }
               },
               position: {
@@ -497,7 +367,7 @@ export default defineComponent({
             this.current_connection = link.id;
           } else {
             const lastStep = this.graph.toJSON();
-            modelState = lastStep;
+            modelStates.push(lastStep);
             this.graph.getCells().forEach((element: any) => {
               if ((element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition') && element.attributes.selected) {
                 const link = new joint.shapes.pn.Link({
@@ -529,8 +399,7 @@ export default defineComponent({
                     rect: {
                       fill: 'white',
                       'fill-opacity': 0,
-                      stroke: 'none',
-                      'pointer-events': 'none'
+                      stroke: 'none'
                     }
                   },
                   position: {
@@ -549,14 +418,14 @@ export default defineComponent({
       }
     });
 
-    paper.on('blank:pointerdown', (evt: any, x: number, y: number) => {
+    (this.paper as any).on('blank:pointerdown', (evt: any, x: number, y: number) => {
       if (this.selectedElement === 'place') {
         const lastStep = this.graph.toJSON();
-        modelState = lastStep;
+        modelStates.push(lastStep);
         this.addPlace(x, y);
       } else if (this.selectedElement === 'transition') {
         const lastStep = this.graph.toJSON();
-        modelState = lastStep;
+        modelStates.push(lastStep);
         this.addTransition(x, y);
       } else if (this.selectedElement === '') {
         startPoint = { x, y };
@@ -582,7 +451,7 @@ export default defineComponent({
 
         this.graph.addCell(rect);
 
-        paper.on('blank:pointermove', (event, x, y) => {
+        (this.paper as any).on('blank:pointermove', (event: any, x: any, y: any) => {
           endPoint = { x, y };
 
           (rect as any).set('size', {
@@ -598,7 +467,7 @@ export default defineComponent({
       }
     });
 
-    paper.on('cell:pointermove', (cellView: any, event, x, y) => {
+    (this.paper as any).on('cell:pointermove', (cellView: any, event: any, x: any, y: any) => {
       if (cellView.model.attributes.type !== 'pn.Link') {
         if (!this.ctrl_pressed) {
           if (cellView.model.attributes.selected) {
@@ -629,7 +498,7 @@ export default defineComponent({
       }
     });
 
-    paper.on('cell:pointerup', (cellView: any, event, x, y) => {
+    (this.paper as any).on('cell:pointerup', (cellView: any, event: any, x: any, y: any) => {
       if (this.selectedElement === 'delete') {
         this.graph.getCells().forEach((element: any) => {
           if (cellView.model.id === element.attributes.place) {
@@ -640,12 +509,13 @@ export default defineComponent({
       }
       if (this.current_connections.length === 0) {
         if (this.current_connection !== null) {
-          const paperOffset = (paper as any).el.getBoundingClientRect();
+          const paperOffset = (this.paper as any).el.getBoundingClientRect();
           const link = this.graph.getCell(this.current_connection);
           let found = false;
           this.graph.getCells().forEach((element: any) => {
+            const point = this.paper.pageToLocalPoint({ x: event.clientX, y: event.clientY });
             const bbox = element.getBBox();
-            if ((event.clientX - paperOffset.left) >= bbox.x && (event.clientX - paperOffset.left) <= bbox.x + bbox.width && (event.clientY - paperOffset.top) >= bbox.y && (event.clientY - paperOffset.top) <= bbox.y + bbox.height) {
+            if (point.x >= bbox.x && point.x <= bbox.x + bbox.width && point.y >= bbox.y && point.y <= bbox.y + bbox.height) {
               if (element instanceof joint.shapes.pn.Place || element instanceof joint.shapes.pn.Transition) {
                 found = true;
                 if (element.id === cellView.model.id) {
@@ -675,13 +545,14 @@ export default defineComponent({
           }
         }
       } else if (this.current_connections.length > 0) {
-        const paperOffset = (paper as any).el.getBoundingClientRect();
+        const paperOffset = (this.paper as any).el.getBoundingClientRect();
         this.current_connections.forEach((place: any) => {
           const link = this.graph.getCell(place);
           let found = false;
           this.graph.getCells().forEach((element: any) => {
+            const point = this.paper.pageToLocalPoint({ x: event.clientX, y: event.clientY });
             const bbox = element.getBBox();
-            if ((event.clientX - paperOffset.left) >= bbox.x && (event.clientX - paperOffset.left) <= bbox.x + bbox.width && (event.clientY - paperOffset.top) >= bbox.y && (event.clientY - paperOffset.top) <= bbox.y + bbox.height) {
+            if (point.x >= bbox.x && point.x <= bbox.x + bbox.width && point.y >= bbox.y && point.y <= bbox.y + bbox.height) {
               if (element instanceof joint.shapes.pn.Place || element instanceof joint.shapes.pn.Transition) {
                 found = true;
                 if (element.id === cellView.model.id) {
@@ -692,12 +563,10 @@ export default defineComponent({
                   this.graph.getCells().forEach((exist: any) => {
                     if (exist.attributes.type === 'pn.Link') {
                       if (exist.attributes.source.id === place && exist.attributes.target.id === element.id) {
-                        console.log('jd');
                         link.remove();
                       }
                     }
                   });
-                  console.log(bbox);
                   link.prop('target', { id: element.id });
                 }
               }
@@ -711,7 +580,7 @@ export default defineComponent({
       }
     });
 
-    paper.on('blank:pointerup', () => {
+    (this.paper as any).on('blank:pointerup', () => {
       if (this.selectedElement === '') {
         this.graph.getCells().forEach((element: any) => {
           element.attributes.selected = false;
@@ -766,7 +635,7 @@ export default defineComponent({
       }
     });
 
-    paper.on('cell:contextmenu', (cellView, evt) => {
+    (this.paper as any).on('cell:contextmenu', (cellView: any, evt: any) => {
       evt.preventDefault();
       this.contextShow = true;
 
@@ -908,11 +777,11 @@ export default defineComponent({
         saveButton.innerHTML = 'Save';
         saveButton.onclick = () => {
           const lastStep = this.graph.toJSON();
-          modelState = lastStep;
+          modelStates.push(lastStep);
           if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition') {
             let nameExist = false;
             this.graph.getCells().forEach((element: any) => {
-              if (element.attributes.type !== 'pn.Link' && element.attributes.type !== 'basic.Text') {
+              if (element.attributes.type !== 'pn.Link' && element.attributes.type !== 'basic.Circle') {
                 if (!element.attributes.attrs['.label']) {
                   if ((cellView as any).model.id !== element.id && element.attributes.attrs['.label'].text === nameInput.value) {
                     nameExist = true;
@@ -950,61 +819,45 @@ export default defineComponent({
                   element.remove();
                 }
               });
-              const tokens = (cellView as any).model.get('tokens');
 
-              let offset = 0;
-              let tokenWidth = 9;
+              let tokenText = (cellView as any).model.get('tokens').toString();
 
-              for (let i = 1; i < tokens.toString().length; i++) {
-                offset += 4;
-                tokenWidth += 9;
+              if (parseInt((cellView as any).model.get('tokens')) === 1) {
+                tokenText = '';
               }
 
-              const tokensText = new joint.shapes.basic.Text({
-                position: { x: (cellView as any).model.position().x + 26 - offset, y: (cellView as any).model.position().y + 22 },
-                size: { width: tokenWidth, height: 15 },
+              const circle = new joint.shapes.basic.Circle({
+                position: { x: (cellView as any).model.position().x, y: (cellView as any).model.position().y },
                 attrs: {
+                  circle: {
+                    attrs: {
+                      r: 20
+                    },
+                    fill: 'black',
+                    'pointer-events': 'none'
+                  },
                   text: {
-                    text: (cellView as any).model.get('tokens').toString(),
-                    'pointer-events': 'none',
-                    'font-size': 18,
+                    text: tokenText,
+                    'font-size': 16,
                     'text-anchor': 'middle',
-                    'ref-x': '50%',
-                    'ref-y': 0.5,
                     'y-alignment': 'middle',
-                    'x-alignment': 'middle'
+                    'pointer-events': 'none',
+                    fill: 'white'
                   }
                 },
+                'pointer-events': 'none',
                 place: (cellView as any).model.get('id'),
-                locked: true
+                locked: true,
+                interactive: false
               });
-
-              this.graph.addCell(tokensText);
+              this.graph.addCell(circle);
+              circle.attr('circle/r', parseInt((cellView as any).model.attributes.attrs.circle.r) / 2);
               (cellView as any).model.on('change:position', () => {
-                tokensText.position(
-                  (cellView as any).model.position().x + 26 - offset,
-                  (cellView as any).model.position().y + 22
+                circle.position(
+                  (cellView as any).model.position().x,
+                  (cellView as any).model.position().y
                 );
               });
-
-              // const circle = new joint.shapes.basic.Circle({
-              //   position: { x: (cellView as any).model.position().x, y: (cellView as any).model.position().y },
-              //   size: { width: 25, height: 25 },
-              //   attrs: {
-              //     circle: {
-              //       fill: 'blue',
-              //       'pointer-events': 'none',
-              //       r: 20
-              //     }
-              //   }
-              // });
-              // this.graph.addCell(circle);
-              // (cellView as any).model.on('change:position', () => {
-              //   circle.position(
-              //     (cellView as any).model.position().x,
-              //     (cellView as any).model.position().y
-              //   );
-              // });
             }
           }
           if ((cellView as any).model.get('type') === 'pn.Transition') {
@@ -1055,8 +908,7 @@ export default defineComponent({
                 rect: {
                   fill: 'white',
                   'fill-opacity': 0,
-                  stroke: 'none',
-                  'pointer-events': 'none'
+                  stroke: 'none'
                 }
               },
               position: {
@@ -1079,17 +931,17 @@ export default defineComponent({
           this.contextShow = false;
         };
 
-        paper.on('blank:pointerdown', (evt) => {
+        this.paper.on('blank:pointerdown', (evt: any) => {
           editWindow.remove();
           this.contextShow = false;
         });
 
-        paper.on('cell:pointerdown', (evt) => {
+        this.paper.on('cell:pointerdown', (evt: any) => {
           editWindow.remove();
           this.contextShow = false;
         });
 
-        paper.on('cell:contextmenu', (cellView, evt) => {
+        this.paper.on('cell:contextmenu', (cellView: any, evt: any) => {
           editWindow.remove();
         });
 
@@ -1133,176 +985,174 @@ export default defineComponent({
     });
 
     window.addEventListener('keydown', (evt: KeyboardEvent) => {
-      if (!this.contextShow) {
-        if (evt.key === '1') {
-          this.switchPlace();
-        }
-        if (evt.key === '2') {
-          this.switchTransition();
-        }
-        if (evt.key === '3') {
-          this.switchDelete();
-        }
-        if (evt.key === 'Delete') {
-          const lastStep = this.graph.toJSON();
-          modelState = lastStep;
-          this.graph.getCells().forEach((element: any) => {
-            if (typeof element !== 'undefined') {
-              if (element.attributes.selected) {
-                this.graph.getCells().forEach((text: any) => {
-                  if (element.id === text.attributes.place) {
-                    text.remove();
-                  }
-                });
-                element.remove();
-              }
-            }
-          });
-        }
-        if (evt.key === 'z' && evt.ctrlKey) {
-          if (this.graph.getCells().length > 0) {
-            if (this.graph.toJSON().cells.length > modelState.cells.length) {
-              if (this.graph.getLastCell().attributes.type === 'pn.Place') {
-                this.placeCounter--;
-              } else if (this.graph.getLastCell().attributes.type === 'pn.Transition') {
-                this.transitionCounter--;
-              }
-            } else {
-              if (this.graph.getLastCell().attributes.type === 'pn.Place') {
-                this.placeCounter++;
-              } else if (this.graph.getLastCell().attributes.type === 'pn.Transition') {
-                this.transitionCounter++;
-              }
-            }
+      if (!this.running) {
+        if (!this.contextShow) {
+          if (evt.key === '1') {
+            this.switchPlace();
           }
-          this.graph.clear();
-          for (let i = 0; i < modelState.cells.length; i++) {
-            if (modelState.cells[i].type === 'pn.Place') {
-              const place = new joint.shapes.pn.Place({
-                position: { x: modelState.cells[i].position.x, y: modelState.cells[i].position.y },
-                attrs: {
-                  '.label': { text: modelState.cells[i].attrs['.label'].text, 'ref-x': 0.5, 'ref-y': -15 },
-                  circle: {
-                    fill: modelState.cells[i].attrs.circle.fill,
-                    r: 20
-                  }
-                },
-                size: {
-                  width: modelState.cells[i].size.width,
-                  height: modelState.cells[i].size.height
-                },
-                selected: false,
-                tokens: modelState.cells[i].tokens,
-                id: modelState.cells[i].id
-              });
-
-              this.graph.addCell(place);
-              place.attr('circle/r', parseInt(modelState.cells[i].attrs.circle.r));
-            } else if (modelState.cells[i].type === 'basic.Text') {
-              this.graph.getCells().forEach((element: any) => {
-                if (element.attributes.id === modelState.cells[i].place) {
-                  const tokens = element.attributes.tokens;
-
-                  let offset = 0;
-                  let tokenWidth = 9;
-
-                  for (let i = 1; i < tokens.toString().length; i++) {
-                    offset += 4;
-                    tokenWidth += 9;
-                  }
-
-                  const tokensText = new joint.shapes.basic.Text({
-                    position: { x: element.attributes.position.x + 26 - offset, y: element.attributes.position.y + 22 },
-                    size: { width: tokenWidth, height: 15 },
+          if (evt.key === '2') {
+            this.switchTransition();
+          }
+          if (evt.key === '3') {
+            this.switchDelete();
+          }
+          if (evt.key === 'Delete') {
+            const lastStep = this.graph.toJSON();
+            modelStates.push(lastStep);
+            this.graph.getCells().forEach((element: any) => {
+              if (typeof element !== 'undefined') {
+                if (element.attributes.selected) {
+                  this.graph.getCells().forEach((text: any) => {
+                    if (element.id === text.attributes.place) {
+                      text.remove();
+                    }
+                  });
+                  element.remove();
+                }
+              }
+            });
+          }
+          if (evt.key === 'z' && evt.ctrlKey) {
+            let modelState: any;
+            if (this.graph.getCells().length > 0) {
+              modelState = modelStates.pop();
+              if (this.graph.toJSON().cells.length > modelState.cells.length) {
+                if (this.graph.getLastCell().attributes.type === 'pn.Place') {
+                  this.placeCounter--;
+                } else if (this.graph.getLastCell().attributes.type === 'pn.Transition') {
+                  this.transitionCounter--;
+                }
+              } else {
+                if (this.graph.getLastCell().attributes.type === 'pn.Place') {
+                  this.placeCounter++;
+                } else if (this.graph.getLastCell().attributes.type === 'pn.Transition') {
+                  this.transitionCounter++;
+                }
+              }
+              this.graph.clear();
+              for (let i = 0; i < modelState.cells.length; i++) {
+                if (modelState.cells[i].type === 'pn.Place') {
+                  const place = new joint.shapes.pn.Place({
+                    position: { x: modelState.cells[i].position.x, y: modelState.cells[i].position.y },
                     attrs: {
-                      text: {
-                        text: element.get('tokens').toString(),
-                        'font-size': 18,
-                        'text-anchor': 'middle',
-                        'ref-x': '50%',
-                        'ref-y': 0.5,
-                        'y-alignment': 'middle',
-                        'x-alignment': 'middle'
+                      '.label': { text: modelState.cells[i].attrs['.label'].text, 'ref-x': 0.5, 'ref-y': -15 },
+                      circle: {
+                        fill: modelState.cells[i].attrs.circle.fill,
+                        r: 20
                       }
                     },
-                    place: element.attributes.id,
-                    locked: true
+                    size: {
+                      width: modelState.cells[i].size.width,
+                      height: modelState.cells[i].size.height
+                    },
+                    selected: false,
+                    tokens: modelState.cells[i].tokens,
+                    id: modelState.cells[i].id
                   });
 
-                  this.graph.addCell(tokensText);
-                  element.on('change:position', () => {
-                    tokensText.position(
-                      element.attributes.position.x + 26 - offset,
-                      element.attributes.position.y + 22
-                    );
+                  this.graph.addCell(place);
+                  place.attr('circle/r', parseInt(modelState.cells[i].attrs.circle.r));
+                } else if (modelState.cells[i].type === 'basic.Circle') {
+                  this.graph.getCells().forEach((element: any) => {
+                    if (element.attributes.id === modelState.cells[i].place) {
+                      const circle = new joint.shapes.basic.Circle({
+                        position: { x: element.attributes.position.x, y: element.attributes.position.y },
+                        attrs: {
+                          circle: {
+                            attrs: {
+                              r: 20
+                            },
+                            fill: 'black',
+                            'pointer-events': 'none'
+                          },
+                          text: {
+                            text: element.get('tokens').toString(),
+                            'font-size': 18,
+                            'text-anchor': 'middle',
+                            'y-alignment': 'middle',
+                            'pointer-events': 'none',
+                            fill: 'white'
+                          }
+                        },
+                        'pointer-events': 'none',
+                        place: element.attributes.id,
+                        locked: true,
+                        interactive: false
+                      });
+                      this.graph.addCell(circle);
+                      circle.attr('circle/r', parseInt(element.attributes.attrs.circle.r) / 2);
+                      element.on('change:position', () => {
+                        circle.position(
+                          element.position().x,
+                          element.position().y
+                        );
+                      });
+                    }
                   });
+                } else if (modelState.cells[i].type === 'pn.Transition') {
+                  this.transitionCounter++;
+                  const transition = new joint.shapes.pn.Transition({
+                    position: { x: modelState.cells[i].position.x, y: modelState.cells[i].position.y },
+                    attrs: {
+                      '.label': { text: modelState.cells[i].attrs['.label'].text, 'ref-x': 0.5, 'ref-y': -15 },
+                      rect: {
+                        fill: '#ffffff',
+                        width: 20,
+                        height: 60
+                      }
+                    },
+                    id: modelState.cells[i].id,
+                    selected: false
+                  });
+
+                  this.graph.addCell(transition);
+
+                  transition.attr('rect/width', parseInt(modelState.cells[i].attrs.rect.width));
+                  transition.attr('rect/height', parseInt(modelState.cells[i].attrs.rect.height));
+                } else if (modelState.cells[i].type === 'pn.Link') {
+                  const link = new joint.shapes.pn.Link({
+                    source: { id: modelState.cells[i].source.id },
+                    target: { id: modelState.cells[i].target.id },
+                    id: modelState.cells[i].id,
+                    attrs: {
+                      '.marker-target': { display: 'none', style: { 'pointer-events': 'none' } },
+                      '.marker-source': { display: 'none', style: { 'pointer-events': 'none' } },
+                      '.link-tools': { display: 'none' },
+                      '.connection': { stroke: 'black', 'pointer-events': 'none' }
+                    },
+                    weight: modelState.cells[i].weight,
+                    selected: false
+                  });
+                  this.graph.addCell(link);
+
+                  const distance = 18 + (4 * modelState.cells[i].labels[0].attrs.text.text.toString().length);
+
+                  link.appendLabel({
+                    attrs: {
+                      text: {
+                        text: modelState.cells[i].labels[0].attrs.text.text,
+                        'pointer-events': 'none',
+                        'font-size': 20,
+                        'font-weight': 'bold',
+                        fill: 'black',
+                        stroke: 'white',
+                        'stroke-width': 1
+                      },
+                      rect: {
+                        fill: 'white',
+                        'fill-opacity': 0,
+                        stroke: 'none'
+                      }
+                    },
+                    position: {
+                      distance: -distance
+                    }
+                  });
+
+                  link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
+                  link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
                 }
-              });
-            } else if (modelState.cells[i].type === 'pn.Transition') {
-              this.transitionCounter++;
-              const transition = new joint.shapes.pn.Transition({
-                position: { x: modelState.cells[i].position.x, y: modelState.cells[i].position.y },
-                attrs: {
-                  '.label': { text: modelState.cells[i].attrs['.label'].text, 'ref-x': 0.5, 'ref-y': -15 },
-                  rect: {
-                    fill: '#ffffff',
-                    width: 20,
-                    height: 60
-                  }
-                },
-                id: modelState.cells[i].id,
-                selected: false
-              });
-
-              this.graph.addCell(transition);
-
-              transition.attr('rect/width', parseInt(modelState.cells[i].attrs.rect.width));
-              transition.attr('rect/height', parseInt(modelState.cells[i].attrs.rect.height));
-            } else if (modelState.cells[i].type === 'pn.Link') {
-              const link = new joint.shapes.pn.Link({
-                source: { id: modelState.cells[i].source.id },
-                target: { id: modelState.cells[i].target.id },
-                id: modelState.cells[i].id,
-                attrs: {
-                  '.marker-target': { display: 'none', style: { 'pointer-events': 'none' } },
-                  '.marker-source': { display: 'none', style: { 'pointer-events': 'none' } },
-                  '.link-tools': { display: 'none' },
-                  '.connection': { stroke: 'black', 'pointer-events': 'none' }
-                },
-                weight: modelState.cells[i].weight,
-                selected: false
-              });
-              this.graph.addCell(link);
-
-              console.log();
-
-              const distance = 18 + (4 * modelState.cells[i].labels[0].attrs.text.text.toString().length);
-
-              link.appendLabel({
-                attrs: {
-                  text: {
-                    text: modelState.cells[i].labels[0].attrs.text.text,
-                    'pointer-events': 'none',
-                    'font-size': 20,
-                    'font-weight': 'bold',
-                    fill: 'black',
-                    stroke: 'white',
-                    'stroke-width': 1
-                  },
-                  rect: {
-                    fill: 'white',
-                    'fill-opacity': 0,
-                    stroke: 'none',
-                    'pointer-events': 'none'
-                  }
-                },
-                position: {
-                  distance: -distance
-                }
-              });
-
-              link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
-              link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
+              }
             }
           }
         }
@@ -1311,20 +1161,19 @@ export default defineComponent({
 
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Control') {
-        paper.setInteractivity({ elementMove: false });
+        this.paper.setInteractivity(false);
         this.ctrl_pressed = true;
       }
     });
 
     document.addEventListener('keyup', (event) => {
       if (event.key === 'Control') {
-        paper.setInteractivity({ elementMove: true });
+        this.paper.setInteractivity(true);
         this.ctrl_pressed = false;
       }
     });
 
     if (history.state.redirectExport) {
-      console.log(history.state.redirectExport);
       this.redirectNetExport(history.state.redirectExport);
     }
 
@@ -1354,31 +1203,6 @@ export default defineComponent({
   },
 
   methods: {
-
-    switchPlace() {
-      if (this.selectedElement === 'place') {
-        this.selectedElement = '';
-      } else {
-        this.selectedElement = 'place';
-      }
-    },
-
-    switchTransition() {
-      if (this.selectedElement === 'transition') {
-        this.selectedElement = '';
-      } else {
-        this.selectedElement = 'transition';
-      }
-    },
-
-    switchDelete() {
-      if (this.selectedElement === 'delete') {
-        this.selectedElement = '';
-      } else {
-        this.selectedElement = 'delete';
-      }
-    },
-
     async getUser(): Promise<ILogin> {
       return await LoginServices.fetch();
     },
@@ -1445,50 +1269,74 @@ export default defineComponent({
     },
 
     async run() {
-      this.resultSimulation.elements = this.elements.slice(1);
-      this.resultSimulation.connections = this.connections;
-      this.resultSimulation.tokens = this.tokens;
-      this.resultSimulation.connectionWeights = this.connection_weight;
+      const elements = [] as any;
+      const connections = [] as any;
 
-      this.simulationCounter++;
+      await this.simulationCounter++;
+
+      this.getGraphData(elements, connections);
+      this.resultSimulation.elements = elements;
+      this.resultSimulation.connections = connections;
 
       await this.simulation(this.resultSimulation).then((data) => (this.resultSimulation = data));
 
-      console.log(this.resultSimulation);
-
       await this.netChangeSimulation(this.resultSimulation);
 
-      await this.checkIfNewToken();
+      let sourcePosition: any;
+      let targetPosition: any;
 
-      let animationCounter = 0;
+      let pathData: any;
 
-      await this.customTimeout(0.5);
+      this.resultSimulation.changes.forEach((ele: any) => {
+        this.graph.getCells().forEach((element: any) => {
+          if (element.attributes.type === 'pn.Link') {
+            if (element.getSourceElement().attributes.attrs['.label'].text === ele.split(' ')[0] &&
+                element.getTargetElement().attributes.attrs['.label'].text === ele.split(' ')[1]) {
+              sourcePosition = element.getSourcePoint();
+              targetPosition = element.getTargetPoint();
 
-      await this.resultSimulation.changes.forEach(async (data, i) => {
-        animationCounter++;
-        if (!data.includes('Added:')) {
-          const arc = data.split(' ');
-          let elementName = '';
-          this.connections.forEach((conn: any) => {
-            if (conn.ft === arc[0] && conn.st === arc[1]) {
-              elementName = conn.name;
+              const circle = new joint.shapes.basic.Circle({
+                position: { x: sourcePosition.x - 10, y: sourcePosition.y - 20 },
+                size: { width: 20, height: 20 },
+                attrs: {
+                  circle: { fill: 'black' }
+                },
+                simulation: true
+              });
+
+              this.graph.addCell(circle);
+
+              circle.transition('position/y', targetPosition.y - 5, {
+                duration: 500,
+                timingFunction: function(t) { return t * t; },
+                valueFunction: function(a, b) {
+                  return function(t) {
+                    return a + (b - a) * t;
+                  };
+                }
+              });
+
+              circle.transition('position/x', targetPosition.x - 5, {
+                duration: 500,
+                timingFunction: function(t) { return t * t; },
+                valueFunction: function(a, b) {
+                  return function(t) {
+                    return a + (b - a) * t;
+                  };
+                }
+              });
             }
-          });
-          this.elements.forEach((ele, i) => {
-            if (ele.name === elementName) {
-              const x1 = this.elements[this.findFirstConnection(this.elements[i].name)].x + this.offset(this.elements[this.findFirstConnection(this.elements[i].name)].name, this.elements[this.findSecondConnection(this.elements[i].name)].x, this.elements[this.findFirstConnection(this.elements[i].name)].x, 'x');
-              const y1 = this.elements[this.findFirstConnection(this.elements[i].name)].y + this.offset(this.elements[this.findFirstConnection(this.elements[i].name)].name, this.elements[this.findSecondConnection(this.elements[i].name)].y, this.elements[this.findFirstConnection(this.elements[i].name)].y, 'y');
-              const x2 = this.elements[this.findSecondConnection(this.elements[i].name)].x - this.offsetX(this.elements[this.findSecondConnection(this.elements[i].name)].x, this.elements[this.findFirstConnection(this.elements[i].name)].x, this.elements[this.findSecondConnection(this.elements[i].name)].name);
-              const y2 = this.elements[this.findSecondConnection(this.elements[i].name)].y - this.offsetY(this.elements[this.findSecondConnection(this.elements[i].name)].y, this.elements[this.findFirstConnection(this.elements[i].name)].y, this.elements[this.findSecondConnection(this.elements[i].name)].name);
-              this.addAnimation(animationCounter, x1, y1, x2, y2);
-            }
-          });
-        }
+          }
+        });
       });
 
-      await this.customTimeout(600);
+      await this.customTimeout(500);
 
-      this.animations.splice(0);
+      this.graph.getCells().forEach((element: any) => {
+        if (element.attributes.type === 'basic.Circle' && element.attributes.simulation) {
+          element.remove();
+        }
+      });
 
       await this.customTimeout(400);
 
@@ -1499,8 +1347,14 @@ export default defineComponent({
 
     async stop() {
       this.running = false;
-      this.animations.splice(0);
       this.netChangeSimulation(this.beforeSimulation);
+      this.simulationCounter = 0;
+
+      this.graph.getCells().forEach((element: any) => {
+        if (element.attributes.type === 'basic.Circle' && element.attributes.simulation) {
+          element.remove();
+        }
+      });
     },
 
     customTimeout(ms: number) {
@@ -1537,223 +1391,75 @@ export default defineComponent({
       (document.getElementById(animationId) as any).beginElement();
     },
 
-    checkNetAlert() {
-      this.resultSimulation.elements = this.elements.slice(1);
-      this.resultSimulation.connections = this.connections;
-      this.resultSimulation.tokens = this.tokens;
-      this.resultSimulation.connectionWeights = this.connection_weight;
-
-      this.checkNet(this.resultSimulation).then((data) => {
-        if (data) {
-          Swal.fire(
-            'Sprawdzenie!',
-            'Symulacja sieci zostanie wykonana!',
-            'success'
-          );
-        } else {
-          Swal.fire(
-            'Sprawdzenie!',
-            'Symulacja sieci nie wykona się!',
-            'error'
-          );
+    getGraphData(elements = [] as any, connections = [] as any) {
+      this.graph.getCells().forEach((element: any) => {
+        let weight = 0;
+        let tokens = 0;
+        let name = '';
+        let x = 0;
+        let y = 0;
+        let width = 0;
+        let height = 0;
+        let r = 0;
+        let source = '';
+        let target = '';
+        if (element.attributes.type === 'pn.Link') {
+          weight = parseInt(element.attributes.weight);
+          source = element.attributes.source.id;
+          target = element.attributes.target.id;
+        }
+        if (element.attributes.type === 'pn.Place') {
+          tokens = parseInt(element.attributes.tokens);
+          name = element.attributes.attrs['.label'].text;
+          x = element.attributes.position.x;
+          y = element.attributes.position.y;
+          r = parseInt(element.attributes.attrs.circle.r);
+        }
+        if (element.attributes.type === 'pn.Transition') {
+          name = element.attributes.attrs['.label'].text;
+          x = element.attributes.position.x;
+          y = element.attributes.position.y;
+          width = parseInt(element.attributes.attrs.rect.width);
+          height = parseInt(element.attributes.attrs.rect.height);
+        }
+        if (element.attributes.type !== 'basic.Circle') {
+          if (element.attributes.type !== 'pn.Link') {
+            elements.push({ name: name, type: element.attributes.type, x: x, y: y, weight: weight, tokens: tokens, id: element.attributes.id, r: r, width: width, height: height });
+          } else {
+            connections.push({ source: source, target: target, weight: weight });
+          }
         }
       });
     },
+
+    // checkNetAlert() {
+    //   this.resultSimulation.elements = this.elements.slice(1);
+    //   this.resultSimulation.connections = this.connections;
+    //   this.resultSimulation.tokens = this.tokens;
+    //   this.resultSimulation.connectionWeights = this.connection_weight;
+
+    //   this.checkNet(this.resultSimulation).then((data) => {
+    //     if (data) {
+    //       Swal.fire(
+    //         'Sprawdzenie!',
+    //         'Symulacja sieci zostanie wykonana!',
+    //         'success'
+    //       );
+    //     } else {
+    //       Swal.fire(
+    //         'Sprawdzenie!',
+    //         'Symulacja sieci nie wykona się!',
+    //         'error'
+    //       );
+    //     }
+    //   });
+    // },
 
     checkIfLogged() {
       if (localStorage.getItem('token') != null) {
         return true;
       }
       return false;
-    },
-
-    setHoveredID(index: number) {
-      this.hovered_target = index;
-    },
-
-    startDrag(index: number) {
-      if (!this.running) {
-        this.current_target = index;
-        if (this.ctrl_pressed) {
-          this.addConnection();
-          this.current_connection = this.elements[this.elements.length - 1].name;
-          this.connection_edit = true;
-          (this.$refs.box as any).addEventListener('mousemove', this.connection_drag);
-        } else {
-          (this.$refs.box as any).addEventListener('mousemove', this.drag);
-        }
-      }
-    },
-
-    selectConnection(index: number) {
-      this.current_target = index;
-    },
-
-    offset(type: string, offset1: number, offset2: number, position: string) {
-      if (type.substring(1, 2) === 'T') {
-        if (position === 'x') {
-          if (offset1 < offset2) {
-            return 0;
-          } else {
-            return 30;
-          }
-        } else {
-          if (offset1 < offset2) {
-            return 0;
-          } else {
-            return 60;
-          }
-        }
-      } else {
-        return 0;
-      }
-    },
-
-    offsetX(offset1: number, offset2: number, type: string) {
-      const roundOffset = Math.min(offset1, offset2) + (Math.max(offset1, offset2) - Math.min(offset1, offset2)) / 2;
-
-      let finalOffset = (roundOffset - offset2) - 7;
-
-      if (finalOffset > 20) {
-        finalOffset = 20;
-      }
-      if (finalOffset < -50) {
-        finalOffset = -50;
-      }
-      if (type.substring(1, 2) === 'T') {
-        return finalOffset;
-      } else if (type.substring(1, 2) === 'A') {
-        return 0;
-      } else {
-        if (offset1 < offset2) {
-          let circleOffset = -(roundOffset - offset1 - 40);
-
-          if (circleOffset < -40) {
-            circleOffset = -40;
-          }
-          return circleOffset;
-        } else {
-          let circleOffset = -(roundOffset - offset1 + 40);
-
-          if (circleOffset > 40) {
-            circleOffset = 40;
-          }
-          return circleOffset;
-        }
-      }
-    },
-
-    offsetY(offset1: number, offset2: number, type: string) {
-      const roundOffset = Math.min(offset1, offset2) + (Math.max(offset1, offset2) - Math.min(offset1, offset2)) / 2;
-      let finalOffset = (roundOffset - offset2) - 15;
-
-      if (finalOffset > 10) {
-        finalOffset = 10;
-      }
-      if (finalOffset < -70) {
-        finalOffset = -70;
-      }
-
-      if (type.substring(1, 2) === 'T') {
-        return finalOffset;
-      } else if (type.substring(1, 2) === 'A') {
-        return 0;
-      } else {
-        if (offset1 < offset2) {
-          let circleOffset = -(roundOffset - offset1 - 40);
-
-          if (circleOffset < -40) {
-            circleOffset = -40;
-          }
-          return circleOffset;
-        } else {
-          let circleOffset = -(roundOffset - offset1 + 40);
-
-          if (circleOffset > 40) {
-            circleOffset = 40;
-          }
-          return circleOffset;
-        }
-      }
-    },
-
-    textOffset(count: number) {
-      const countString = count.toString();
-      if (countString.length === 1) {
-        return -5;
-      } else {
-        return -10;
-      }
-    },
-
-    selectedComponent(index: number) {
-      if (this.current_target === index) {
-        return '#FF5733';
-      } else {
-        return '#000000';
-      }
-    },
-
-    connection_drag(event: any) {
-      if (!this.running) {
-        try {
-          this.elements[this.elements.length - 1].x = event.offsetX - 5;
-          this.elements[this.elements.length - 1].y = event.offsetY - 5;
-        } catch (error) {
-        }
-      }
-    },
-
-    drag(event: any) {
-      if (!this.running) {
-        const idx = this.current_target;
-        try {
-          if (event.target.nodeName === 'rect') {
-            this.elements[idx].x = event.offsetX - 15;
-            this.elements[idx].y = event.offsetY - 30;
-          } else {
-            this.elements[idx].x = event.offsetX;
-            this.elements[idx].y = event.offsetY;
-          }
-        } catch (error) {
-
-        }
-      }
-    },
-
-    endDrag() {
-      if (!this.running) {
-        (this.$refs.box as any).removeEventListener('mousemove', this.drag);
-        if (this.connection_edit) {
-          (this.$refs.box as any).removeEventListener('mousemove', this.drag);
-          (this.$refs.box as any).removeEventListener('mousemove', this.connection_drag);
-          if (this.hovered_target === 0 || this.hovered_target === this.current_target) {
-            this.children.splice(-1, 1);
-            this.elements.splice(-1, 1);
-            this.connections.splice(-1, 1);
-            this.counter--;
-          } else {
-            this.elements[this.elements.length - 1].x2 = this.elements[this.hovered_target].x;
-            this.elements[this.elements.length - 1].y2 = this.elements[this.hovered_target].y;
-            this.elements[this.elements.length - 1].x = this.elements[this.current_target].x;
-            this.elements[this.elements.length - 1].y = this.elements[this.current_target].y;
-            this.connections[this.connections.length - 1].st = this.elements[this.hovered_target].name;
-            document.getElementById(this.current_connection)?.removeEventListener('mousemove', this.connection_drag);
-
-            if ((this.connections[this.connections.length - 1].ft.substring(1, 2) === 'C' &&
-            this.connections[this.connections.length - 1].st.substring(1, 2) === 'C') ||
-            (this.connections[this.connections.length - 1].ft.substring(1, 2) === 'T' &&
-            this.connections[this.connections.length - 1].st.substring(1, 2) === 'T')) {
-              this.children.splice(-1, 1);
-              this.elements.splice(-1, 1);
-              this.connections.splice(-1, 1);
-              this.counter--;
-            }
-          }
-          this.current_connection = '';
-          this.connection_edit = false;
-        }
-      }
     },
 
     addPlace(x: number, y: number) {
@@ -1784,283 +1490,13 @@ export default defineComponent({
       this.graph.addCell(transition);
     },
 
-    addConnection() {
-      if (!this.running) {
-        const target = this.current_target;
-        this.counter++;
-        this.elements.push({ name: 'EA' + this.counter, x: this.elements[target].x, y: this.elements[target].y, x2: this.elements[target].x, y2: this.elements[target].y });
-        this.connections.push({ name: 'EA' + this.counter, ft: this.elements[target].name, st: '' });
-        this.children.push(Connection);
-      }
-    },
-
-    addToken() {
-      if (!this.running) {
-        if (this.current_target > 0) {
-          if (this.elements[this.current_target].name.substring(1, 2) === 'C') {
-            let findCircle = false;
-            for (let i = 0; i < this.tokens.length; i++) {
-              if (this.tokens[i].circle === this.elements[this.current_target].name) {
-                findCircle = true;
-                this.tokens[i].token_amount++;
-              }
-            }
-
-            if (!findCircle) {
-              this.counter++;
-              this.elements.push({ name: 'EE' + this.counter, x: this.elements[this.current_target].x, y: this.elements[this.current_target].y, x2: 0, y2: 0 });
-              this.tokens.push({ name: 'EE' + this.counter, object_name: 'EE' + (this.elements.length - 1), label_name: 'EL' + this.elements.length, circle: this.elements[this.current_target].name, token_amount: 1 });
-              this.children.push(SmallCircle);
-              this.counter++;
-              this.elements.push({ name: 'EL' + this.counter, x: this.elements[this.current_target].x, y: this.elements[this.current_target].y, x2: 0, y2: 0 });
-              this.children.push(TokenText);
-            }
-          }
-        }
-      }
-    },
-
-    substractToken() {
-      if (!this.running) {
-        if (this.current_target > 0) {
-          let findCircle = false;
-          for (let i = 0; i < this.tokens.length; i++) {
-            if (this.tokens[i].circle === this.elements[this.current_target].name) {
-              findCircle = true;
-              this.tokens[i].token_amount--;
-              if (this.tokens[i].token_amount === 0) {
-                for (let j = 0; j < this.elements.length; j++) {
-                  if (this.elements[j].name === this.tokens[i].object_name) {
-                    this.elements.splice(j, 1);
-                    this.children.splice(j - 1, 1);
-                  }
-
-                  if (this.elements[j].name === this.tokens[i].label_name) {
-                    this.elements.splice(j, 1);
-                    this.children.splice(j - 1, 1);
-                  }
-                }
-                this.tokens.splice(i, 1);
-              }
-            }
-          }
-        }
-      }
-    },
-
-    addConnectionWeight() {
-      if (!this.running) {
-        if (this.current_target > 0) {
-          if (this.elements[this.current_target].name.substring(1, 2) === 'A') {
-            let findConnection = false;
-            for (let i = 0; i < this.connection_weight.length; i++) {
-              if (this.connection_weight[i].name === this.elements[this.current_target].name) {
-                findConnection = true;
-                this.connection_weight[i].weight++;
-              }
-            }
-
-            if (!findConnection) {
-              this.counter++;
-              const offsetX = Math.round((this.elements[this.current_target].x - this.elements[this.current_target].x2) / 2);
-              const offsetY = Math.round((this.elements[this.current_target].y - this.elements[this.current_target].y2) / 2);
-              this.elements.push({ name: 'EW' + this.counter, x: this.elements[this.current_target].x2, y: this.elements[this.current_target].y2, x2: 0, y2: 0 });
-              this.connection_weight.push({ name: this.elements[this.current_target].name, element: 'EW' + this.counter, weight: 2 });
-              this.children.push(WeightText);
-            }
-          }
-        }
-      }
-    },
-
-    substractConnectionWeight() {
-      if (!this.running) {
-        if (this.current_target > 0) {
-          for (let i = 0; i < this.connection_weight.length; i++) {
-            if (this.connection_weight[i].name === this.elements[this.current_target].name) {
-              this.connection_weight[i].weight--;
-              if (this.connection_weight[i].weight === 1) {
-                for (let j = 0; j < this.elements.length; j++) {
-                  if (this.elements[j].name === this.connection_weight[i].element) {
-                    this.elements.splice(j, 1);
-                    this.children.splice(j - 1, 1);
-                  }
-                }
-                this.connection_weight.splice(i, 1);
-              }
-            }
-          }
-        }
-      }
-    },
-
-    checkIfNewToken() {
-      this.resultSimulation.changes.forEach((data) => {
-        if (data.includes('Added:')) {
-          const circle = data.split('Added:')[1];
-          let circleIndex = 0;
-          this.elements.forEach((data, i) => {
-            if (data.name === circle) {
-              circleIndex = i;
-            }
-          });
-          if (circleIndex >= 0) {
-            let name = '';
-            let labelName = '';
-            this.resultSimulation.tokens.forEach((data) => {
-              if (data.circle === circle) {
-                name = data.name;
-                labelName = data.label_name;
-              }
-            });
-            if (name !== '' || labelName !== '') {
-              this.counter++;
-              this.elements.push({ name: name, x: this.elements[circleIndex].x, y: this.elements[circleIndex].y, x2: 0, y2: 0 });
-              this.children.push(SmallCircle);
-              this.counter++;
-              this.elements.push({ name: labelName, x: this.elements[circleIndex].x, y: this.elements[circleIndex].y, x2: 0, y2: 0 });
-              this.children.push(TokenText);
-            }
-          }
-        }
-      });
-    },
-
-    findCircle(index: string) {
-      for (let i = 0; i < this.tokens.length; i++) {
-        if (this.tokens[i].name === index) {
-          for (let j = 0; j < this.elements.length; j++) {
-            if (this.tokens[i].circle === this.elements[j].name) {
-              return j;
-            }
-          }
-        }
-      }
-    },
-
-    findToken(index: string) {
-      for (let i = 0; i < this.tokens.length; i++) {
-        if (this.tokens[i].name === index) {
-          return this.tokens[i].token_amount;
-        }
-      }
-    },
-
-    findConnection(index: string) {
-      for (let i = 0; i < this.connection_weight.length; i++) {
-        if (this.connection_weight[i].element === index) {
-          for (let j = 0; j < this.elements.length; j++) {
-            if (this.connection_weight[i].name === this.elements[j].name) {
-              return this.elements[j].name;
-            }
-          }
-        }
-      }
-    },
-
-    findConnectionText(index: string) {
-      for (let i = 0; i < this.connection_weight.length; i++) {
-        if (this.connection_weight[i].element === index) {
-          return this.connection_weight[i].weight;
-        }
-      }
-    },
-
-    findFirstConnection(index: string) {
-      let firstElement = -1;
-      for (let i = 0; i < this.connections.length; i++) {
-        if (this.connections[i].name === index) {
-          for (let j = 0; j < this.elements.length; j++) {
-            if (this.elements[j].name === this.connections[i].ft) {
-              firstElement = j;
-            }
-          }
-        }
-      }
-      return firstElement;
-    },
-
-    findSecondConnection(index: string) {
-      let secondElement = 0;
-      for (let i = 0; i < this.connections.length; i++) {
-        if (this.connections[i].name === index) {
-          if (this.connections[i].st === 0) {
-            secondElement = (this.elements.length - 1);
-          } else {
-            for (let j = 0; j < this.elements.length; j++) {
-              if (this.elements[j].name === this.connections[i].st) {
-                secondElement = j;
-              }
-            }
-          }
-        }
-      }
-
-      if (secondElement < 1) {
-        secondElement = this.elements.length - 1;
-      }
-
-      return secondElement;
-    },
-
-    deleteElement() {
-      if (!this.running) {
-        if (this.current_target !== 0) {
-          let deletedIndex = 0;
-          let deletedIndex2 = 0;
-          const connections2 = [...this.connections];
-          const elements2 = [...this.elements];
-          const children2 = [...this.children];
-          this.connections.forEach((element: any, index: number) => {
-            if (element.ft === this.elements[this.current_target].name || element.st === this.elements[this.current_target].name) {
-              this.elements.forEach((element2: any, index2: number) => {
-                if (element2.name === element.name) {
-                  elements2.splice(index2 - deletedIndex2, 1);
-                  children2.splice((index2 - 1) - deletedIndex2, 1);
-                  deletedIndex2++;
-                }
-              });
-              connections2.splice(index - deletedIndex, 1);
-              deletedIndex++;
-            }
-          });
-          this.connections = connections2;
-          this.elements = elements2;
-          this.children = children2;
-          for (let i = 0; i < this.tokens.length; i++) {
-            if (this.tokens[i].circle === this.elements[this.current_target].name) {
-              for (let j = 0; j < this.elements.length; j++) {
-                if (this.elements[j].name === this.tokens[i].object_name) {
-                  this.elements.splice(j, 1);
-                  this.children.splice(j - 1, 1);
-                  this.elements.splice(j, 1);
-                  this.children.splice(j - 1, 1);
-                }
-              }
-              this.tokens.splice(i, 1);
-            }
-          }
-          if (this.elements[this.current_target].name.substring(1, 2) === 'A') {
-            for (let i = 0; i < this.connections.length; i++) {
-              if (this.connections[i].name === this.elements[this.current_target].name) {
-                this.connections.splice(i, 1);
-              }
-            }
-          }
-          this.children.splice(this.current_target - 1, 1);
-          this.elements.splice(this.current_target, 1);
-          this.current_target = 0;
-        }
-      }
-    },
-
     clear() {
       this.graph.clear();
     },
 
     exportNet() {
       if (!this.running) {
-        if (this.children.length > 0) {
+        if (this.graph.getCells().length > 0) {
           Swal.fire({
             title: 'Wybierz format',
             showDenyButton: true,
@@ -2069,11 +1505,10 @@ export default defineComponent({
             denyButtonColor: '#7066e0'
           }).then((result) => {
             if (result.isConfirmed) {
-              const elements = JSON.stringify(this.elements.slice(1));
-              const connections = JSON.stringify(this.connections);
-              const tokens = JSON.stringify(this.tokens);
-              const connectionWeights = JSON.stringify(this.connection_weight);
-              const data = '[' + elements + ',' + connections + ',' + tokens + ',' + connectionWeights + ']';
+              const elements = [] as any;
+              const connections = [] as any;
+              this.getGraphData(elements, connections);
+              const data = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
               const blob = new Blob([data], { type: 'text/plain' });
               const anchor = document.createElement('a');
               anchor.download = 'PetriNet_import.txt';
@@ -2082,35 +1517,32 @@ export default defineComponent({
               anchor.click();
             } else if (result.isDenied) {
               let data = '';
-              this.elements.slice(1).forEach((element) => {
-                if (element.name.substring(1, 2) === 'C') {
-                  data = data + 'p ' + element.x + '.0 ' + element.y + '.0 ' + element.name + ' ';
-
-                  if (this.tokens.length === 0) {
-                    data = data + '0';
-                  } else {
-                    let found = false;
-                    for (let i = 0; i < this.tokens.length; i++) {
-                      if (this.tokens[i].circle === element.name) {
-                        data = data + this.tokens[i].token_amount;
-                        found = true;
-                      }
-                    }
-                    if (!found) {
-                      data = data + '0';
-                    }
-                  }
+              this.graph.getCells().forEach((element: any) => {
+                if (element.attributes.type === 'pn.Place') {
+                  data = data + 'p ' + element.attributes.position.x + '.0 ' + element.attributes.position.y + '.0 ' + element.attributes.attrs['.label'].text + ' ' + element.attributes.tokens;
 
                   data = data + ' n\n';
                 }
 
-                if (element.name.substring(1, 2) === 'T') {
-                  data = data + 't ' + element.x + '.0 ' + element.y + '.0 ' + element.name + ' 0 w n\n';
+                if (element.attributes.type === 'pn.Transition') {
+                  data = data + 't ' + element.attributes.position.x + '.0 ' + element.attributes.position.y + '.0 ' + element.attributes.attrs['.label'].text + ' 0 w n\n';
                 }
               });
 
-              this.connections.forEach((connection: { name: string, ft: string, st: string }) => {
-                data = data + 'e ' + connection.ft + ' ' + connection.st + ' 1 n\n';
+              this.graph.getCells().forEach((element: any) => {
+                if (element.attributes.type === 'pn.Link') {
+                  let source: any;
+                  let target: any;
+                  this.graph.getCells().forEach((elementName: any) => {
+                    if (element.attributes.source.id === elementName.attributes.id) {
+                      source = elementName.attributes.attrs['.label'].text;
+                    }
+                    if (element.attributes.target.id === elementName.attributes.id) {
+                      target = elementName.attributes.attrs['.label'].text;
+                    }
+                  });
+                  data = data + 'e ' + source + ' ' + target + ' ' + element.attributes.weight + ' n\n';
+                }
               });
 
               data = data + 'h PetriNetExport';
@@ -2150,48 +1582,142 @@ export default defineComponent({
         if ((this.selectedFile as any).name.includes('.txt')) {
           reader.onload = (res) => {
             this.dest = res.target?.result;
-            this.clear();
-            try {
-              for (let i = 0; i < JSON.parse(this.dest)[1].length; i++) {
-                this.connections.push(JSON.parse(this.dest)[1][i]);
-              }
-              for (let i = 0; i < JSON.parse(this.dest)[2].length; i++) {
-                this.tokens.push(JSON.parse(this.dest)[2][i]);
-              }
-              for (let i = 0; i < JSON.parse(this.dest)[3].length; i++) {
-                this.connection_weight.push(JSON.parse(this.dest)[3][i]);
-              }
-              for (let i = 0; i < JSON.parse(this.dest)[0].length; i++) {
-                const objectType = JSON.parse(this.dest)[0][i].name.substring(1, 2);
-                if (objectType === 'C') {
-                  this.counter++;
-                  this.children.push(Circle);
-                } else if (objectType === 'T') {
-                  this.counter++;
-                  this.children.push(Square);
-                } else if (objectType === 'A') {
-                  this.counter++;
-                  this.children.push(Connection);
-                } else if (objectType === 'E') {
-                  this.counter++;
-                  this.children.push(SmallCircle);
-                } else if (objectType === 'L') {
-                  this.counter++;
-                  this.children.push(TokenText);
-                } else if (objectType === 'W') {
-                  this.counter++;
-                  this.children.push(WeightText);
-                } else {
-                  console.log('Zły plik');
-                  this.clear();
-                  break;
+            this.graph.clear();
+            JSON.parse(this.dest)[0].forEach((element: any) => {
+              if (element.type === 'pn.Place') {
+                this.placeCounter++;
+                const place = new joint.shapes.pn.Place({
+                  position: { x: element.x, y: element.y },
+                  id: element.id,
+                  attrs: {
+                    '.label': { text: element.name, 'ref-x': 0.5, 'ref-y': -15 },
+                    circle: placeSettings.circle
+                  },
+                  selected: false,
+                  tokens: element.tokens
+                });
+
+                this.graph.addCell(place);
+
+                let r = element.r;
+
+                if (r < 10) {
+                  r = 10;
                 }
-                this.elements.push(JSON.parse(this.dest)[0][i]);
+
+                place.attr('circle/r', parseInt(r));
+
+                if (element.tokens > 0) {
+                  let tokenText = element.tokens;
+
+                  if (parseInt(element.tokens) === 1) {
+                    tokenText = '';
+                  }
+
+                  const circle = new joint.shapes.basic.Circle({
+                    position: { x: element.x, y: element.y },
+                    attrs: {
+                      circle: {
+                        attrs: {
+                          r: 20
+                        },
+                        fill: 'black',
+                        'pointer-events': 'none'
+                      },
+                      text: {
+                        text: tokenText,
+                        'font-size': 16,
+                        'text-anchor': 'middle',
+                        'y-alignment': 'middle',
+                        'pointer-events': 'none',
+                        fill: 'white'
+                      }
+                    },
+                    'pointer-events': 'none',
+                    place: element.id,
+                    locked: true,
+                    interactive: false
+                  });
+                  this.graph.addCell(circle);
+                  circle.attr('circle/r', parseInt((place as any).attributes.attrs.circle.r) / 2);
+                  (place as any).on('change:position', () => {
+                    circle.position(
+                      place.position().x,
+                      place.position().y
+                    );
+                  });
+                }
               }
-            } catch (e) {
-              this.clear();
-              console.log('Zły plik');
-            }
+              if (element.type === 'pn.Transition') {
+                this.transitionCounter++;
+                const transition = new joint.shapes.pn.Transition({
+                  position: { x: element.x, y: element.y },
+                  id: element.id,
+                  attrs: {
+                    '.label': { text: element.name, 'ref-x': 0.5, 'ref-y': -15 },
+                    rect: transitionSettings.rect
+                  },
+                  selected: false
+                });
+                this.graph.addCell(transition);
+
+                let width = element.width;
+                let height = element.height;
+
+                if (width < 20) {
+                  width = 20;
+                }
+
+                if (height < 20) {
+                  height = 20;
+                }
+
+                transition.attr('rect/width', parseInt(width));
+                transition.attr('rect/height', parseInt(height));
+              }
+            });
+            JSON.parse(this.dest)[1].forEach((element: any) => {
+              const link = new joint.shapes.pn.Link({
+                source: { id: element.source },
+                target: { id: element.target },
+                attrs: {
+                  '.marker-target': { display: 'none', style: { 'pointer-events': 'none' } },
+                  '.marker-source': { display: 'none', style: { 'pointer-events': 'none' } },
+                  '.link-tools': { display: 'none' },
+                  '.connection': { stroke: 'black', 'pointer-events': 'none' }
+                },
+                weight: element.weight,
+                selected: false
+              });
+              this.graph.addCell(link);
+
+              const distance = 18 + (4 * element.weight.toString().length);
+
+              link.appendLabel({
+                attrs: {
+                  text: {
+                    text: element.weight.toString(),
+                    'pointer-events': 'none',
+                    'font-size': 20,
+                    'font-weight': 'bold',
+                    fill: 'black',
+                    stroke: 'white',
+                    'stroke-width': 1
+                  },
+                  rect: {
+                    fill: 'white',
+                    'fill-opacity': 0,
+                    stroke: 'none'
+                  }
+                },
+                position: {
+                  distance: -distance
+                }
+              });
+
+              link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
+              link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
+            });
           };
           if (this.selectedFile != null) {
             reader.readAsText(this.selectedFile);
@@ -2204,41 +1730,141 @@ export default defineComponent({
 
     redirectNetExport(netExport: string) {
       try {
-        for (let i = 0; i < JSON.parse(netExport)[1].length; i++) {
-          this.connections.push(JSON.parse(netExport)[1][i]);
-        }
-        for (let i = 0; i < JSON.parse(netExport)[2].length; i++) {
-          this.tokens.push(JSON.parse(netExport)[2][i]);
-        }
-        for (let i = 0; i < JSON.parse(netExport)[3].length; i++) {
-          this.connection_weight.push(JSON.parse(netExport)[3][i]);
-        }
-        for (let i = 0; i < JSON.parse(netExport)[0].length; i++) {
-          const objectType = JSON.parse(netExport)[0][i].name.substring(1, 2);
-          if (objectType === 'C') {
-            this.counter++;
-            this.children.push(Circle);
-          } else if (objectType === 'T') {
-            this.counter++;
-            this.children.push(Square);
-          } else if (objectType === 'A') {
-            this.counter++;
-            this.children.push(Connection);
-          } else if (objectType === 'E') {
-            this.counter++;
-            this.children.push(SmallCircle);
-          } else if (objectType === 'L') {
-            this.counter++;
-            this.children.push(TokenText);
-          } else if (objectType === 'W') {
-            this.counter++;
-            this.children.push(WeightText);
-          } else {
-            this.clear();
-            break;
+        JSON.parse(netExport)[0].forEach((element: any) => {
+          if (element.type === 'pn.Place') {
+            this.placeCounter++;
+            const place = new joint.shapes.pn.Place({
+              position: { x: element.x, y: element.y },
+              id: element.id,
+              attrs: {
+                '.label': { text: element.name, 'ref-x': 0.5, 'ref-y': -15 },
+                circle: placeSettings.circle
+              },
+              selected: false,
+              tokens: element.tokens
+            });
+
+            this.graph.addCell(place);
+
+            let r = element.r;
+
+            if (r < 10) {
+              r = 10;
+            }
+
+            place.attr('circle/r', parseInt(r));
+
+            if (element.tokens > 0) {
+              let tokenText = element.tokens;
+
+              if (parseInt(element.tokens) === 1) {
+                tokenText = '';
+              }
+
+              const circle = new joint.shapes.basic.Circle({
+                position: { x: element.x, y: element.y },
+                attrs: {
+                  circle: {
+                    attrs: {
+                      r: 20
+                    },
+                    fill: 'black',
+                    'pointer-events': 'none'
+                  },
+                  text: {
+                    text: tokenText,
+                    'font-size': 16,
+                    'text-anchor': 'middle',
+                    'y-alignment': 'middle',
+                    'pointer-events': 'none',
+                    fill: 'white'
+                  }
+                },
+                'pointer-events': 'none',
+                place: element.id,
+                locked: true,
+                interactive: false
+              });
+              this.graph.addCell(circle);
+              circle.attr('circle/r', parseInt((place as any).attributes.attrs.circle.r) / 2);
+              (place as any).on('change:position', () => {
+                circle.position(
+                  place.position().x,
+                  place.position().y
+                );
+              });
+            }
           }
-          this.elements.push(JSON.parse(netExport)[0][i]);
-        }
+          if (element.type === 'pn.Transition') {
+            this.transitionCounter++;
+            const transition = new joint.shapes.pn.Transition({
+              position: { x: element.x, y: element.y },
+              id: element.id,
+              attrs: {
+                '.label': { text: element.name, 'ref-x': 0.5, 'ref-y': -15 },
+                rect: transitionSettings.rect
+              },
+              selected: false
+            });
+            this.graph.addCell(transition);
+
+            let width = element.width;
+            let height = element.height;
+
+            if (width < 20) {
+              width = 20;
+            }
+
+            if (height < 20) {
+              height = 20;
+            }
+
+            transition.attr('rect/width', parseInt(width));
+            transition.attr('rect/height', parseInt(height));
+          }
+        });
+        JSON.parse(netExport)[1].forEach((element: any) => {
+          const link = new joint.shapes.pn.Link({
+            source: { id: element.source },
+            target: { id: element.target },
+            attrs: {
+              '.marker-target': { display: 'none', style: { 'pointer-events': 'none' } },
+              '.marker-source': { display: 'none', style: { 'pointer-events': 'none' } },
+              '.link-tools': { display: 'none' },
+              '.connection': { stroke: 'black', 'pointer-events': 'none' }
+            },
+            weight: element.weight,
+            selected: false
+          });
+          this.graph.addCell(link);
+
+          const distance = 18 + (4 * element.weight.toString().length);
+
+          link.appendLabel({
+            attrs: {
+              text: {
+                text: element.weight.toString(),
+                'pointer-events': 'none',
+                'font-size': 20,
+                'font-weight': 'bold',
+                fill: 'black',
+                stroke: 'white',
+                'stroke-width': 1
+              },
+              rect: {
+                fill: 'white',
+                'fill-opacity': 0,
+                stroke: 'none'
+              }
+            },
+            position: {
+              distance: -distance
+            }
+          });
+
+          link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
+          link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
+        });
       } catch (e) {
         this.clear();
       }
@@ -2247,42 +1873,141 @@ export default defineComponent({
     netChangeSimulation(result: ISimulation) {
       this.clear();
       try {
-        for (let i = 0; i < result.connections.length; i++) {
-          this.connections.push(result.connections[i]);
-        }
+        result.elements.forEach((element: any) => {
+          if (element.type === 'pn.Place') {
+            this.placeCounter++;
+            const place = new joint.shapes.pn.Place({
+              position: { x: element.x, y: element.y },
+              id: element.id,
+              attrs: {
+                '.label': { text: element.name, 'ref-x': 0.5, 'ref-y': -15 },
+                circle: placeSettings.circle
+              },
+              selected: false,
+              tokens: element.tokens
+            });
 
-        for (let i = 0; i < result.tokens.length; i++) {
-          this.tokens.push(result.tokens[i]);
-        }
-        for (let i = 0; i < result.connectionWeights.length; i++) {
-          this.connection_weight.push(result.connectionWeights[i]);
-        }
-        for (let i = 0; i < result.elements.length; i++) {
-          const objectType = result.elements[i].name.substring(1, 2);
-          if (objectType === 'C') {
-            this.counter++;
-            this.children.push(Circle);
-          } else if (objectType === 'T') {
-            this.counter++;
-            this.children.push(Square);
-          } else if (objectType === 'A') {
-            this.counter++;
-            this.children.push(Connection);
-          } else if (objectType === 'E') {
-            this.counter++;
-            this.children.push(SmallCircle);
-          } else if (objectType === 'L') {
-            this.counter++;
-            this.children.push(TokenText);
-          } else if (objectType === 'W') {
-            this.counter++;
-            this.children.push(WeightText);
-          } else {
-            this.clear();
-            break;
+            this.graph.addCell(place);
+
+            let r = element.r;
+
+            if (r < 10) {
+              r = 10;
+            }
+
+            place.attr('circle/r', parseInt(r));
+
+            if (element.tokens > 0) {
+              let tokenText = element.tokens;
+
+              if (parseInt(element.tokens) === 1) {
+                tokenText = '';
+              }
+
+              const circle = new joint.shapes.basic.Circle({
+                position: { x: element.x, y: element.y },
+                attrs: {
+                  circle: {
+                    attrs: {
+                      r: 20
+                    },
+                    fill: 'black',
+                    'pointer-events': 'none'
+                  },
+                  text: {
+                    text: tokenText,
+                    'font-size': 16,
+                    'text-anchor': 'middle',
+                    'y-alignment': 'middle',
+                    'pointer-events': 'none',
+                    fill: 'white'
+                  }
+                },
+                'pointer-events': 'none',
+                place: element.id,
+                locked: true,
+                interactive: false
+              });
+              this.graph.addCell(circle);
+              circle.attr('circle/r', parseInt((place as any).attributes.attrs.circle.r) / 2);
+              (place as any).on('change:position', () => {
+                circle.position(
+                  place.position().x,
+                  place.position().y
+                );
+              });
+            }
           }
-          this.elements.push(result.elements[i]);
-        }
+          if (element.type === 'pn.Transition') {
+            this.transitionCounter++;
+            const transition = new joint.shapes.pn.Transition({
+              position: { x: element.x, y: element.y },
+              id: element.id,
+              attrs: {
+                '.label': { text: element.name, 'ref-x': 0.5, 'ref-y': -15 },
+                rect: transitionSettings.rect
+              },
+              selected: false
+            });
+            this.graph.addCell(transition);
+
+            let width = element.width;
+            let height = element.height;
+
+            if (width < 20) {
+              width = 20;
+            }
+
+            if (height < 20) {
+              height = 20;
+            }
+
+            transition.attr('rect/width', parseInt(width));
+            transition.attr('rect/height', parseInt(height));
+          }
+        });
+        result.connections.forEach((element: any) => {
+          const link = new joint.shapes.pn.Link({
+            source: { id: element.source },
+            target: { id: element.target },
+            attrs: {
+              '.marker-target': { display: 'none', style: { 'pointer-events': 'none' } },
+              '.marker-source': { display: 'none', style: { 'pointer-events': 'none' } },
+              '.link-tools': { display: 'none' },
+              '.connection': { stroke: 'black', 'pointer-events': 'none' }
+            },
+            weight: element.weight,
+            selected: false
+          });
+          this.graph.addCell(link);
+
+          const distance = 18 + (4 * element.weight.toString().length);
+
+          link.appendLabel({
+            attrs: {
+              text: {
+                text: element.weight.toString(),
+                'pointer-events': 'none',
+                'font-size': 20,
+                'font-weight': 'bold',
+                fill: 'black',
+                stroke: 'white',
+                'stroke-width': 1
+              },
+              rect: {
+                fill: 'white',
+                'fill-opacity': 0,
+                stroke: 'none'
+              }
+            },
+            position: {
+              distance: -distance
+            }
+          });
+
+          link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
+          link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
+        });
       } catch (e) {
         this.clear();
       }
@@ -2290,6 +2015,9 @@ export default defineComponent({
 
     saveModal() {
       if (!this.running) {
+        const elements = [] as any;
+        const connections = [] as any;
+        this.getGraphData(elements, connections);
         if (history.state.editUserSave || history.state.editExampleNet) {
           Swal.fire({
             icon: 'warning',
@@ -2303,10 +2031,10 @@ export default defineComponent({
           }).then((result) => {
             if (result.isConfirmed) {
               if (history.state.editUserSave) {
-                this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + JSON.stringify(this.connection_weight) + ']';
+                this.saveResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
                 this.update(history.state.editId);
               } else {
-                this.exampleEditResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + JSON.stringify(this.connection_weight) + ']';
+                this.exampleEditResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
                 this.updateExampleNet(history.state.editId);
               }
               Swal.fire(
@@ -2337,7 +2065,7 @@ export default defineComponent({
                 title: 'Nazwa jest za długa!'
               });
             } else {
-              if (this.children.length === 0) {
+              if (this.graph.getCells().length === 0) {
                 Swal.fire({
                   icon: 'error',
                   title: 'Błąd!',
@@ -2347,7 +2075,7 @@ export default defineComponent({
                 if (!this.checkIfCreateExample()) {
                   this.saveResult.userId = this.loginResult.id;
                   this.saveResult.saveName = result.value;
-                  this.saveResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + ',' + JSON.stringify(this.connection_weight) + ']';
+                  this.saveResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
                   this.findByUserAndSaveName(result.value).then((id) => {
                     if (id !== 0) {
                       Swal.fire({
@@ -2389,7 +2117,7 @@ export default defineComponent({
                   });
                 } else {
                   this.exampleNetResult.netName = result.value;
-                  this.exampleNetResult.netExport = '[' + JSON.stringify(this.elements.slice(1)) + ',' + JSON.stringify(this.connections) + ',' + JSON.stringify(this.tokens) + JSON.stringify(this.connection_weight) + ']';
+                  this.exampleNetResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
                   this.findByNetName(result.value).then((exist) => {
                     if (exist) {
                       Swal.fire({
@@ -2422,10 +2150,6 @@ export default defineComponent({
       }
     },
 
-    fetchData() {
-      return this.children.length;
-    },
-
     checkIfCreateExample() {
       if (history.state.createExample) {
         return true;
@@ -2442,12 +2166,48 @@ export default defineComponent({
       return false;
     },
 
+    fetchData() {
+      return this.graph.getCells().length;
+    },
+
     checkIfExampleEdited() {
       if (history.state.editExampleNet) {
         return true;
       }
 
       return false;
+    },
+
+    switchPlace() {
+      if (this.selectedElement === 'place') {
+        this.selectedElement = '';
+      } else {
+        this.selectedElement = 'place';
+      }
+    },
+
+    switchTransition() {
+      if (this.selectedElement === 'transition') {
+        this.selectedElement = '';
+      } else {
+        this.selectedElement = 'transition';
+      }
+    },
+
+    switchDelete() {
+      if (this.selectedElement === 'delete') {
+        this.selectedElement = '';
+      } else {
+        this.selectedElement = 'delete';
+      }
+    },
+
+    updatePaperInteractivity() {
+      if (this.running) {
+        this.paper.setInteractivity(false);
+      } else {
+        this.paper.setInteractivity(true);
+      }
     }
   }
 });

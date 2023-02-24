@@ -4,37 +4,26 @@ export default class SimulationServices {
   public static getBlankSimulationTemplate(): ISimulation {
     const tempElement: IElements = {
       name: '',
+      type: '',
       x: 0,
       y: 0,
-      x2: 0,
-      y2: 0
+      weight: 0,
+      tokens: 0,
+      id: '',
+      r: 0,
+      width: 0,
+      height: 0
     };
 
     const tempConnection: IConnections = {
-      name: '',
-      ft: '',
-      st: ''
-    };
-
-    const tempToken: ITokens = {
-      name: '',
-      object_name: '',
-      label_name: '',
-      circle: '',
-      token_amount: 0
-    };
-
-    const tempConnectionWeight: IConnectionWeight = {
-      name: '',
-      element: '',
+      source: '',
+      target: '',
       weight: 0
     };
 
     const tempSimulation: ISimulation = {
       elements: [tempElement],
       connections: [tempConnection],
-      tokens: [tempToken],
-      connectionWeights: [tempConnectionWeight],
       changes: ['']
     };
 
@@ -53,35 +42,24 @@ export default class SimulationServices {
 export interface ISimulation {
     elements: Array<IElements>;
     connections: Array<IConnections>;
-    tokens: Array<ITokens>;
-    connectionWeights: Array<IConnectionWeight>;
     changes: Array<string>;
 }
 
 export interface IElements {
     name: string;
+    type: string;
     x: number;
     y: number;
-    x2: number;
-    y2: number;
+    weight: number;
+    tokens: number;
+    id: string;
+    r: number;
+    width: number;
+    height: number;
 }
 
 export interface IConnections {
-    name: string;
-    ft: string;
-    st: string;
-}
-
-export interface ITokens {
-    circle: string;
-    label_name: string;
-    name: string;
-    object_name: string;
-    token_amount: number;
-}
-
-export interface IConnectionWeight {
-  name: string;
-  element: string;
-  weight: number;
+    source: string;
+    target: string;
+    weight: number;
 }

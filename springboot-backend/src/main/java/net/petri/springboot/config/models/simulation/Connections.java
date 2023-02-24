@@ -11,9 +11,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Connections {
 
-    private String name;
+    private String source;
 
-    private String FT;
+    private String target;
 
-    private String ST;
+    private int weight;
 }

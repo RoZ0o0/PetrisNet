@@ -13,11 +13,21 @@ public class Elements {
 
     private String name;
 
+    private String type;
+
     private int x;
 
     private int y;
 
-    private int x2;
+    private int weight;
 
-    private int y2;
+    private int tokens;
+
+    private String id;
+
+    private int r;
+
+    private int width;
+
+    private int height;
 }

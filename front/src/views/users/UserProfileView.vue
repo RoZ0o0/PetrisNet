@@ -334,46 +334,46 @@ export default defineComponent({
       });
     },
 
-    setPublicAlert(save: ISaveNet, id: number) {
-      console.log(save.netExport);
-      this.getNetFromExport(save.netExport);
+    // setPublicAlert(save: ISaveNet, id: number) {
+    //   console.log(save.netExport);
+    //   this.getNetFromExport(save.netExport);
 
-      this.resultSimulation.elements = this.elements;
-      this.resultSimulation.connections = this.connections;
-      this.resultSimulation.tokens = this.tokens;
-      this.resultSimulation.connectionWeights = this.connection_weight;
+    //   this.resultSimulation.elements = this.elements;
+    //   this.resultSimulation.connections = this.connections;
+    //   this.resultSimulation.tokens = this.tokens;
+    //   this.resultSimulation.connectionWeights = this.connection_weight;
 
-      this.checkNet(this.resultSimulation).then((data) => {
-        if (data) {
-          Swal.fire({
-            icon: 'info',
-            title: 'Czy napewno chcesz ustawić swój model jako publiczny?',
-            text: 'Bo zmianie, będzie on widoczny dla innych użytkowników na stronie głównej!',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Tak',
-            cancelButtonText: 'Anuluj'
-          }).then((result) => {
-            if (result.isConfirmed) {
-              this.setPublic(save, id);
-              Swal.fire(
-                'Gotowe!',
-                'Twój model został udostępniony.',
-                'success'
-              );
-              this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
-            }
-          });
-        } else {
-          Swal.fire(
-            'Sprawdzenie!',
-            'Niepoprawna sieć!',
-            'error'
-          );
-        }
-      });
-    },
+    //   this.checkNet(this.resultSimulation).then((data) => {
+    //     if (data) {
+    //       Swal.fire({
+    //         icon: 'info',
+    //         title: 'Czy napewno chcesz ustawić swój model jako publiczny?',
+    //         text: 'Bo zmianie, będzie on widoczny dla innych użytkowników na stronie głównej!',
+    //         showCancelButton: true,
+    //         confirmButtonColor: '#3085d6',
+    //         cancelButtonColor: '#d33',
+    //         confirmButtonText: 'Tak',
+    //         cancelButtonText: 'Anuluj'
+    //       }).then((result) => {
+    //         if (result.isConfirmed) {
+    //           this.setPublic(save, id);
+    //           Swal.fire(
+    //             'Gotowe!',
+    //             'Twój model został udostępniony.',
+    //             'success'
+    //           );
+    //           this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
+    //         }
+    //       });
+    //     } else {
+    //       Swal.fire(
+    //         'Sprawdzenie!',
+    //         'Niepoprawna sieć!',
+    //         'error'
+    //       );
+    //     }
+    //   });
+    // },
 
     getNetFromExport(netExport: string) {
       try {

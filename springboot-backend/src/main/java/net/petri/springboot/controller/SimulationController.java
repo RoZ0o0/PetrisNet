@@ -17,7 +17,7 @@ public class SimulationController {
 
     @PostMapping()
     public SimulationNet simulation(@RequestBody SimulationNet net) { return simulationService.simulation(net); }
-
-    @PostMapping("/check")
-    public boolean checkNet(@RequestBody SimulationNet net) { return simulationService.checkNetRun(net); }
+//
+//    @PostMapping("/check")
+//    public boolean checkNet(@RequestBody SimulationNet net) { return simulationService.checkNetRun(net); }
 }
