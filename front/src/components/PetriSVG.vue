@@ -126,6 +126,7 @@ export default defineComponent({
       current_connection: null as any,
       current_connections: [] as any,
       ctrl_pressed: false,
+      shift_pressed: false,
       animations: [] as any,
       counter: 0,
       dest: null as any,
@@ -226,26 +227,28 @@ export default defineComponent({
         }
 
         if (!cellView.model.attributes.selected) {
-          this.graph.getCells().forEach((element: any) => {
-            element.attributes.selected = false;
-            if (element.attributes.type === 'pn.Place') {
-              element.attr({
-                circle: {
-                  stroke: 'black'
-                }
-              });
-            } else if (element.attributes.type === 'pn.Transition') {
-              element.attr({
-                rect: {
-                  stroke: 'black'
-                }
-              });
-            } else if (element.attributes.type === 'pn.Link') {
-              const link = this.graph.getCell(element.id);
+          if (!this.shift_pressed) {
+            this.graph.getCells().forEach((element: any) => {
+              element.attributes.selected = false;
+              if (element.attributes.type === 'pn.Place') {
+                element.attr({
+                  circle: {
+                    stroke: 'black'
+                  }
+                });
+              } else if (element.attributes.type === 'pn.Transition') {
+                element.attr({
+                  rect: {
+                    stroke: 'black'
+                  }
+                });
+              } else if (element.attributes.type === 'pn.Link') {
+                const link = this.graph.getCell(element.id);
 
-              element.attr('.marker-arrowhead[end=target]', { style: { 'background-color': 'black' } });
-            }
-          });
+                element.attr('.connection/stroke', 'black');
+              }
+            });
+          }
           cellView.model.attributes.selected = true;
           if (cellView.model.attributes.type === 'pn.Place') {
             cellView.model.attr({
@@ -260,7 +263,7 @@ export default defineComponent({
               }
             });
           } else if (cellView.model.attributes.type === 'pn.Link') {
-            cellView.model.attr('.marker-arrowhead[end=target]', { style: { 'background-color': 'red' } });
+            cellView.model.attr('.connection/stroke', 'red');
           }
         }
       } else {
@@ -560,13 +563,17 @@ export default defineComponent({
                 } else if ((element as any).attributes.type === cellView.model.attributes.type) {
                   link.remove();
                 } else {
+                  let exs = false;
                   this.graph.getCells().forEach((exist: any) => {
                     if (exist.attributes.type === 'pn.Link') {
-                      if (exist.attributes.source.id === place && exist.attributes.target.id === element.id) {
-                        link.remove();
+                      if (exist.attributes.source.id === link.getSourceElement().attributes.id && exist.attributes.target.id === element.id) {
+                        exs = true;
                       }
                     }
                   });
+                  if (exs) {
+                    link.remove();
+                  }
                   link.prop('target', { id: element.id });
                 }
               }
@@ -596,14 +603,28 @@ export default defineComponent({
                 stroke: 'black'
               }
             });
+          } else if (element.attributes.type === 'pn.Link') {
+            element.attr('.connection/stroke', 'black');
           }
         });
         this.graph.getCells().forEach((element: any) => {
-          if (element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition') {
-            const placeX = element.position().x;
-            const placeY = element.position().y;
-            const placeWidth = element.get('size').width;
-            const placeHeight = element.get('size').height;
+          if (element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition' || element.attributes.type === 'pn.Link') {
+            let placeX: any;
+            let placeY: any;
+            let placeWidth: any;
+            let placeHeight: any;
+
+            if (element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition') {
+              placeX = element.position().x;
+              placeY = element.position().y;
+              placeWidth = element.get('size').width;
+              placeHeight = element.get('size').height;
+            } else {
+              placeX = element.getBBox().x;
+              placeY = element.getBBox().y;
+              placeWidth = element.getBBox().width;
+              placeHeight = element.getBBox().height;
+            }
 
             const rectX = rect.position().x;
             const rectY = rect.position().y;
@@ -627,6 +648,8 @@ export default defineComponent({
                     stroke: 'red'
                   }
                 });
+              } else if (element.attributes.type === 'pn.Link') {
+                element.attr('.connection/stroke', 'red');
               }
             }
           }
@@ -639,65 +662,34 @@ export default defineComponent({
       evt.preventDefault();
       this.contextShow = true;
 
-      if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition' || (cellView as any).model.get('type') === 'pn.Link') {
-        let nameDiv: any;
-        let nameInput: any;
-        let textName: any;
+      let counter = 0;
+      let counterLink = 0;
+      this.graph.getCells().forEach((element: any) => {
+        if (element.attributes.type === 'pn.Place' && element.attributes.selected) {
+          counter++;
+        }
+        if (element.attributes.type === 'pn.Link' && element.attributes.selected) {
+          counterLink++;
+        }
+      });
 
+      if (counter > 1 && (cellView as any).model.get('type') === 'pn.Place') {
         let tokenDiv: any;
         let tokenInput: any;
         let textToken: any;
 
-        let sizeDiv: any;
-        let sizeInput: any;
-        let textSize: any;
-
-        let weightDiv: any;
-        let weightInput: any;
-        let textWeight: any;
-
-        let widthDiv: any;
-        let widthInput: any;
-        let textWidth: any;
-
-        let heightDiv: any;
-        let heightInput: any;
-        let textHeight: any;
-
         const editWindow = document.createElement('div');
-        if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition') {
-          nameDiv = document.createElement('div');
-        }
         if ((cellView as any).model.get('type') === 'pn.Place') {
           tokenDiv = document.createElement('div');
-          sizeDiv = document.createElement('div');
-        }
-        if ((cellView as any).model.get('type') === 'pn.Transition') {
-          widthDiv = document.createElement('div');
-          heightDiv = document.createElement('div');
-        }
-        if ((cellView as any).model.get('type') === 'pn.Link') {
-          weightDiv = document.createElement('div');
-        }
-        editWindow.classList.add('editElements');
-        editWindow.style.position = 'absolute';
-        editWindow.style.left = evt.pageX + 'px';
-        editWindow.style.top = evt.pageY + 'px';
-        editWindow.style.background = 'white';
-        editWindow.style.border = '1px solid black';
-        editWindow.style.borderRadius = '0.75rem';
-        editWindow.style.padding = '10px';
+          editWindow.classList.add('editElements');
+          editWindow.style.position = 'absolute';
+          editWindow.style.left = evt.pageX + 'px';
+          editWindow.style.top = evt.pageY + 'px';
+          editWindow.style.background = 'white';
+          editWindow.style.border = '1px solid black';
+          editWindow.style.borderRadius = '0.75rem';
+          editWindow.style.padding = '10px';
 
-        if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition') {
-          nameInput = document.createElement('input');
-          nameInput.type = 'text';
-          nameInput.value = (cellView as any).model.get('attrs')['.label'].text;
-
-          textName = document.createElement('p');
-          textName.innerHTML = 'Nazwa';
-        }
-
-        if ((cellView as any).model.get('type') === 'pn.Place') {
           tokenInput = document.createElement('input');
           tokenInput.type = 'number';
           tokenInput.setAttribute('min', '0');
@@ -712,275 +704,576 @@ export default defineComponent({
           textToken = document.createElement('p');
           textToken.innerHTML = 'Tokeny';
 
-          sizeInput = document.createElement('input');
-          sizeInput.type = 'number';
-          sizeInput.setAttribute('min', '0');
-          sizeInput.value = (cellView as any).model.get('attrs').circle.r;
+          const saveButton = document.createElement('button');
+          saveButton.innerHTML = 'Save';
+          saveButton.onclick = () => {
+            const lastStep = this.graph.toJSON();
+            modelStates.push(lastStep);
 
-          sizeInput.addEventListener('input', () => {
-            if (parseInt(sizeInput.value) < 0) {
-              sizeInput.value = '10';
+            if (tokenInput.value === '') {
+              tokenInput.value = '0';
             }
+
+            this.graph.getCells().forEach((element: any) => {
+              if (element.attributes.type === 'pn.Place' && element.attributes.selected) {
+                element.attributes.tokens = tokenInput.value;
+                if (parseInt(tokenInput.value) === 0) {
+                  this.graph.getCells().forEach((ele: any) => {
+                    if (ele.attributes.place === element.attributes.id) {
+                      ele.remove();
+                    }
+                  });
+                }
+                if (parseInt(tokenInput.value) > 0 && tokenInput.value.length <= 4) {
+                  this.graph.getCells().forEach((ele: any) => {
+                    if (ele.attributes.place === element.attributes.id) {
+                      ele.remove();
+                    }
+                  });
+
+                  let tokenText = element.attributes.tokens.toString();
+
+                  if (parseInt(element.attributes.tokens) === 1) {
+                    tokenText = '';
+                  }
+
+                  const circle = new joint.shapes.basic.Circle({
+                    position: { x: element.position().x, y: element.position().y },
+                    attrs: {
+                      circle: {
+                        attrs: {
+                          r: 20
+                        },
+                        fill: 'black',
+                        'pointer-events': 'none'
+                      },
+                      text: {
+                        text: tokenText,
+                        'font-size': 16,
+                        'text-anchor': 'middle',
+                        'y-alignment': 'middle',
+                        'pointer-events': 'none',
+                        fill: 'white'
+                      }
+                    },
+                    'pointer-events': 'none',
+                    place: element.attributes.id,
+                    locked: true,
+                    interactive: false
+                  });
+                  this.graph.addCell(circle);
+                  circle.attr('circle/r', parseInt(element.attributes.attrs.circle.r) / 2);
+                  element.on('change:position', () => {
+                    circle.position(
+                      element.position().x,
+                      element.position().y
+                    );
+                  });
+                }
+              }
+            });
+            editWindow.remove();
+            this.contextShow = false;
+          };
+
+          const cancelButton = document.createElement('button');
+          cancelButton.innerHTML = 'Cancel';
+          cancelButton.onclick = () => {
+            editWindow.remove();
+            this.contextShow = false;
+          };
+
+          this.paper.on('blank:pointerdown', (evt: any) => {
+            editWindow.remove();
+            this.contextShow = false;
           });
 
-          textSize = document.createElement('p');
-          textSize.innerHTML = 'Rozmiar';
+          this.paper.on('cell:pointerdown', (evt: any) => {
+            editWindow.remove();
+            this.contextShow = false;
+          });
+
+          this.paper.on('cell:contextmenu', (cellView: any, evt: any) => {
+            editWindow.remove();
+          });
+
+          tokenDiv.appendChild(textToken);
+          tokenDiv.appendChild(tokenInput);
+          editWindow.appendChild(tokenDiv);
+
+          editWindow.appendChild(saveButton);
+          editWindow.appendChild(cancelButton);
+
+          (container as any).appendChild(editWindow);
         }
+      } else if (counterLink > 1 && (cellView as any).model.get('type') === 'pn.Link') {
+        let weightDiv: any;
+        let weightInput: any;
+        let textWeight: any;
 
-        if ((cellView as any).model.get('type') === 'pn.Transition') {
-          widthInput = document.createElement('input');
-          widthInput.type = 'number';
-          widthInput.setAttribute('min', '0');
-          widthInput.value = (cellView as any).model.get('attrs').rect.width;
-
-          widthInput.addEventListener('input', () => {
-            if (parseInt(widthInput.value) < 0) {
-              widthInput.value = '20';
-            }
-          });
-
-          textWidth = document.createElement('p');
-          textWidth.innerHTML = 'Szerokość';
-
-          heightInput = document.createElement('input');
-          heightInput.type = 'number';
-          heightInput.setAttribute('min', '0');
-          heightInput.value = (cellView as any).model.get('attrs').rect.height;
-
-          heightInput.addEventListener('input', () => {
-            if (parseInt(heightInput.value) < 0) {
-              heightInput.value = '20';
-            }
-          });
-
-          textHeight = document.createElement('p');
-          textHeight.innerHTML = 'Wysokość';
-        }
-
+        const editWindow = document.createElement('div');
         if ((cellView as any).model.get('type') === 'pn.Link') {
+          weightDiv = document.createElement('div');
+          editWindow.classList.add('editElements');
+          editWindow.style.position = 'absolute';
+          editWindow.style.left = evt.pageX + 'px';
+          editWindow.style.top = evt.pageY + 'px';
+          editWindow.style.background = 'white';
+          editWindow.style.border = '1px solid black';
+          editWindow.style.borderRadius = '0.75rem';
+          editWindow.style.padding = '10px';
+
           weightInput = document.createElement('input');
           weightInput.type = 'number';
           weightInput.setAttribute('min', '1');
-          weightInput.value = (cellView as any).model.get('weight');
+          weightInput.value = (cellView as any).model.get('tokens');
 
           weightInput.addEventListener('input', () => {
-            if (parseInt(weightInput.value) < 1) {
+            if (parseInt(weightInput.value) < 0) {
               weightInput.value = '0';
             }
           });
 
           textWeight = document.createElement('p');
-          textWeight.innerHTML = 'Waga';
-        }
+          textWeight.innerHTML = 'Wagi';
 
-        const saveButton = document.createElement('button');
-        saveButton.innerHTML = 'Save';
-        saveButton.onclick = () => {
-          const lastStep = this.graph.toJSON();
-          modelStates.push(lastStep);
-          if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition') {
-            let nameExist = false;
+          const saveButton = document.createElement('button');
+          saveButton.innerHTML = 'Save';
+          saveButton.onclick = () => {
+            const lastStep = this.graph.toJSON();
+            modelStates.push(lastStep);
+
+            if (weightInput.value === '') {
+              weightInput.value = '0';
+            }
+
             this.graph.getCells().forEach((element: any) => {
-              if (element.attributes.type !== 'pn.Link' && element.attributes.type !== 'basic.Circle') {
-                if (!element.attributes.attrs['.label']) {
-                  if ((cellView as any).model.id !== element.id && element.attributes.attrs['.label'].text === nameInput.value) {
-                    nameExist = true;
-                  }
-                }
-              }
-            });
-            if (!nameExist) {
-              (cellView as any).model.attr('.label/text', nameInput.value);
-            }
-          }
-          if ((cellView as any).model.get('type') === 'pn.Place') {
-            if (tokenInput.value === '') {
-              tokenInput.value = '0';
-            }
-            if (sizeInput.value === '') {
-              sizeInput.value = '20';
-            }
-            if (sizeInput.value < 10) {
-              sizeInput.value = '10';
-            }
-            (cellView as any).model.attr('circle/r', sizeInput.value);
-            (cellView as any).model.set('tokens', tokenInput.value);
-            if (parseInt(tokenInput.value) === 0) {
-              this.graph.getCells().forEach((element: any) => {
-                if (element.attributes.place === (cellView as any).model.get('id')) {
-                  element.remove();
-                }
-              });
-            }
-
-            if (parseInt(tokenInput.value) > 0 && tokenInput.value.length <= 4) {
-              this.graph.getCells().forEach((element: any) => {
-                if (element.attributes.place === (cellView as any).model.get('id')) {
-                  element.remove();
-                }
-              });
-
-              let tokenText = (cellView as any).model.get('tokens').toString();
-
-              if (parseInt((cellView as any).model.get('tokens')) === 1) {
-                tokenText = '';
-              }
-
-              const circle = new joint.shapes.basic.Circle({
-                position: { x: (cellView as any).model.position().x, y: (cellView as any).model.position().y },
-                attrs: {
-                  circle: {
+              if (element.attributes.type === 'pn.Link' && element.attributes.selected) {
+                element.attributes.weight = weightInput.value;
+                if (parseInt(weightInput.value) > 0 && weightInput.value.length <= 4) {
+                  const link = new joint.shapes.pn.Link({
+                    source: { id: element.attributes.source.id },
+                    target: { id: element.attributes.target.id },
                     attrs: {
-                      r: 20
+                      '.marker-target': { display: 'none' },
+                      '.marker-source': { display: 'none' },
+                      '.link-tools': { display: 'none' },
+                      '.connection': { stroke: 'black', 'pointer-events': 'none' }
                     },
-                    fill: 'black',
-                    'pointer-events': 'none'
-                  },
-                  text: {
-                    text: tokenText,
-                    'font-size': 16,
-                    'text-anchor': 'middle',
-                    'y-alignment': 'middle',
-                    'pointer-events': 'none',
-                    fill: 'white'
-                  }
-                },
-                'pointer-events': 'none',
-                place: (cellView as any).model.get('id'),
-                locked: true,
-                interactive: false
-              });
-              this.graph.addCell(circle);
-              circle.attr('circle/r', parseInt((cellView as any).model.attributes.attrs.circle.r) / 2);
-              (cellView as any).model.on('change:position', () => {
-                circle.position(
-                  (cellView as any).model.position().x,
-                  (cellView as any).model.position().y
-                );
-              });
-            }
-          }
-          if ((cellView as any).model.get('type') === 'pn.Transition') {
-            if (widthInput.value === '') {
-              widthInput.value = '20';
-            }
-            if (heightInput.value === '') {
-              heightInput.value = '60';
-            }
-            if (widthInput.value < 10) {
-              widthInput.value = '10';
-            }
-            if (heightInput.value < 10) {
-              heightInput.value = '10';
-            }
-            (cellView as any).model.attr('rect/width', widthInput.value);
-            (cellView as any).model.attr('rect/height', heightInput.value);
-          }
-          if ((cellView as any).model.get('type') === 'pn.Link') {
-            const link = new joint.shapes.pn.Link({
-              source: { id: (cellView as any).model.attributes.source.id },
-              target: { id: (cellView as any).model.attributes.target.id },
-              attrs: {
-                '.marker-target': { display: 'none' },
-                '.marker-source': { display: 'none' },
-                '.link-tools': { display: 'none' },
-                '.connection': { stroke: 'black', 'pointer-events': 'none' }
-              },
-              weight: weightInput.value,
-              selected: false
-            });
+                    weight: weightInput.value,
+                    selected: false
+                  });
 
-            this.graph.addCell(link);
+                  this.graph.addCell(link);
 
-            const distance = 18 + (4 * weightInput.value.toString().length);
+                  const distance = 18 + (4 * weightInput.value.toString().length);
 
-            link.appendLabel({
-              attrs: {
-                text: {
-                  text: weightInput.value,
-                  'pointer-events': 'none',
-                  'font-size': 20,
-                  'font-weight': 'bold',
-                  fill: 'black',
-                  stroke: 'white',
-                  'stroke-width': 1
-                },
-                rect: {
-                  fill: 'white',
-                  'fill-opacity': 0,
-                  stroke: 'none'
+                  link.appendLabel({
+                    attrs: {
+                      text: {
+                        text: weightInput.value,
+                        'pointer-events': 'none',
+                        'font-size': 20,
+                        'font-weight': 'bold',
+                        fill: 'black',
+                        stroke: 'white',
+                        'stroke-width': 1
+                      },
+                      rect: {
+                        fill: 'white',
+                        'fill-opacity': 0,
+                        stroke: 'none'
+                      }
+                    },
+                    position: {
+                      distance: -distance
+                    }
+                  });
+
+                  link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
+                  link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
+                  element.remove();
                 }
-              },
-              position: {
-                distance: -distance
               }
             });
+            editWindow.remove();
+            this.contextShow = false;
+          };
 
-            link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
-            link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
-            (cellView as any).model.remove();
-          }
-          editWindow.remove();
-          this.contextShow = false;
-        };
+          const cancelButton = document.createElement('button');
+          cancelButton.innerHTML = 'Cancel';
+          cancelButton.onclick = () => {
+            editWindow.remove();
+            this.contextShow = false;
+          };
 
-        const cancelButton = document.createElement('button');
-        cancelButton.innerHTML = 'Cancel';
-        cancelButton.onclick = () => {
-          editWindow.remove();
-          this.contextShow = false;
-        };
+          this.paper.on('blank:pointerdown', (evt: any) => {
+            editWindow.remove();
+            this.contextShow = false;
+          });
 
-        this.paper.on('blank:pointerdown', (evt: any) => {
-          editWindow.remove();
-          this.contextShow = false;
-        });
+          this.paper.on('cell:pointerdown', (evt: any) => {
+            editWindow.remove();
+            this.contextShow = false;
+          });
 
-        this.paper.on('cell:pointerdown', (evt: any) => {
-          editWindow.remove();
-          this.contextShow = false;
-        });
+          this.paper.on('cell:contextmenu', (cellView: any, evt: any) => {
+            editWindow.remove();
+          });
 
-        this.paper.on('cell:contextmenu', (cellView: any, evt: any) => {
-          editWindow.remove();
-        });
-
-        if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition') {
-          nameDiv.appendChild(textName);
-          nameDiv.appendChild(nameInput);
-          editWindow.appendChild(nameDiv);
-        }
-
-        if ((cellView as any).model.get('type') === 'pn.Place') {
-          tokenDiv.appendChild(textToken);
-          tokenDiv.appendChild(tokenInput);
-          editWindow.appendChild(tokenDiv);
-
-          sizeDiv.appendChild(textSize);
-          sizeDiv.appendChild(sizeInput);
-          editWindow.appendChild(sizeDiv);
-        }
-
-        if ((cellView as any).model.get('type') === 'pn.Transition') {
-          widthDiv.appendChild(textWidth);
-          widthDiv.appendChild(widthInput);
-          editWindow.appendChild(widthDiv);
-
-          heightDiv.appendChild(textHeight);
-          heightDiv.appendChild(heightInput);
-          editWindow.appendChild(heightDiv);
-        }
-
-        if ((cellView as any).model.get('type') === 'pn.Link') {
           weightDiv.appendChild(textWeight);
           weightDiv.appendChild(weightInput);
           editWindow.appendChild(weightDiv);
+
+          editWindow.appendChild(saveButton);
+          editWindow.appendChild(cancelButton);
+
+          (container as any).appendChild(editWindow);
         }
+      } else {
+        if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition' || (cellView as any).model.get('type') === 'pn.Link') {
+          let nameDiv: any;
+          let nameInput: any;
+          let textName: any;
 
-        editWindow.appendChild(saveButton);
-        editWindow.appendChild(cancelButton);
+          let tokenDiv: any;
+          let tokenInput: any;
+          let textToken: any;
 
-        (container as any).appendChild(editWindow);
+          let sizeDiv: any;
+          let sizeInput: any;
+          let textSize: any;
+
+          let weightDiv: any;
+          let weightInput: any;
+          let textWeight: any;
+
+          let widthDiv: any;
+          let widthInput: any;
+          let textWidth: any;
+
+          let heightDiv: any;
+          let heightInput: any;
+          let textHeight: any;
+
+          const editWindow = document.createElement('div');
+          if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition') {
+            nameDiv = document.createElement('div');
+          }
+          if ((cellView as any).model.get('type') === 'pn.Place') {
+            tokenDiv = document.createElement('div');
+            sizeDiv = document.createElement('div');
+          }
+          if ((cellView as any).model.get('type') === 'pn.Transition') {
+            widthDiv = document.createElement('div');
+            heightDiv = document.createElement('div');
+          }
+          if ((cellView as any).model.get('type') === 'pn.Link') {
+            weightDiv = document.createElement('div');
+          }
+          editWindow.classList.add('editElements');
+          editWindow.style.position = 'absolute';
+          editWindow.style.left = evt.pageX + 'px';
+          editWindow.style.top = evt.pageY + 'px';
+          editWindow.style.background = 'white';
+          editWindow.style.border = '1px solid black';
+          editWindow.style.borderRadius = '0.75rem';
+          editWindow.style.padding = '10px';
+
+          if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition') {
+            nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.value = (cellView as any).model.get('attrs')['.label'].text;
+
+            textName = document.createElement('p');
+            textName.innerHTML = 'Nazwa';
+          }
+
+          if ((cellView as any).model.get('type') === 'pn.Place') {
+            tokenInput = document.createElement('input');
+            tokenInput.type = 'number';
+            tokenInput.setAttribute('min', '0');
+            tokenInput.value = (cellView as any).model.get('tokens');
+
+            tokenInput.addEventListener('input', () => {
+              if (parseInt(tokenInput.value) < 0) {
+                tokenInput.value = '0';
+              }
+            });
+
+            textToken = document.createElement('p');
+            textToken.innerHTML = 'Tokeny';
+
+            sizeInput = document.createElement('input');
+            sizeInput.type = 'number';
+            sizeInput.setAttribute('min', '0');
+            sizeInput.value = (cellView as any).model.get('attrs').circle.r;
+
+            sizeInput.addEventListener('input', () => {
+              if (parseInt(sizeInput.value) < 0) {
+                sizeInput.value = '10';
+              }
+            });
+
+            textSize = document.createElement('p');
+            textSize.innerHTML = 'Rozmiar';
+          }
+
+          if ((cellView as any).model.get('type') === 'pn.Transition') {
+            widthInput = document.createElement('input');
+            widthInput.type = 'number';
+            widthInput.setAttribute('min', '0');
+            widthInput.value = (cellView as any).model.get('attrs').rect.width;
+
+            widthInput.addEventListener('input', () => {
+              if (parseInt(widthInput.value) < 0) {
+                widthInput.value = '20';
+              }
+            });
+
+            textWidth = document.createElement('p');
+            textWidth.innerHTML = 'Szerokość';
+
+            heightInput = document.createElement('input');
+            heightInput.type = 'number';
+            heightInput.setAttribute('min', '0');
+            heightInput.value = (cellView as any).model.get('attrs').rect.height;
+
+            heightInput.addEventListener('input', () => {
+              if (parseInt(heightInput.value) < 0) {
+                heightInput.value = '20';
+              }
+            });
+
+            textHeight = document.createElement('p');
+            textHeight.innerHTML = 'Wysokość';
+          }
+
+          if ((cellView as any).model.get('type') === 'pn.Link') {
+            weightInput = document.createElement('input');
+            weightInput.type = 'number';
+            weightInput.setAttribute('min', '1');
+            weightInput.value = (cellView as any).model.get('weight');
+
+            weightInput.addEventListener('input', () => {
+              if (parseInt(weightInput.value) < 1) {
+                weightInput.value = '0';
+              }
+            });
+
+            textWeight = document.createElement('p');
+            textWeight.innerHTML = 'Waga';
+          }
+
+          const saveButton = document.createElement('button');
+          saveButton.innerHTML = 'Save';
+          saveButton.onclick = () => {
+            const lastStep = this.graph.toJSON();
+            modelStates.push(lastStep);
+            if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition') {
+              let nameExist = false;
+              this.graph.getCells().forEach((element: any) => {
+                if (element.attributes.type !== 'pn.Link' && element.attributes.type !== 'basic.Circle') {
+                  if (!element.attributes.attrs['.label']) {
+                    if ((cellView as any).model.id !== element.id && element.attributes.attrs['.label'].text === nameInput.value) {
+                      nameExist = true;
+                    }
+                  }
+                }
+              });
+              if (!nameExist) {
+                (cellView as any).model.attr('.label/text', nameInput.value);
+              }
+            }
+            if ((cellView as any).model.get('type') === 'pn.Place') {
+              if (tokenInput.value === '') {
+                tokenInput.value = '0';
+              }
+              if (sizeInput.value === '') {
+                sizeInput.value = '20';
+              }
+              if (sizeInput.value < 10) {
+                sizeInput.value = '10';
+              }
+              (cellView as any).model.attr('circle/r', sizeInput.value);
+              (cellView as any).model.set('tokens', tokenInput.value);
+              if (parseInt(tokenInput.value) === 0) {
+                this.graph.getCells().forEach((element: any) => {
+                  if (element.attributes.place === (cellView as any).model.get('id')) {
+                    element.remove();
+                  }
+                });
+              }
+
+              if (parseInt(tokenInput.value) > 0 && tokenInput.value.length <= 4) {
+                this.graph.getCells().forEach((element: any) => {
+                  if (element.attributes.place === (cellView as any).model.get('id')) {
+                    element.remove();
+                  }
+                });
+
+                let tokenText = (cellView as any).model.get('tokens').toString();
+
+                if (parseInt((cellView as any).model.get('tokens')) === 1) {
+                  tokenText = '';
+                }
+
+                const circle = new joint.shapes.basic.Circle({
+                  position: { x: (cellView as any).model.position().x, y: (cellView as any).model.position().y },
+                  attrs: {
+                    circle: {
+                      attrs: {
+                        r: 20
+                      },
+                      fill: 'black',
+                      'pointer-events': 'none'
+                    },
+                    text: {
+                      text: tokenText,
+                      'font-size': 16,
+                      'text-anchor': 'middle',
+                      'y-alignment': 'middle',
+                      'pointer-events': 'none',
+                      fill: 'white'
+                    }
+                  },
+                  'pointer-events': 'none',
+                  place: (cellView as any).model.get('id'),
+                  locked: true,
+                  interactive: false
+                });
+                this.graph.addCell(circle);
+                circle.attr('circle/r', parseInt((cellView as any).model.attributes.attrs.circle.r) / 2);
+                (cellView as any).model.on('change:position', () => {
+                  circle.position(
+                    (cellView as any).model.position().x,
+                    (cellView as any).model.position().y
+                  );
+                });
+              }
+            }
+            if ((cellView as any).model.get('type') === 'pn.Transition') {
+              if (widthInput.value === '') {
+                widthInput.value = '20';
+              }
+              if (heightInput.value === '') {
+                heightInput.value = '60';
+              }
+              if (widthInput.value < 10) {
+                widthInput.value = '10';
+              }
+              if (heightInput.value < 10) {
+                heightInput.value = '10';
+              }
+              (cellView as any).model.attr('rect/width', widthInput.value);
+              (cellView as any).model.attr('rect/height', heightInput.value);
+            }
+            if ((cellView as any).model.get('type') === 'pn.Link') {
+              const link = new joint.shapes.pn.Link({
+                source: { id: (cellView as any).model.attributes.source.id },
+                target: { id: (cellView as any).model.attributes.target.id },
+                attrs: {
+                  '.marker-target': { display: 'none' },
+                  '.marker-source': { display: 'none' },
+                  '.link-tools': { display: 'none' },
+                  '.connection': { stroke: 'black', 'pointer-events': 'none' }
+                },
+                weight: weightInput.value,
+                selected: false
+              });
+
+              this.graph.addCell(link);
+
+              const distance = 18 + (4 * weightInput.value.toString().length);
+
+              link.appendLabel({
+                attrs: {
+                  text: {
+                    text: weightInput.value,
+                    'pointer-events': 'none',
+                    'font-size': 20,
+                    'font-weight': 'bold',
+                    fill: 'black',
+                    stroke: 'white',
+                    'stroke-width': 1
+                  },
+                  rect: {
+                    fill: 'white',
+                    'fill-opacity': 0,
+                    stroke: 'none'
+                  }
+                },
+                position: {
+                  distance: -distance
+                }
+              });
+
+              link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
+              link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
+              (cellView as any).model.remove();
+            }
+            editWindow.remove();
+            this.contextShow = false;
+          };
+
+          const cancelButton = document.createElement('button');
+          cancelButton.innerHTML = 'Cancel';
+          cancelButton.onclick = () => {
+            editWindow.remove();
+            this.contextShow = false;
+          };
+
+          this.paper.on('blank:pointerdown', (evt: any) => {
+            editWindow.remove();
+            this.contextShow = false;
+          });
+
+          this.paper.on('cell:pointerdown', (evt: any) => {
+            editWindow.remove();
+            this.contextShow = false;
+          });
+
+          this.paper.on('cell:contextmenu', (cellView: any, evt: any) => {
+            editWindow.remove();
+          });
+
+          if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition') {
+            nameDiv.appendChild(textName);
+            nameDiv.appendChild(nameInput);
+            editWindow.appendChild(nameDiv);
+          }
+
+          if ((cellView as any).model.get('type') === 'pn.Place') {
+            tokenDiv.appendChild(textToken);
+            tokenDiv.appendChild(tokenInput);
+            editWindow.appendChild(tokenDiv);
+
+            sizeDiv.appendChild(textSize);
+            sizeDiv.appendChild(sizeInput);
+            editWindow.appendChild(sizeDiv);
+          }
+
+          if ((cellView as any).model.get('type') === 'pn.Transition') {
+            widthDiv.appendChild(textWidth);
+            widthDiv.appendChild(widthInput);
+            editWindow.appendChild(widthDiv);
+
+            heightDiv.appendChild(textHeight);
+            heightDiv.appendChild(heightInput);
+            editWindow.appendChild(heightDiv);
+          }
+
+          if ((cellView as any).model.get('type') === 'pn.Link') {
+            weightDiv.appendChild(textWeight);
+            weightDiv.appendChild(weightInput);
+            editWindow.appendChild(weightDiv);
+          }
+
+          editWindow.appendChild(saveButton);
+          editWindow.appendChild(cancelButton);
+
+          (container as any).appendChild(editWindow);
+        }
       }
     });
 
@@ -1170,6 +1463,20 @@ export default defineComponent({
       if (event.key === 'Control') {
         this.paper.setInteractivity(true);
         this.ctrl_pressed = false;
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Shift') {
+        this.paper.setInteractivity(false);
+        this.shift_pressed = true;
+      }
+    });
+
+    document.addEventListener('keyup', (event) => {
+      if (event.key === 'Shift') {
+        this.paper.setInteractivity(true);
+        this.shift_pressed = false;
       }
     });
 
@@ -1500,9 +1807,12 @@ export default defineComponent({
           Swal.fire({
             title: 'Wybierz format',
             showDenyButton: true,
+            showCancelButton: true,
             confirmButtonText: 'Standardowy',
             denyButtonText: 'Tina',
-            denyButtonColor: '#7066e0'
+            denyButtonColor: '#7066e0',
+            cancelButtonText: 'PIPE',
+            cancelButtonColor: '#7066e0'
           }).then((result) => {
             if (result.isConfirmed) {
               const elements = [] as any;
@@ -1550,6 +1860,109 @@ export default defineComponent({
               const blob = new Blob([data], { type: 'text/plain' });
               const anchor = document.createElement('a');
               anchor.download = 'PetriNetExport.ndr';
+              anchor.href = window.URL.createObjectURL(blob);
+              anchor.dataset.downloadurl = ['text/plain', anchor.download, anchor.href].join(':');
+              anchor.click();
+            } else if (result.dismiss === Swal.DismissReason.cancel) {
+              let data = '<?xml version="1.0" encoding="ISO-8859-1"?><pnml>\n';
+              data = data + '\t<net id="Net-One" type="P/T net">\n';
+              data = data + '\t\t<token id="Default" enabled="true" red="0" green="0" blue="0"/>\n';
+              this.graph.getCells().forEach((element: any) => {
+                if (element.attributes.type === 'pn.Place') {
+                  data = data + '\t\t<place id="' + element.attributes.attrs['.label'].text + '">\n';
+
+                  data = data + '\t\t\t<graphics>\n';
+                  data = data + '\t\t\t\t<position x="' + element.attributes.position.x + '.0" y="' + element.attributes.position.y + '.0"/>\n';
+                  data = data + '\t\t\t</graphics>\n';
+
+                  data = data + '\t\t\t<name>\n';
+                  data = data + '\t\t\t\t<value>' + element.attributes.attrs['.label'].text + '</value>\n';
+                  data = data + '\t\t\t\t<graphics>\n';
+                  data = data + '\t\t\t\t\t<offset x="0.0" y="0.0"/>\n';
+                  data = data + '\t\t\t\t</graphics>\n';
+                  data = data + '\t\t\t</name>\n';
+
+                  data = data + '\t\t\t<initialMarking>\n';
+                  data = data + '\t\t\t\t<value>Default,' + element.attributes.tokens + '</value>\n';
+                  data = data + '\t\t\t\t<graphics>\n';
+                  data = data + '\t\t\t\t\t<offset x="0.0" y="0.0"/>\n';
+                  data = data + '\t\t\t\t</graphics>\n';
+                  data = data + '\t\t\t</initialMarking>\n';
+
+                  data = data + '\t\t\t<capacity>\n';
+                  data = data + '\t\t\t\t<value>0</value>\n';
+                  data = data + '\t\t\t</capacity>\n';
+
+                  data = data + '\t\t</place>\n';
+                }
+              });
+              this.graph.getCells().forEach((element: any) => {
+                if (element.attributes.type === 'pn.Transition') {
+                  data = data + '\t\t<transition id="' + element.attributes.attrs['.label'].text + '">\n';
+
+                  data = data + '\t\t\t<graphics>\n';
+                  data = data + '\t\t\t\t<position x="' + element.attributes.position.x + '.0" y="' + element.attributes.position.y + '.0"/>\n';
+                  data = data + '\t\t\t</graphics>\n';
+
+                  data = data + '\t\t\t<name>\n';
+                  data = data + '\t\t\t\t<value>' + element.attributes.attrs['.label'].text + '</value>\n';
+                  data = data + '\t\t\t\t<graphics>\n';
+                  data = data + '\t\t\t\t\t<offset x="-5.0" y="35.0"/>\n';
+                  data = data + '\t\t\t\t</graphics>\n';
+                  data = data + '\t\t\t</name>\n';
+
+                  data = data + '\t\t\t<orientation>\n';
+                  data = data + '\t\t\t\t<value>0</value>\n';
+                  data = data + '\t\t\t</orientation>\n';
+
+                  data = data + '\t\t\t<rate>\n';
+                  data = data + '\t\t\t\t<value>1.0</value>\n';
+                  data = data + '\t\t\t</rate>\n';
+
+                  data = data + '\t\t\t<timed>\n';
+                  data = data + '\t\t\t\t<value>false</value>\n';
+                  data = data + '\t\t\t</timed>\n';
+
+                  data = data + '\t\t\t<infiniteServer>\n';
+                  data = data + '\t\t\t\t<value>false</value>\n';
+                  data = data + '\t\t\t</infiniteServer>\n';
+
+                  data = data + '\t\t\t<priority>\n';
+                  data = data + '\t\t\t\t<value>1</value>\n';
+                  data = data + '\t\t\t</priority>\n';
+
+                  data = data + '\t\t</transition>\n';
+                }
+              });
+
+              this.graph.getCells().forEach((element: any) => {
+                if (element.attributes.type === 'pn.Link') {
+                  data = data + '\t\t<arc id="' + element.getSourceElement().attributes.attrs['.label'].text + ' to ' + element.getTargetElement().attributes.attrs['.label'].text + '" ';
+                  data = data + 'source="' + element.getSourceElement().attributes.attrs['.label'].text + '" target="' + element.getTargetElement().attributes.attrs['.label'].text + '">\n';
+
+                  data = data + '\t\t\t<graphics/>\n';
+
+                  data = data + '\t\t\t<inscription>\n';
+                  data = data + '\t\t\t\t<value>Default,' + element.attributes.weight + '</value>\n';
+                  data = data + '\t\t\t\t<graphics/>\n';
+                  data = data + '\t\t\t</inscription>\n';
+
+                  data = data + '\t\t\t<tagged>\n';
+                  data = data + '\t\t\t\t<value>false</value>\n';
+                  data = data + '\t\t\t</tagged>\n';
+
+                  data = data + '\t\t\t<type value="normal"/>\n';
+
+                  data = data + '\t\t</arc>\n';
+                }
+              });
+
+              data = data + '\t</net>\n';
+              data = data + '</pnml>\n';
+
+              const blob = new Blob([data], { type: 'text/plain' });
+              const anchor = document.createElement('a');
+              anchor.download = 'PetriNetExport.xml';
               anchor.href = window.URL.createObjectURL(blob);
               anchor.dataset.downloadurl = ['text/plain', anchor.download, anchor.href].join(':');
               anchor.click();

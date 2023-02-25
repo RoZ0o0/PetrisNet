@@ -12,27 +12,28 @@ import java.util.*;
 public record SimulationService() {
 
     public SimulationNet simulation(SimulationNet net) {
-        Random random = new Random();
-        ArrayList<String> changes = new ArrayList<>();
-        net.setChanges(changes);
-        ArrayList<String> transitions = new ArrayList<>();
-        Map<String, ArrayList<String>> connectionsTransitionST = new HashMap<>();
-        Map<String, ArrayList<String>> connectionsTransitionFT = new HashMap<>();
-        for (int i = 0; i < net.getElements().size(); i++) {
-            if (Objects.equals(net.getElements().get(i).getType(), "pn.Transition")) {
-                transitions.add(net.getElements().get(i).getId());
+        if (net.getElements().size() > 0) {
+            Random random = new Random();
+            ArrayList<String> changes = new ArrayList<>();
+            net.setChanges(changes);
+            ArrayList<String> transitions = new ArrayList<>();
+            Map<String, ArrayList<String>> connectionsTransitionST = new HashMap<>();
+            Map<String, ArrayList<String>> connectionsTransitionFT = new HashMap<>();
+            for (int i = 0; i < net.getElements().size(); i++) {
+                if (Objects.equals(net.getElements().get(i).getType(), "pn.Transition")) {
+                    transitions.add(net.getElements().get(i).getId());
+                }
             }
-        }
 
-        getConnectionMap(net, transitions, connectionsTransitionST, connectionsTransitionFT);
+            getConnectionMap(net, transitions, connectionsTransitionST, connectionsTransitionFT);
 
-        ArrayList<String> enabledTransitions = new ArrayList<>();
-        for (String transitionKey: connectionsTransitionST.keySet()) {
-            boolean isEnabled = checkTransition(net, connectionsTransitionST, transitionKey);
-            if (isEnabled) {
-                enabledTransitions.add(transitionKey);
+            ArrayList<String> enabledTransitions = new ArrayList<>();
+            for (String transitionKey : connectionsTransitionST.keySet()) {
+                boolean isEnabled = checkTransition(net, connectionsTransitionST, connectionsTransitionFT, transitionKey);
+                if (isEnabled) {
+                    enabledTransitions.add(transitionKey);
+                }
             }
-        }
 
             if (!enabledTransitions.isEmpty()) {
 
@@ -54,6 +55,7 @@ public record SimulationService() {
 
                 net.setChanges(changes);
             }
+        }
 
         return net;
     }
@@ -111,7 +113,7 @@ public record SimulationService() {
                                 Map<String, ArrayList<String>> connectionsTransitionST,
                                 Map<String, ArrayList<String>> connectionsTransitionFT) {
 
-        boolean isEnabled = checkTransition(net, connectionsTransitionST, transitionKey);
+        boolean isEnabled = checkTransition(net, connectionsTransitionST, connectionsTransitionFT, transitionKey);
 
         if (isEnabled) {
             for (int i = 0; i < connectionsTransitionST.get(transitionKey).size(); i++) {
@@ -137,7 +139,7 @@ public record SimulationService() {
 
     }
 
-    private boolean checkTransition(SimulationNet net, Map<String, ArrayList<String>> connectionsTransitionST, String transitionKey) {
+    private boolean checkTransition(SimulationNet net, Map<String, ArrayList<String>> connectionsTransitionST, Map<String, ArrayList<String>> connectionsTransitionFT, String transitionKey) {
         if (connectionsTransitionST.get(transitionKey).size() > 0) {
             for (int i = 0; i < connectionsTransitionST.get(transitionKey).size(); i++) {
                 int numberOfTokens = 0;
@@ -153,10 +155,9 @@ public record SimulationService() {
                     return false;
                 }
             }
-        } else {
-            return false;
         }
-        return true;
+
+        return connectionsTransitionFT.get(transitionKey).size() > 0;
     }
 
     private int getConnectionWeight(SimulationNet net, String transitionKey, String placeName) {
