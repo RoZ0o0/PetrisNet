@@ -15,10 +15,16 @@ export default class SimulationServices {
       height: 0
     };
 
+    const tempVertices: IVertices = {
+      x: 0,
+      y: 0
+    };
+
     const tempConnection: IConnections = {
       source: '',
       target: '',
-      weight: 0
+      weight: 0,
+      vertices: [tempVertices]
     };
 
     const tempSimulation: ISimulation = {
@@ -62,4 +68,10 @@ export interface IConnections {
     source: string;
     target: string;
     weight: number;
+    vertices: Array<IVertices>;
+}
+
+export interface IVertices {
+  x: number;
+  y: number;
 }

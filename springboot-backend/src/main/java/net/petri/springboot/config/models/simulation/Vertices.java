@@ -5,19 +5,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Connections {
+public class Vertices {
 
-    private String source;
+    private int x;
 
-    private String target;
-
-    private int weight;
-
-    private List<Vertices> vertices;
+    private int y;
 }

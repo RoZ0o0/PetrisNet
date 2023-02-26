@@ -8,9 +8,9 @@
         <span v-if='checkIfExampleEdited()' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>Edytowanie przykładowej sieci: {{ this.exampleEditResult.netName }}</span>
       </div>
       <div class="flex ml-4 items-center petri-nav">
-        <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center" @click='run(); this.running = true;' :disabled='this.running'>
-          <RunIcon class="inline-block align-middle" :disabled='this.running' />
-          <span class="inline-block align-middle select-none" :disabled='this.running'>Run</span>
+        <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center" @click='run(); this.running = true;' :disabled='this.running && !this.wait'>
+          <RunIcon class="inline-block align-middle" :disabled='this.running && !this.wait' />
+          <span class="inline-block align-middle select-none" :disabled='this.running && !this.wait'>Run</span>
         </button>
         <button class="border-2 border-black border-l-0 rounded-br-xl rounded-tr-xl p-2 items-center" @click='stop()'>
           <StopIcon class="inline-block align-middle" />
@@ -123,10 +123,16 @@ export default defineComponent({
       selectedElement: '',
       placeCounter: 0,
       transitionCounter: 0,
+      counterPoints: 0,
       current_connection: null as any,
       current_connections: [] as any,
+      current_x: null as any,
+      current_y: null as any,
+      modelStates: [] as any,
       ctrl_pressed: false,
       shift_pressed: false,
+      alt_pressed: false,
+      altOnce: false,
       animations: [] as any,
       counter: 0,
       dest: null as any,
@@ -141,7 +147,8 @@ export default defineComponent({
       resultSimulation: SimulationServices.getBlankSimulationTemplate(),
       beforeSimulation: SimulationServices.getBlankSimulationTemplate(),
       simulationCounter: 0,
-      running: false
+      running: false,
+      wait: false
     };
   },
   watch: {
@@ -172,8 +179,6 @@ export default defineComponent({
 
     this.graph = new joint.dia.Graph();
 
-    const modelStates = [] as any;
-
     this.paper = new joint.dia.Paper({
       el: container,
       model: this.graph,
@@ -195,6 +200,11 @@ export default defineComponent({
     let endPoint: any;
 
     let currentScale = 1;
+
+    let path: any;
+    let isDrawing: any;
+
+    let pathData: any;
 
     (this.paper as any).on('blank:mousewheel', (event: MouseEvent, x: number, y: number, delta: number) => {
       event.preventDefault();
@@ -223,7 +233,7 @@ export default defineComponent({
           startX = cellView.model.get('position').x;
           startY = cellView.model.get('position').y;
           const lastStep = this.graph.toJSON();
-          modelStates.push(lastStep);
+          this.modelStates.push(lastStep);
         }
 
         if (!cellView.model.attributes.selected) {
@@ -275,14 +285,15 @@ export default defineComponent({
               '.marker-target': { display: 'none' },
               '.marker-source': { display: 'none' },
               '.link-tools': { display: 'none' },
-              '.connection': { stroke: 'black', 'pointer-events': 'none' }
+              '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
+              '.connection-wrap': { display: 'none' }
             },
             weight: 1,
             selected: false
           });
 
           const lastStep = this.graph.toJSON();
-          modelStates.push(lastStep);
+          this.modelStates.push(lastStep);
           this.graph.addCell(link);
 
           link.appendLabel({
@@ -332,14 +343,15 @@ export default defineComponent({
                 '.marker-target': { display: 'none' },
                 '.marker-source': { display: 'none' },
                 '.link-tools': { display: 'none' },
-                '.connection': { stroke: 'black', 'pointer-events': 'none' }
+                '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
+                '.connection-wrap': { display: 'none' }
               },
               weight: 1,
               selected: false
             });
 
             const lastStep = this.graph.toJSON();
-            modelStates.push(lastStep);
+            this.modelStates.push(lastStep);
             this.graph.addCell(link);
 
             link.appendLabel({
@@ -367,10 +379,15 @@ export default defineComponent({
             link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
             link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
 
+            (link as any).on('change:vertices', (link: any) => {
+              const lastStep = this.graph.toJSON();
+              this.modelStates.push(lastStep);
+            });
+
             this.current_connection = link.id;
           } else {
             const lastStep = this.graph.toJSON();
-            modelStates.push(lastStep);
+            this.modelStates.push(lastStep);
             this.graph.getCells().forEach((element: any) => {
               if ((element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition') && element.attributes.selected) {
                 const link = new joint.shapes.pn.Link({
@@ -380,7 +397,8 @@ export default defineComponent({
                     '.marker-target': { display: 'none' },
                     '.marker-source': { display: 'none' },
                     '.link-tools': { display: 'none' },
-                    '.connection': { stroke: 'black', 'pointer-events': 'none' }
+                    '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
+                    '.connection-wrap': { display: 'none' }
                   },
                   weight: 1,
                   selected: false
@@ -413,6 +431,11 @@ export default defineComponent({
                 link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
                 link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
 
+                (link as any).on('change:vertices', (link: any) => {
+                  const lastStep = this.graph.toJSON();
+                  this.modelStates.push(lastStep);
+                });
+
                 this.current_connections.push(link.id);
               }
             });
@@ -424,11 +447,11 @@ export default defineComponent({
     (this.paper as any).on('blank:pointerdown', (evt: any, x: number, y: number) => {
       if (this.selectedElement === 'place') {
         const lastStep = this.graph.toJSON();
-        modelStates.push(lastStep);
+        this.modelStates.push(lastStep);
         this.addPlace(x, y);
       } else if (this.selectedElement === 'transition') {
         const lastStep = this.graph.toJSON();
-        modelStates.push(lastStep);
+        this.modelStates.push(lastStep);
         this.addTransition(x, y);
       } else if (this.selectedElement === '') {
         startPoint = { x, y };
@@ -482,6 +505,22 @@ export default defineComponent({
                 element.set('position', { x: position.x + moveX, y: position.y + moveY });
               }
             });
+            this.graph.getCells().forEach((element: any) => {
+              if (element.attributes.type === 'pn.Link') {
+                const link = this.graph.getCell(element.attributes.id);
+                const source = link.getSourceElement();
+                const target = link.getTargetElement();
+                if (source.attributes.selected && target.attributes.selected) {
+                  const vertices = [] as any;
+                  if (link.vertices().length > 0) {
+                    for (let i = 0; i < element.vertices().length; i++) {
+                      vertices.push({ x: element.vertices()[i].x + moveX, y: element.vertices()[i].y + moveY });
+                    }
+                    link.vertices(vertices);
+                  }
+                }
+              }
+            });
             startX = startX + moveX;
             startY = startY + moveY;
           }
@@ -489,6 +528,19 @@ export default defineComponent({
           if (this.current_connections.length === 0) {
             const link = this.graph.getCell(this.current_connection);
             link.prop('target', { x: x, y: y });
+            let found = false;
+            this.graph.getCells().forEach((element: any) => {
+              const point = this.paper.pageToLocalPoint({ x: event.clientX, y: event.clientY });
+              const bbox = element.getBBox();
+              if (point.x >= bbox.x && point.x <= bbox.x + bbox.width && point.y >= bbox.y && point.y <= bbox.y + bbox.height) {
+                found = true;
+              }
+            });
+
+            if (!found) {
+              this.current_x = x;
+              this.current_y = y;
+            }
           } else {
             this.current_connections.forEach((element: any) => {
               const link = this.graph.getCell(element);
@@ -585,6 +637,9 @@ export default defineComponent({
         });
         this.current_connections = [];
       }
+
+      isDrawing = false;
+      console.log(path);
     });
 
     (this.paper as any).on('blank:pointerup', () => {
@@ -708,7 +763,7 @@ export default defineComponent({
           saveButton.innerHTML = 'Save';
           saveButton.onclick = () => {
             const lastStep = this.graph.toJSON();
-            modelStates.push(lastStep);
+            this.modelStates.push(lastStep);
 
             if (tokenInput.value === '') {
               tokenInput.value = '0';
@@ -841,7 +896,7 @@ export default defineComponent({
           saveButton.innerHTML = 'Save';
           saveButton.onclick = () => {
             const lastStep = this.graph.toJSON();
-            modelStates.push(lastStep);
+            this.modelStates.push(lastStep);
 
             if (weightInput.value === '') {
               weightInput.value = '0';
@@ -858,7 +913,8 @@ export default defineComponent({
                       '.marker-target': { display: 'none' },
                       '.marker-source': { display: 'none' },
                       '.link-tools': { display: 'none' },
-                      '.connection': { stroke: 'black', 'pointer-events': 'none' }
+                      '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
+                      '.connection-wrap': { display: 'none' }
                     },
                     weight: weightInput.value,
                     selected: false
@@ -890,8 +946,18 @@ export default defineComponent({
                     }
                   });
 
+                  if (element.attributes.vertices) {
+                    link.vertices(element.attributes.vertices);
+                  }
+
                   link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
                   link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
+
+                  (link as any).on('change:vertices', (link: any) => {
+                    const lastStep = this.graph.toJSON();
+                    this.modelStates.push(lastStep);
+                  });
+
                   element.remove();
                 }
               }
@@ -1069,7 +1135,7 @@ export default defineComponent({
           saveButton.innerHTML = 'Save';
           saveButton.onclick = () => {
             const lastStep = this.graph.toJSON();
-            modelStates.push(lastStep);
+            this.modelStates.push(lastStep);
             if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition') {
               let nameExist = false;
               this.graph.getCells().forEach((element: any) => {
@@ -1176,7 +1242,8 @@ export default defineComponent({
                   '.marker-target': { display: 'none' },
                   '.marker-source': { display: 'none' },
                   '.link-tools': { display: 'none' },
-                  '.connection': { stroke: 'black', 'pointer-events': 'none' }
+                  '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
+                  '.connection-wrap': { display: 'none' }
                 },
                 weight: weightInput.value,
                 selected: false
@@ -1208,8 +1275,17 @@ export default defineComponent({
                 }
               });
 
+              if ((cellView as any).model.attributes.vertices) {
+                link.vertices((cellView as any).model.attributes.vertices);
+              }
               link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
               link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
+
+              (link as any).on('change:vertices', (link: any) => {
+                const lastStep = this.graph.toJSON();
+                this.modelStates.push(lastStep);
+              });
+
               (cellView as any).model.remove();
             }
             editWindow.remove();
@@ -1291,7 +1367,7 @@ export default defineComponent({
           }
           if (evt.key === 'Delete') {
             const lastStep = this.graph.toJSON();
-            modelStates.push(lastStep);
+            this.modelStates.push(lastStep);
             this.graph.getCells().forEach((element: any) => {
               if (typeof element !== 'undefined') {
                 if (element.attributes.selected) {
@@ -1308,7 +1384,7 @@ export default defineComponent({
           if (evt.key === 'z' && evt.ctrlKey) {
             let modelState: any;
             if (this.graph.getCells().length > 0) {
-              modelState = modelStates.pop();
+              modelState = this.modelStates.pop();
               if (this.graph.toJSON().cells.length > modelState.cells.length) {
                 if (this.graph.getLastCell().attributes.type === 'pn.Place') {
                   this.placeCounter--;
@@ -1411,7 +1487,8 @@ export default defineComponent({
                       '.marker-target': { display: 'none', style: { 'pointer-events': 'none' } },
                       '.marker-source': { display: 'none', style: { 'pointer-events': 'none' } },
                       '.link-tools': { display: 'none' },
-                      '.connection': { stroke: 'black', 'pointer-events': 'none' }
+                      '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
+                      '.connection-wrap': { display: 'none' }
                     },
                     weight: modelState.cells[i].weight,
                     selected: false
@@ -1442,8 +1519,17 @@ export default defineComponent({
                     }
                   });
 
+                  if (modelState.cells[i].vertices) {
+                    link.vertices(modelState.cells[i].vertices);
+                  }
+
                   link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
                   link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
+
+                  (link as any).on('change:vertices', (link: any) => {
+                    const lastStep = this.graph.toJSON();
+                    this.modelStates.push(lastStep);
+                  });
                 }
               }
             }
@@ -1461,6 +1547,11 @@ export default defineComponent({
 
     document.addEventListener('keyup', (event) => {
       if (event.key === 'Control') {
+        if (this.current_connection !== null) {
+          const link = this.graph.getCell(this.current_connection);
+          link.remove();
+          this.current_connection = null;
+        }
         this.paper.setInteractivity(true);
         this.ctrl_pressed = false;
       }
@@ -1477,6 +1568,46 @@ export default defineComponent({
       if (event.key === 'Shift') {
         this.paper.setInteractivity(true);
         this.shift_pressed = false;
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Alt') {
+        event.preventDefault();
+        this.alt_pressed = true;
+        if (!this.altOnce) {
+          if (this.current_connection !== null) {
+            if (this.current_x !== null && this.current_y !== null) {
+              const link = this.graph.getCell(this.current_connection);
+              let vertices = [] as any;
+              if (link.vertices() <= 0) {
+                const points = {
+                  x: this.current_x,
+                  y: this.current_y
+                };
+                vertices.push(points);
+              } else {
+                vertices = link.get('vertices');
+                const points = {
+                  x: this.current_x,
+                  y: this.current_y
+                };
+                vertices.push(points);
+              }
+              link.vertices(vertices);
+            }
+          }
+          this.altOnce = true;
+          this.current_x = null;
+          this.current_y = null;
+        }
+      }
+    });
+
+    document.addEventListener('keyup', (event) => {
+      if (event.key === 'Alt') {
+        this.alt_pressed = false;
+        this.altOnce = false;
       }
     });
 
@@ -1576,79 +1707,82 @@ export default defineComponent({
     },
 
     async run() {
-      const elements = [] as any;
-      const connections = [] as any;
+      try {
+        this.running = true;
 
-      await this.simulationCounter++;
+        while (this.running) {
+          const elements = [] as any;
+          const connections = [] as any;
 
-      this.getGraphData(elements, connections);
-      this.resultSimulation.elements = elements;
-      this.resultSimulation.connections = connections;
+          await this.simulationCounter++;
 
-      await this.simulation(this.resultSimulation).then((data) => (this.resultSimulation = data));
+          this.getGraphData(elements, connections);
+          this.resultSimulation.elements = elements;
+          this.resultSimulation.connections = connections;
 
-      await this.netChangeSimulation(this.resultSimulation);
+          await this.simulation(this.resultSimulation).then((data) => (this.resultSimulation = data));
 
-      let sourcePosition: any;
-      let targetPosition: any;
+          await this.netChangeSimulation(this.resultSimulation);
 
-      let pathData: any;
+          let sourcePosition: any;
+          let targetPosition: any;
 
-      this.resultSimulation.changes.forEach((ele: any) => {
-        this.graph.getCells().forEach((element: any) => {
-          if (element.attributes.type === 'pn.Link') {
-            if (element.getSourceElement().attributes.attrs['.label'].text === ele.split(' ')[0] &&
-                element.getTargetElement().attributes.attrs['.label'].text === ele.split(' ')[1]) {
-              sourcePosition = element.getSourcePoint();
-              targetPosition = element.getTargetPoint();
+          this.resultSimulation.changes.forEach((ele: any) => {
+            this.graph.getCells().forEach((element: any) => {
+              if (element.attributes.type === 'pn.Link') {
+                if (element.getSourceElement().attributes.attrs['.label'].text === ele.split(' ')[0] &&
+                    element.getTargetElement().attributes.attrs['.label'].text === ele.split(' ')[1]) {
+                  if (this.running) {
+                    sourcePosition = element.getSourcePoint();
+                    targetPosition = element.getTargetPoint();
 
-              const circle = new joint.shapes.basic.Circle({
-                position: { x: sourcePosition.x - 10, y: sourcePosition.y - 20 },
-                size: { width: 20, height: 20 },
-                attrs: {
-                  circle: { fill: 'black' }
-                },
-                simulation: true
-              });
+                    const connector = joint.connectors.normal;
+                    const pathData = connector(sourcePosition, targetPosition, element.get('vertices'));
 
-              this.graph.addCell(circle);
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', pathData.toString());
+                    const pathLength = path.getTotalLength();
 
-              circle.transition('position/y', targetPosition.y - 5, {
-                duration: 500,
-                timingFunction: function(t) { return t * t; },
-                valueFunction: function(a, b) {
-                  return function(t) {
-                    return a + (b - a) * t;
-                  };
+                    const circle = new joint.shapes.basic.Circle({
+                      position: { x: element.getSourcePoint().x, y: element.getSourcePoint().y - 5 },
+                      size: { width: 20, height: 20 },
+                      attrs: { circle: { fill: 'black' } },
+                      simulation: true
+                    });
+                    this.graph.addCell(circle);
+
+                    let distance = 0;
+                    const step = 6;
+
+                    function animate() {
+                      distance += step;
+
+                      const point = path.getPointAtLength(distance);
+                      const position = {
+                        x: point.x - (circle as any).attributes.size.width / 2,
+                        y: point.y - ((circle as any).attributes.size.height / 2) - 5
+                      };
+
+                      if (distance >= pathLength) {
+                        circle.position(targetPosition.x - (circle as any).attributes.size.width / 3, targetPosition.y - (circle as any).attributes.size.height / 3);
+                        circle.remove();
+                        return;
+                      }
+
+                      circle.position(position.x, position.y);
+
+                      requestAnimationFrame(animate);
+                    }
+                    animate();
+                  }
                 }
-              });
+              }
+            });
+          });
 
-              circle.transition('position/x', targetPosition.x - 5, {
-                duration: 500,
-                timingFunction: function(t) { return t * t; },
-                valueFunction: function(a, b) {
-                  return function(t) {
-                    return a + (b - a) * t;
-                  };
-                }
-              });
-            }
-          }
-        });
-      });
-
-      await this.customTimeout(500);
-
-      this.graph.getCells().forEach((element: any) => {
-        if (element.attributes.type === 'basic.Circle' && element.attributes.simulation) {
-          element.remove();
+          await this.customTimeout(1000);
         }
-      });
-
-      await this.customTimeout(400);
-
-      if (this.running) {
-        await this.run();
+      } catch (e) {
       }
     },
 
@@ -1664,38 +1798,8 @@ export default defineComponent({
       });
     },
 
-    customTimeout(ms: number) {
+    async customTimeout(ms: number) {
       return new Promise(resolve => setTimeout(resolve, ms));
-    },
-
-    async addAnimation(counter: number, x1: number, y1: number, x2: number, y2: number) {
-      const animationId = 'animation' + counter;
-      const circleId = 'circle' + counter;
-      this.animations.push(
-        markRaw({
-          template: `
-          <animateTransform
-            id="` + animationId + `"
-            begin="indefinite"
-            xlink:href="#` + circleId + `"
-            attributeName="transform"
-            type="translate" from="` + x1 + ',' + y1 + '" to="' + x2 + ',' + y2 + `" dur="0.5s"
-            additive="replace" fill="freeze"
-          />
-        `
-        })
-      );
-      this.animations.push(
-        markRaw({
-          template: `
-            <g id="` + circleId + `">
-              <circle r="10" stroke="#000000" fill="#000000" />
-            </g>
-          `
-        })
-      );
-      await this.customTimeout(1);
-      (document.getElementById(animationId) as any).beginElement();
     },
 
     getGraphData(elements = [] as any, connections = [] as any) {
@@ -1710,10 +1814,14 @@ export default defineComponent({
         let r = 0;
         let source = '';
         let target = '';
+        let vertices = [];
         if (element.attributes.type === 'pn.Link') {
           weight = parseInt(element.attributes.weight);
           source = element.attributes.source.id;
           target = element.attributes.target.id;
+          if (element.attributes.vertices) {
+            vertices = element.attributes.vertices;
+          }
         }
         if (element.attributes.type === 'pn.Place') {
           tokens = parseInt(element.attributes.tokens);
@@ -1733,7 +1841,7 @@ export default defineComponent({
           if (element.attributes.type !== 'pn.Link') {
             elements.push({ name: name, type: element.attributes.type, x: x, y: y, weight: weight, tokens: tokens, id: element.attributes.id, r: r, width: width, height: height });
           } else {
-            connections.push({ source: source, target: target, weight: weight });
+            connections.push({ source: source, target: target, weight: weight, vertices: vertices });
           }
         }
       });
@@ -2097,7 +2205,8 @@ export default defineComponent({
                   '.marker-target': { display: 'none', style: { 'pointer-events': 'none' } },
                   '.marker-source': { display: 'none', style: { 'pointer-events': 'none' } },
                   '.link-tools': { display: 'none' },
-                  '.connection': { stroke: 'black', 'pointer-events': 'none' }
+                  '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
+                  '.connection-wrap': { display: 'none' }
                 },
                 weight: element.weight,
                 selected: false
@@ -2128,8 +2237,17 @@ export default defineComponent({
                 }
               });
 
+              if (element.vertices) {
+                link.vertices(element.vertices);
+              }
+
               link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
               link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
+
+              (link as any).on('change:vertices', (link: any) => {
+                const lastStep = this.graph.toJSON();
+                this.modelStates.push(lastStep);
+              });
             });
           };
           if (this.selectedFile != null) {
@@ -2244,7 +2362,8 @@ export default defineComponent({
               '.marker-target': { display: 'none', style: { 'pointer-events': 'none' } },
               '.marker-source': { display: 'none', style: { 'pointer-events': 'none' } },
               '.link-tools': { display: 'none' },
-              '.connection': { stroke: 'black', 'pointer-events': 'none' }
+              '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
+              '.connection-wrap': { display: 'none' }
             },
             weight: element.weight,
             selected: false
@@ -2275,6 +2394,10 @@ export default defineComponent({
             }
           });
 
+          if (element.vertices) {
+            link.vertices(element.vertices);
+          }
+
           link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
           link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
         });
@@ -2283,12 +2406,11 @@ export default defineComponent({
       }
     },
 
-    netChangeSimulation(result: ISimulation) {
+    async netChangeSimulation(result: ISimulation) {
       this.clear();
       try {
         result.elements.forEach((element: any) => {
           if (element.type === 'pn.Place') {
-            this.placeCounter++;
             const place = new joint.shapes.pn.Place({
               position: { x: element.x, y: element.y },
               id: element.id,
@@ -2352,7 +2474,6 @@ export default defineComponent({
             }
           }
           if (element.type === 'pn.Transition') {
-            this.transitionCounter++;
             const transition = new joint.shapes.pn.Transition({
               position: { x: element.x, y: element.y },
               id: element.id,
@@ -2387,7 +2508,8 @@ export default defineComponent({
               '.marker-target': { display: 'none', style: { 'pointer-events': 'none' } },
               '.marker-source': { display: 'none', style: { 'pointer-events': 'none' } },
               '.link-tools': { display: 'none' },
-              '.connection': { stroke: 'black', 'pointer-events': 'none' }
+              '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
+              '.connection-wrap': { display: 'none' }
             },
             weight: element.weight,
             selected: false
@@ -2417,6 +2539,10 @@ export default defineComponent({
               distance: -distance
             }
           });
+
+          if (element.vertices) {
+            link.vertices(element.vertices);
+          }
 
           link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
           link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });

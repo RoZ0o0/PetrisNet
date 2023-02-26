@@ -157,7 +157,7 @@ public record SimulationService() {
             }
         }
 
-        return connectionsTransitionFT.get(transitionKey).size() > 0;
+        return true;
     }
 
     private int getConnectionWeight(SimulationNet net, String transitionKey, String placeName) {
