@@ -113,30 +113,25 @@ public record SimulationService() {
                                 Map<String, ArrayList<String>> connectionsTransitionST,
                                 Map<String, ArrayList<String>> connectionsTransitionFT) {
 
-        boolean isEnabled = checkTransition(net, connectionsTransitionST, connectionsTransitionFT, transitionKey);
-
-        if (isEnabled) {
-            for (int i = 0; i < connectionsTransitionST.get(transitionKey).size(); i++) {
-                int tokensNumber = 0;
-                for (int j = 0; j < net.getElements().size(); j++) {
-                    if (Objects.equals(net.getElements().get(j).getName(), connectionsTransitionST.get(transitionKey).get(i))) {
-                        tokensNumber = net.getElements().get(j).getTokens();
-                    }
+        for (int i = 0; i < connectionsTransitionST.get(transitionKey).size(); i++) {
+            int tokensNumber = 0;
+            for (int j = 0; j < net.getElements().size(); j++) {
+                if (Objects.equals(net.getElements().get(j).getId(), connectionsTransitionST.get(transitionKey).get(i))) {
+                    tokensNumber = net.getElements().get(j).getTokens();
                 }
-
-                int connectionWeight = getConnectionWeight(net, transitionKey, connectionsTransitionST.get(transitionKey).get(i));
-
-                for (int j = 0; j < net.getElements().size(); j++) {
-                    if (connectionsTransitionST.get(transitionKey).get(i) == net.getElements().get(j).getName()) {
-                        net.getElements().get(j).setTokens(tokensNumber - connectionWeight);
-                    }
-                }
-                changes.add(connectionsTransitionST.get(transitionKey).get(i) + " " + transitionKey);
             }
 
-            addByOutputArc(net, changes, connectionsTransitionFT, transitionKey);
+            int connectionWeight = getConnectionWeight(net, transitionKey, connectionsTransitionST.get(transitionKey).get(i));
+
+            for (int j = 0; j < net.getElements().size(); j++) {
+                if (Objects.equals(connectionsTransitionST.get(transitionKey).get(i), net.getElements().get(j).getId())) {
+                    net.getElements().get(j).setTokens(tokensNumber - connectionWeight);
+                }
+            }
+            changes.add(connectionsTransitionST.get(transitionKey).get(i) + " " + transitionKey);
         }
 
+        addByOutputArc(net, changes, connectionsTransitionFT, transitionKey);
     }
 
     private boolean checkTransition(SimulationNet net, Map<String, ArrayList<String>> connectionsTransitionST, Map<String, ArrayList<String>> connectionsTransitionFT, String transitionKey) {
@@ -144,7 +139,7 @@ public record SimulationService() {
             for (int i = 0; i < connectionsTransitionST.get(transitionKey).size(); i++) {
                 int numberOfTokens = 0;
                 for (int j = 0; j < net.getElements().size(); j++) {
-                    if (Objects.equals(net.getElements().get(j).getName(), connectionsTransitionST.get(transitionKey).get(i))) {
+                    if (Objects.equals(net.getElements().get(j).getId(), connectionsTransitionST.get(transitionKey).get(i))) {
                         numberOfTokens = net.getElements().get(j).getTokens();
                     }
                 }
@@ -155,23 +150,17 @@ public record SimulationService() {
                     return false;
                 }
             }
+        } else {
+            if (connectionsTransitionFT.get(transitionKey).size() <= 0) {
+                return false;
+            }
         }
 
         return true;
     }
 
-    private int getConnectionWeight(SimulationNet net, String transitionKey, String placeName) {
-        String transitionId = "";
-        String placeId = "";
+    private int getConnectionWeight(SimulationNet net, String transitionId, String placeId) {
         int connectionWeight = 1;
-        for (int i = 0; i < net.getElements().size(); i++) {
-            if (Objects.equals(transitionKey, net.getElements().get(i).getName())) {
-                transitionId = net.getElements().get(i).getId();
-            }
-            if (Objects.equals(placeName, net.getElements().get(i).getName())) {
-                placeId = net.getElements().get(i).getId();
-            }
-        }
 
         for (Connections connection : net.getConnections()) {
             if (Objects.equals(connection.getTarget(), transitionId) && Objects.equals(connection.getSource(), placeId)) {
@@ -185,25 +174,14 @@ public record SimulationService() {
     private void addByOutputArc(SimulationNet net, ArrayList<String> changes, Map<String, ArrayList<String>> connectionsTransitionFT, String transitionKey) {
         for (int i = 0; i < connectionsTransitionFT.get(transitionKey).size(); i++) {
             int connectionWeight = 1;
-            String transitionId = "";
-            String placeId = "";
-
-            for (int j = 0; j < net.getElements().size(); j++) {
-                if (Objects.equals(net.getElements().get(j).getName(), transitionKey)) {
-                    transitionId = net.getElements().get(j).getId();
-                }
-                if (Objects.equals(net.getElements().get(j).getName(), connectionsTransitionFT.get(transitionKey).get(i))) {
-                    placeId = net.getElements().get(j).getId();
-                }
-            }
 
             for (int j = 0; j < net.getConnections().size(); j++) {
-                if (Objects.equals(net.getConnections().get(j).getSource(), transitionId) && Objects.equals(net.getConnections().get(j).getTarget(), placeId)){
+                if (Objects.equals(net.getConnections().get(j).getSource(), transitionKey) && Objects.equals(net.getConnections().get(j).getTarget(), connectionsTransitionFT.get(transitionKey).get(i))){
                     connectionWeight = net.getConnections().get(j).getWeight();
                 }
             }
             for (int j = 0; j < net.getElements().size(); j++) {
-                if (Objects.equals(net.getElements().get(j).getName(), connectionsTransitionFT.get(transitionKey).get(i))) {
+                if (Objects.equals(net.getElements().get(j).getId(), connectionsTransitionFT.get(transitionKey).get(i))) {
                     int numberOfTokens = net.getElements().get(j).getTokens();
                     net.getElements().get(j).setTokens(numberOfTokens + connectionWeight);
                     changes.add(transitionKey + " " + connectionsTransitionFT.get(transitionKey).get(i));
@@ -216,29 +194,24 @@ public record SimulationService() {
         for (String element : transitions) {
             ArrayList<String> tempConnectionsST = new ArrayList<>();
             ArrayList<String> tempConnectionsFT = new ArrayList<>();
-            for (int i = 0 ; i < net.getConnections().size(); i++) {
-                if (Objects.equals(net.getConnections().get(i).getTarget(), element)) {
-                    for (int j = 0; j < net.getElements().size(); j++) {
+            for (int i = 0; i < net.getConnections().size(); i++) {
+                if (Objects.equals(element, net.getConnections().get(i).getTarget())) {
+                    for (int j = 0; j< net.getElements().size(); j++) {
                         if (Objects.equals(net.getElements().get(j).getId(), net.getConnections().get(i).getSource())) {
-                            tempConnectionsST.add(net.getElements().get(j).getName());
+                            tempConnectionsST.add(net.getElements().get(j).getId());
                         }
                     }
-                } else if(Objects.equals(net.getConnections().get(i).getSource(), element)) {
-                    for (int j = 0; j < net.getElements().size(); j++) {
+                } else if (Objects.equals(element, net.getConnections().get(i).getSource())) {
+                    for (int j = 0; j< net.getElements().size(); j++) {
                         if (Objects.equals(net.getElements().get(j).getId(), net.getConnections().get(i).getTarget())) {
-                            tempConnectionsFT.add(net.getElements().get(j).getName());
+                            tempConnectionsFT.add(net.getElements().get(j).getId());
                         }
                     }
                 }
             }
-            String transitionName = "";
-            for (int i = 0; i < net.getElements().size(); i++) {
-                if (Objects.equals(net.getElements().get(i).getId(), element)) {
-                    transitionName = net.getElements().get(i).getName();
-                }
-            }
-            connectionsST.put(transitionName, tempConnectionsST);
-            connectionsFT.put(transitionName, tempConnectionsFT);
+
+            connectionsST.put(element, tempConnectionsST);
+            connectionsFT.put(element, tempConnectionsFT);
         }
     }
 }

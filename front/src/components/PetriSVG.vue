@@ -26,9 +26,14 @@
           <SquareIcon class="inline-block align-middle" />
           <span class="inline-block align-middle select-none">Transition [2]</span>
         </button>
+        <button class="border-2 border-black border-l-0 p-2 items-center" v-on:click="switchDelete" :style='this.selectedElement === "fastadd" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
+          <CircleIcon class="inline-block align-middle" v-if='!this.tab_clicked' />
+          <SquareIcon class="inline-block align-middle" v-if='this.tab_clicked' />
+          <span class="inline-block align-middle select-none">Fast Add [3]</span>
+        </button>
         <button class="border-2 border-black border-l-0 border-r-0 p-2 items-center" v-on:click="switchDelete" :style='this.selectedElement === "delete" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
           <RemoveIcon class="inline-block align-middle" />
-          <span class="inline-block align-middle select-none">Remove [3]</span>
+          <span class="inline-block align-middle select-none">Remove [4]</span>
         </button>
         <button class="border-2 border-black rounded-br-xl rounded-tr-xl p-2 items-center" v-on:click="clear" :disabled="this.running">
           <ClearIcon class="inline-block align-middle" />
@@ -38,7 +43,7 @@
     </div>
   </div>
   <div class="mx-8 my-4 border-2 border-black rounded-xl h-4/5 paper-container">
-    <div ref="petriEditor" class='rounded-xl petriEditor'></div>
+    <div ref="petriEditor" class='rounded-xl petriEditor' v-bind:style="{ cursor: selectedElement === 'fastadd' ? fastAddCursor : 'default' }"></div>
   </div>
   <div class="flex w-full h-16 items-center justify-center">
     <div class="flex items-center petri-nav">
@@ -100,6 +105,13 @@ const transitionSettings = {
   }
 };
 
+const svgPath = 'M -100 -100 L 100 -100 L 100 100 L -100 100 L -100 -100 Z';
+
+let currentScale = 1;
+
+const cursorWidth = 100 * currentScale;
+const cursorHeight = 100 * currentScale;
+
 export default defineComponent({
   paper: null as joint.dia.Paper | null,
   name: 'PetriSVG',
@@ -132,6 +144,7 @@ export default defineComponent({
       ctrl_pressed: false,
       shift_pressed: false,
       alt_pressed: false,
+      tab_clicked: false,
       altOnce: false,
       animations: [] as any,
       counter: 0,
@@ -148,7 +161,8 @@ export default defineComponent({
       beforeSimulation: SimulationServices.getBlankSimulationTemplate(),
       simulationCounter: 0,
       running: false,
-      wait: false
+      wait: false,
+      fastAddCursor: `url("data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><path d="${svgPath}" stroke="black" stroke-width="1" fill="none" transform="translate(50,50) scale(0.4)"/></svg>`)}") 50 50, auto`
     };
   },
   watch: {
@@ -184,7 +198,7 @@ export default defineComponent({
       model: this.graph,
       width: '100%',
       height: '100%',
-      gridSize: 10,
+      gridSize: 5,
       drawGrid: true,
       interactive: {
         linkMoveable: false
@@ -198,8 +212,6 @@ export default defineComponent({
 
     let startPoint: any;
     let endPoint: any;
-
-    let currentScale = 1;
 
     let path: any;
     let isDrawing: any;
@@ -255,6 +267,7 @@ export default defineComponent({
               } else if (element.attributes.type === 'pn.Link') {
                 const link = this.graph.getCell(element.id);
 
+                element.attr('.marker-vertices/display', 'none');
                 element.attr('.connection/stroke', 'black');
               }
             });
@@ -273,69 +286,16 @@ export default defineComponent({
               }
             });
           } else if (cellView.model.attributes.type === 'pn.Link') {
+            const link = this.graph.getCell(cellView.model.attributes.id);
+            link.attr('.marker-vertices', { display: '', fill: 'transparent', stroke: 'black', 'stroke-width': 2 });
+            link.attr('.marker-vertex', { circle: { r: 5 } });
+            link.attr('.marker-vertex-remove-area', { fill: 'transparent', stroke: 'transparent' });
             cellView.model.attr('.connection/stroke', 'red');
           }
         }
       } else {
         if (!cellView.model.attributes.selected) {
-          const link = new joint.shapes.pn.Link({
-            source: { id: cellView.model.id },
-            target: { x: x, y: y },
-            attrs: {
-              '.marker-target': { display: 'none' },
-              '.marker-source': { display: 'none' },
-              '.link-tools': { display: 'none' },
-              '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
-              '.connection-wrap': { display: 'none' }
-            },
-            weight: 1,
-            selected: false
-          });
-
-          const lastStep = this.graph.toJSON();
-          this.modelStates.push(lastStep);
-          this.graph.addCell(link);
-
-          link.appendLabel({
-            attrs: {
-              text: {
-                text: '1',
-                'pointer-events': 'none',
-                'font-size': 20,
-                'font-weight': 'bold',
-                fill: 'black',
-                stroke: 'white',
-                'stroke-width': 1
-              },
-              rect: {
-                fill: 'white',
-                'fill-opacity': 0,
-                stroke: 'none'
-              }
-            },
-            position: {
-              distance: -22
-            }
-          });
-
-          link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
-          link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
-
-          this.current_connection = link.id;
-        } else {
-          let checkIfPlacesSelected = true;
-          let checkIfTransitionsSelected = true;
-          this.graph.getCells().forEach((element: any) => {
-            if (element.attributes.selected) {
-              if (element.attributes.type !== 'pn.Place') {
-                checkIfPlacesSelected = false;
-              }
-              if (element.attributes.type !== 'pn.Transition') {
-                checkIfTransitionsSelected = false;
-              }
-            }
-          });
-          if (!checkIfPlacesSelected && !checkIfTransitionsSelected) {
+          if (cellView.model.attributes.type === 'pn.Place' || cellView.model.attributes.type === 'pn.Transition') {
             const link = new joint.shapes.pn.Link({
               source: { id: cellView.model.id },
               target: { x: x, y: y },
@@ -344,7 +304,10 @@ export default defineComponent({
                 '.marker-source': { display: 'none' },
                 '.link-tools': { display: 'none' },
                 '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
-                '.connection-wrap': { display: 'none' }
+                '.connection-wrap': { display: 'none' },
+                '.marker-vertices': { display: 'none' },
+                '.marker-vertex-remove-area': { fill: 'transparent' },
+                '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
               },
               weight: 1,
               selected: false
@@ -379,66 +342,123 @@ export default defineComponent({
             link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
             link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
 
-            (link as any).on('change:vertices', (link: any) => {
-              const lastStep = this.graph.toJSON();
-              this.modelStates.push(lastStep);
-            });
-
             this.current_connection = link.id;
-          } else {
-            const lastStep = this.graph.toJSON();
-            this.modelStates.push(lastStep);
+          }
+        } else {
+          if (cellView.model.attributes.type === 'pn.Place' || cellView.model.attributes.type === 'pn.Transition') {
+            let checkIfPlacesSelected = true;
+            let checkIfTransitionsSelected = true;
             this.graph.getCells().forEach((element: any) => {
-              if ((element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition') && element.attributes.selected) {
-                const link = new joint.shapes.pn.Link({
-                  source: { id: element.id },
-                  target: { x: x, y: y },
-                  attrs: {
-                    '.marker-target': { display: 'none' },
-                    '.marker-source': { display: 'none' },
-                    '.link-tools': { display: 'none' },
-                    '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
-                    '.connection-wrap': { display: 'none' }
-                  },
-                  weight: 1,
-                  selected: false
-                });
-
-                this.graph.addCell(link);
-
-                link.appendLabel({
-                  attrs: {
-                    text: {
-                      text: '1',
-                      'pointer-events': 'none',
-                      'font-size': 20,
-                      'font-weight': 'bold',
-                      fill: 'black',
-                      stroke: 'white',
-                      'stroke-width': 1
-                    },
-                    rect: {
-                      fill: 'white',
-                      'fill-opacity': 0,
-                      stroke: 'none'
-                    }
-                  },
-                  position: {
-                    distance: -22
-                  }
-                });
-
-                link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
-                link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
-
-                (link as any).on('change:vertices', (link: any) => {
-                  const lastStep = this.graph.toJSON();
-                  this.modelStates.push(lastStep);
-                });
-
-                this.current_connections.push(link.id);
+              if (element.attributes.selected) {
+                if (element.attributes.type !== 'pn.Place') {
+                  checkIfPlacesSelected = false;
+                }
+                if (element.attributes.type !== 'pn.Transition') {
+                  checkIfTransitionsSelected = false;
+                }
               }
             });
+            if (!checkIfPlacesSelected && !checkIfTransitionsSelected) {
+              const link = new joint.shapes.pn.Link({
+                source: { id: cellView.model.id },
+                target: { x: x, y: y },
+                attrs: {
+                  '.marker-target': { display: 'none' },
+                  '.marker-source': { display: 'none' },
+                  '.link-tools': { display: 'none' },
+                  '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
+                  '.connection-wrap': { display: 'none' },
+                  '.marker-vertices': { display: 'none' },
+                  '.marker-vertex-remove-area': { fill: 'transparent' },
+                  '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
+                },
+                weight: 1,
+                selected: false
+              });
+
+              const lastStep = this.graph.toJSON();
+              this.modelStates.push(lastStep);
+              this.graph.addCell(link);
+
+              link.appendLabel({
+                attrs: {
+                  text: {
+                    text: '1',
+                    'pointer-events': 'none',
+                    'font-size': 20,
+                    'font-weight': 'bold',
+                    fill: 'black',
+                    stroke: 'white',
+                    'stroke-width': 1
+                  },
+                  rect: {
+                    fill: 'white',
+                    'fill-opacity': 0,
+                    stroke: 'none'
+                  }
+                },
+                position: {
+                  distance: -22
+                }
+              });
+
+              link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
+              link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
+
+              this.current_connection = link.id;
+            } else {
+              const lastStep = this.graph.toJSON();
+              this.modelStates.push(lastStep);
+              this.graph.getCells().forEach((element: any) => {
+                if ((element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition') && element.attributes.selected) {
+                  const link = new joint.shapes.pn.Link({
+                    source: { id: element.id },
+                    target: { x: x, y: y },
+                    attrs: {
+                      '.marker-target': { display: 'none' },
+                      '.marker-source': { display: 'none' },
+                      '.link-tools': { display: 'none' },
+                      '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
+                      '.connection-wrap': { display: 'none' },
+                      '.marker-vertices': { display: 'none' },
+                      '.marker-vertex-remove-area': { fill: 'transparent' },
+                      '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
+                    },
+                    weight: 1,
+                    selected: false
+                  });
+
+                  this.graph.addCell(link);
+
+                  link.appendLabel({
+                    attrs: {
+                      text: {
+                        text: '1',
+                        'pointer-events': 'none',
+                        'font-size': 20,
+                        'font-weight': 'bold',
+                        fill: 'black',
+                        stroke: 'white',
+                        'stroke-width': 1
+                      },
+                      rect: {
+                        fill: 'white',
+                        'fill-opacity': 0,
+                        stroke: 'none'
+                      }
+                    },
+                    position: {
+                      distance: -22
+                    }
+                  });
+
+                  link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
+                  link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
+
+                  this.current_connections.push(link.id);
+                }
+              });
+            }
           }
         }
       }
@@ -448,11 +468,162 @@ export default defineComponent({
       if (this.selectedElement === 'place') {
         const lastStep = this.graph.toJSON();
         this.modelStates.push(lastStep);
-        this.addPlace(x, y);
+        this.addPlace(x - 30, y - 30);
       } else if (this.selectedElement === 'transition') {
         const lastStep = this.graph.toJSON();
         this.modelStates.push(lastStep);
-        this.addTransition(x, y);
+        this.addTransition(x, y - 20);
+      } else if (this.selectedElement === 'fastadd') {
+        if (this.tab_clicked) {
+          const lastStep = this.graph.toJSON();
+          this.modelStates.push(lastStep);
+
+          const rectWidth = 200;
+          const rectHeight = 200;
+          const rect = {
+            x: x - rectWidth / 2,
+            y: y - rectHeight / 2,
+            width: rectWidth,
+            height: rectHeight
+          };
+
+          const elementsInArea = this.paper.findViewsInArea(rect);
+
+          this.transitionCounter++;
+          const transition = new joint.shapes.pn.Transition({
+            position: { x: x, y: y - 20 },
+            attrs: {
+              '.label': { text: 'T' + this.transitionCounter, 'ref-x': 0.5, 'ref-y': -15 },
+              rect: transitionSettings.rect
+            },
+            selected: false
+          });
+
+          this.graph.addCell(transition);
+
+          elementsInArea.forEach((element: any) => {
+            if (element.model.attributes.type === 'pn.Place') {
+              const link = new joint.shapes.pn.Link({
+                source: { id: element.model.attributes.id },
+                target: { id: transition.id },
+                attrs: {
+                  '.marker-target': { display: 'none' },
+                  '.marker-source': { display: 'none' },
+                  '.link-tools': { display: 'none' },
+                  '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
+                  '.connection-wrap': { display: 'none' },
+                  '.marker-vertices': { display: 'none' },
+                  '.marker-vertex-remove-area': { fill: 'transparent' },
+                  '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
+                },
+                weight: 1,
+                selected: false
+              });
+
+              this.graph.addCell(link);
+
+              link.appendLabel({
+                attrs: {
+                  text: {
+                    text: '1',
+                    'pointer-events': 'none',
+                    'font-size': 20,
+                    'font-weight': 'bold',
+                    fill: 'black',
+                    stroke: 'white',
+                    'stroke-width': 1
+                  },
+                  rect: {
+                    fill: 'white',
+                    'fill-opacity': 0,
+                    stroke: 'none'
+                  }
+                },
+                position: {
+                  distance: -22
+                }
+              });
+
+              link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
+              link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
+            }
+          });
+        } else {
+          const lastStep = this.graph.toJSON();
+          this.modelStates.push(lastStep);
+
+          const rectWidth = 200;
+          const rectHeight = 200;
+          const rect = {
+            x: x - rectWidth / 2,
+            y: y - rectHeight / 2,
+            width: rectWidth,
+            height: rectHeight
+          };
+
+          const elementsInArea = this.paper.findViewsInArea(rect);
+
+          this.placeCounter++;
+          const place = new joint.shapes.pn.Place({
+            position: { x: x - 30, y: y - 30 },
+            attrs: {
+              '.label': { text: 'P' + this.placeCounter, 'ref-x': 0.5, 'ref-y': -15 },
+              circle: placeSettings.circle
+            },
+            selected: false,
+            tokens: 0
+          });
+
+          this.graph.addCell(place);
+
+          elementsInArea.forEach((element: any) => {
+            if (element.model.attributes.type === 'pn.Transition') {
+              const link = new joint.shapes.pn.Link({
+                source: { id: element.model.attributes.id },
+                target: { id: place.id },
+                attrs: {
+                  '.marker-target': { display: 'none' },
+                  '.marker-source': { display: 'none' },
+                  '.link-tools': { display: 'none' },
+                  '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
+                  '.connection-wrap': { display: 'none' },
+                  '.marker-vertices': { display: 'none' },
+                  '.marker-vertex-remove-area': { fill: 'transparent' },
+                  '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
+                },
+                weight: 1,
+                selected: false
+              });
+
+              this.graph.addCell(link);
+
+              link.appendLabel({
+                attrs: {
+                  text: {
+                    text: '1',
+                    'pointer-events': 'none',
+                    'font-size': 20,
+                    'font-weight': 'bold',
+                    fill: 'black',
+                    stroke: 'white',
+                    'stroke-width': 1
+                  },
+                  rect: {
+                    fill: 'white',
+                    'fill-opacity': 0,
+                    stroke: 'none'
+                  }
+                },
+                position: {
+                  distance: -22
+                }
+              });
+
+              link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
+              link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
+            }
+          });
+        }
       } else if (this.selectedElement === '') {
         startPoint = { x, y };
 
@@ -533,7 +704,9 @@ export default defineComponent({
               const point = this.paper.pageToLocalPoint({ x: event.clientX, y: event.clientY });
               const bbox = element.getBBox();
               if (point.x >= bbox.x && point.x <= bbox.x + bbox.width && point.y >= bbox.y && point.y <= bbox.y + bbox.height) {
-                found = true;
+                if (element.attributes.type !== 'pn.Link') {
+                  found = true;
+                }
               }
             });
 
@@ -545,6 +718,23 @@ export default defineComponent({
             this.current_connections.forEach((element: any) => {
               const link = this.graph.getCell(element);
               link.prop('target', { x: x, y: y });
+              if (this.current_connections.length === 1) {
+                let found = false;
+                this.graph.getCells().forEach((ele: any) => {
+                  const point = this.paper.pageToLocalPoint({ x: event.clientX, y: event.clientY });
+                  const bbox = ele.getBBox();
+                  if (point.x >= bbox.x && point.x <= bbox.x + bbox.width && point.y >= bbox.y && point.y <= bbox.y + bbox.height) {
+                    if (ele.attributes.type !== 'pn.Link') {
+                      found = true;
+                    }
+                  }
+                });
+
+                if (!found) {
+                  this.current_x = x;
+                  this.current_y = y;
+                }
+              }
             });
           }
         }
@@ -589,6 +779,9 @@ export default defineComponent({
                     }
                   });
                   link.prop('target', { id: element.id });
+                  const linkView = link;
+                  link.remove();
+                  this.graph.addCell(linkView);
                   this.current_connection = null;
                 }
               }
@@ -627,6 +820,11 @@ export default defineComponent({
                     link.remove();
                   }
                   link.prop('target', { id: element.id });
+                  if (this.current_connections.length === 1) {
+                    const linkView = link;
+                    link.remove();
+                    this.graph.addCell(linkView);
+                  }
                 }
               }
             }
@@ -643,73 +841,76 @@ export default defineComponent({
     });
 
     (this.paper as any).on('blank:pointerup', () => {
-      if (this.selectedElement === '') {
-        this.graph.getCells().forEach((element: any) => {
-          element.attributes.selected = false;
-          if (element.attributes.type === 'pn.Place') {
-            element.attr({
-              circle: {
-                stroke: 'black'
-              }
-            });
-          } else if (element.attributes.type === 'pn.Transition') {
-            element.attr({
-              rect: {
-                stroke: 'black'
-              }
-            });
-          } else if (element.attributes.type === 'pn.Link') {
-            element.attr('.connection/stroke', 'black');
-          }
-        });
-        this.graph.getCells().forEach((element: any) => {
-          if (element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition' || element.attributes.type === 'pn.Link') {
-            let placeX: any;
-            let placeY: any;
-            let placeWidth: any;
-            let placeHeight: any;
-
-            if (element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition') {
-              placeX = element.position().x;
-              placeY = element.position().y;
-              placeWidth = element.get('size').width;
-              placeHeight = element.get('size').height;
-            } else {
-              placeX = element.getBBox().x;
-              placeY = element.getBBox().y;
-              placeWidth = element.getBBox().width;
-              placeHeight = element.getBBox().height;
+      if (rect.graph !== null) {
+        if (this.selectedElement === '') {
+          this.graph.getCells().forEach((element: any) => {
+            element.attributes.selected = false;
+            if (element.attributes.type === 'pn.Place') {
+              element.attr({
+                circle: {
+                  stroke: 'black'
+                }
+              });
+            } else if (element.attributes.type === 'pn.Transition') {
+              element.attr({
+                rect: {
+                  stroke: 'black'
+                }
+              });
+            } else if (element.attributes.type === 'pn.Link') {
+              element.attr('.marker-vertices/display', 'none');
+              element.attr('.connection/stroke', 'black');
             }
+          });
+          this.graph.getCells().forEach((element: any) => {
+            if (element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition' || element.attributes.type === 'pn.Link') {
+              let placeX: any;
+              let placeY: any;
+              let placeWidth: any;
+              let placeHeight: any;
 
-            const rectX = rect.position().x;
-            const rectY = rect.position().y;
-            const rectWidth = rect.get('size').width;
-            const rectHeight = rect.get('size').height;
+              if (element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition') {
+                placeX = element.position().x;
+                placeY = element.position().y;
+                placeWidth = element.get('size').width;
+                placeHeight = element.get('size').height;
+              } else {
+                placeX = element.getBBox().x;
+                placeY = element.getBBox().y;
+                placeWidth = element.getBBox().width;
+                placeHeight = element.getBBox().height;
+              }
 
-            const topLeft = placeX >= rectX && placeY >= rectY;
-            const bottomRight = placeX + placeWidth <= rectX + rectWidth && placeY + placeHeight <= rectY + rectHeight;
+              const rectX = rect.position().x;
+              const rectY = rect.position().y;
+              const rectWidth = rect.get('size').width;
+              const rectHeight = rect.get('size').height;
 
-            if (topLeft && bottomRight) {
-              element.attributes.selected = true;
-              if (element.attributes.type === 'pn.Place') {
-                element.attr({
-                  circle: {
-                    stroke: 'red'
-                  }
-                });
-              } else if (element.attributes.type === 'pn.Transition') {
-                element.attr({
-                  rect: {
-                    stroke: 'red'
-                  }
-                });
-              } else if (element.attributes.type === 'pn.Link') {
-                element.attr('.connection/stroke', 'red');
+              const topLeft = placeX >= rectX && placeY >= rectY;
+              const bottomRight = placeX + placeWidth <= rectX + rectWidth && placeY + placeHeight <= rectY + rectHeight;
+
+              if (topLeft && bottomRight) {
+                element.attributes.selected = true;
+                if (element.attributes.type === 'pn.Place') {
+                  element.attr({
+                    circle: {
+                      stroke: 'red'
+                    }
+                  });
+                } else if (element.attributes.type === 'pn.Transition') {
+                  element.attr({
+                    rect: {
+                      stroke: 'red'
+                    }
+                  });
+                } else if (element.attributes.type === 'pn.Link') {
+                  element.attr('.connection/stroke', 'red');
+                }
               }
             }
-          }
-        });
-        rect.remove();
+          });
+          rect.remove();
+        }
       }
     });
 
@@ -914,7 +1115,10 @@ export default defineComponent({
                       '.marker-source': { display: 'none' },
                       '.link-tools': { display: 'none' },
                       '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
-                      '.connection-wrap': { display: 'none' }
+                      '.connection-wrap': { display: 'none' },
+                      '.marker-vertices': { display: 'none' },
+                      '.marker-vertex-remove-area': { fill: 'transparent' },
+                      '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
                     },
                     weight: weightInput.value,
                     selected: false
@@ -1140,8 +1344,8 @@ export default defineComponent({
               let nameExist = false;
               this.graph.getCells().forEach((element: any) => {
                 if (element.attributes.type !== 'pn.Link' && element.attributes.type !== 'basic.Circle') {
-                  if (!element.attributes.attrs['.label']) {
-                    if ((cellView as any).model.id !== element.id && element.attributes.attrs['.label'].text === nameInput.value) {
+                  if (element.attributes.attrs['.label']) {
+                    if ((cellView as any).model.attributes.id !== element.attributes.id && element.attributes.attrs['.label'].text === nameInput.value) {
                       nameExist = true;
                     }
                   }
@@ -1243,7 +1447,10 @@ export default defineComponent({
                   '.marker-source': { display: 'none' },
                   '.link-tools': { display: 'none' },
                   '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
-                  '.connection-wrap': { display: 'none' }
+                  '.connection-wrap': { display: 'none' },
+                  '.marker-vertices': { display: 'none' },
+                  '.marker-vertex-remove-area': { fill: 'transparent' },
+                  '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
                 },
                 weight: weightInput.value,
                 selected: false
@@ -1357,12 +1564,31 @@ export default defineComponent({
       if (!this.running) {
         if (!this.contextShow) {
           if (evt.key === '1') {
+            if (rect.graph !== null) {
+              rect.remove();
+            }
             this.switchPlace();
           }
           if (evt.key === '2') {
+            if (rect.graph !== null) {
+              rect.remove();
+            }
             this.switchTransition();
           }
           if (evt.key === '3') {
+            if (rect.graph !== null) {
+              rect.remove();
+            }
+            if (this.selectedElement === 'fastadd') {
+              this.selectedElement = '';
+            } else {
+              this.selectedElement = 'fastadd';
+            }
+          }
+          if (evt.key === '4') {
+            if (rect.graph !== null) {
+              rect.remove();
+            }
             this.switchDelete();
           }
           if (evt.key === 'Delete') {
@@ -1401,6 +1627,7 @@ export default defineComponent({
               this.graph.clear();
               for (let i = 0; i < modelState.cells.length; i++) {
                 if (modelState.cells[i].type === 'pn.Place') {
+                  this.placeCounter++;
                   const place = new joint.shapes.pn.Place({
                     position: { x: modelState.cells[i].position.x, y: modelState.cells[i].position.y },
                     attrs: {
@@ -1488,7 +1715,10 @@ export default defineComponent({
                       '.marker-source': { display: 'none', style: { 'pointer-events': 'none' } },
                       '.link-tools': { display: 'none' },
                       '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
-                      '.connection-wrap': { display: 'none' }
+                      '.connection-wrap': { display: 'none' },
+                      '.marker-vertices': { display: 'none' },
+                      '.marker-vertex-remove-area': { fill: 'transparent' },
+                      '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
                     },
                     weight: modelState.cells[i].weight,
                     selected: false
@@ -1554,6 +1784,8 @@ export default defineComponent({
         }
         this.paper.setInteractivity(true);
         this.ctrl_pressed = false;
+        this.alt_pressed = false;
+        this.altOnce = false;
       }
     });
 
@@ -1576,9 +1808,14 @@ export default defineComponent({
         event.preventDefault();
         this.alt_pressed = true;
         if (!this.altOnce) {
-          if (this.current_connection !== null) {
+          if (this.current_connection !== null || this.current_connections.length === 1) {
             if (this.current_x !== null && this.current_y !== null) {
-              const link = this.graph.getCell(this.current_connection);
+              let link: any;
+              if (this.current_connection !== null) {
+                link = this.graph.getCell(this.current_connection);
+              } else if (this.current_connections.length === 1) {
+                link = this.graph.getCell(this.current_connections[0]);
+              }
               let vertices = [] as any;
               if (link.vertices() <= 0) {
                 const points = {
@@ -1608,6 +1845,19 @@ export default defineComponent({
       if (event.key === 'Alt') {
         this.alt_pressed = false;
         this.altOnce = false;
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Tab') {
+        event.preventDefault();
+        if (this.selectedElement === 'fastadd') {
+          if (this.tab_clicked) {
+            this.tab_clicked = false;
+          } else {
+            this.tab_clicked = true;
+          }
+        }
       }
     });
 
@@ -1730,8 +1980,8 @@ export default defineComponent({
           this.resultSimulation.changes.forEach((ele: any) => {
             this.graph.getCells().forEach((element: any) => {
               if (element.attributes.type === 'pn.Link') {
-                if (element.getSourceElement().attributes.attrs['.label'].text === ele.split(' ')[0] &&
-                    element.getTargetElement().attributes.attrs['.label'].text === ele.split(' ')[1]) {
+                if (element.attributes.source.id === ele.split(' ')[0] &&
+                    element.attributes.target.id === ele.split(' ')[1]) {
                   if (this.running) {
                     sourcePosition = element.getSourcePoint();
                     targetPosition = element.getTargetPoint();
@@ -1752,7 +2002,7 @@ export default defineComponent({
                     this.graph.addCell(circle);
 
                     let distance = 0;
-                    const step = 6;
+                    const step = (path.getTotalLength() / 60);
 
                     function animate() {
                       distance += step;
@@ -1907,6 +2157,8 @@ export default defineComponent({
 
     clear() {
       this.graph.clear();
+      this.placeCounter = 0;
+      this.transitionCounter = 0;
     },
 
     exportNet() {
@@ -2206,7 +2458,10 @@ export default defineComponent({
                   '.marker-source': { display: 'none', style: { 'pointer-events': 'none' } },
                   '.link-tools': { display: 'none' },
                   '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
-                  '.connection-wrap': { display: 'none' }
+                  '.connection-wrap': { display: 'none' },
+                  '.marker-vertices': { display: 'none' },
+                  '.marker-vertex-remove-area': { fill: 'transparent' },
+                  '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
                 },
                 weight: element.weight,
                 selected: false
@@ -2363,7 +2618,10 @@ export default defineComponent({
               '.marker-source': { display: 'none', style: { 'pointer-events': 'none' } },
               '.link-tools': { display: 'none' },
               '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
-              '.connection-wrap': { display: 'none' }
+              '.connection-wrap': { display: 'none' },
+              '.marker-vertices': { display: 'none' },
+              '.marker-vertex-remove-area': { fill: 'transparent' },
+              '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
             },
             weight: element.weight,
             selected: false
@@ -2411,6 +2669,7 @@ export default defineComponent({
       try {
         result.elements.forEach((element: any) => {
           if (element.type === 'pn.Place') {
+            this.placeCounter++;
             const place = new joint.shapes.pn.Place({
               position: { x: element.x, y: element.y },
               id: element.id,
@@ -2474,6 +2733,7 @@ export default defineComponent({
             }
           }
           if (element.type === 'pn.Transition') {
+            this.transitionCounter++;
             const transition = new joint.shapes.pn.Transition({
               position: { x: element.x, y: element.y },
               id: element.id,
@@ -2509,7 +2769,10 @@ export default defineComponent({
               '.marker-source': { display: 'none', style: { 'pointer-events': 'none' } },
               '.link-tools': { display: 'none' },
               '.connection': { stroke: 'black', 'stroke-width': 2, fill: 'none' },
-              '.connection-wrap': { display: 'none' }
+              '.connection-wrap': { display: 'none' },
+              '.marker-vertices': { display: 'none' },
+              '.marker-vertex-remove-area': { fill: 'transparent' },
+              '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
             },
             weight: element.weight,
             selected: false
