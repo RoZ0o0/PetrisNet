@@ -128,7 +128,7 @@ public record SimulationService() {
                     net.getElements().get(j).setTokens(tokensNumber - connectionWeight);
                 }
             }
-            changes.add(connectionsTransitionST.get(transitionKey).get(i) + " " + transitionKey);
+            changes.add(connectionsTransitionST.get(transitionKey).get(i) + " " + transitionKey + " " + connectionWeight);
         }
 
         addByOutputArc(net, changes, connectionsTransitionFT, transitionKey);
@@ -184,7 +184,7 @@ public record SimulationService() {
                 if (Objects.equals(net.getElements().get(j).getId(), connectionsTransitionFT.get(transitionKey).get(i))) {
                     int numberOfTokens = net.getElements().get(j).getTokens();
                     net.getElements().get(j).setTokens(numberOfTokens + connectionWeight);
-                    changes.add(transitionKey + " " + connectionsTransitionFT.get(transitionKey).get(i));
+                    changes.add(transitionKey + " " + connectionsTransitionFT.get(transitionKey).get(i) + " " + connectionWeight);
                 }
             }
         }
