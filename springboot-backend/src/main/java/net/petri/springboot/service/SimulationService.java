@@ -1,6 +1,7 @@
 package net.petri.springboot.service;
 
 import net.petri.springboot.config.models.simulation.Connections;
+import net.petri.springboot.config.models.simulation.Elements;
 import net.petri.springboot.config.models.simulation.SimulationNet;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -60,56 +61,65 @@ public record SimulationService() {
         return net;
     }
 
-//    public boolean checkNetRun(SimulationNet net) {
-//
-//        if (!Objects.equals(net.getConnections().toString(), "[]")) {
-//            ArrayList<String> transitions = new ArrayList<>();
-//            Map<String, ArrayList<String>> connectionsTransitionST = new HashMap<>();
-//            Map<String, ArrayList<String>> connectionsTransitionFT = new HashMap<>();
-//            for (int i = 0; i < net.getElements().size(); i++) {
-//                if (net.getElements().get(i).getName().charAt(1) == 'T') {
-//                    transitions.add(net.getElements().get(i).getName());
-//                }
-//            }
-//
-//            getConnectionMap(net, transitions, connectionsTransitionST, false);
-//
-//            getConnectionMap(net, transitions, connectionsTransitionFT, true);
-//
-//            for (int i = 0; i < net.getTokens().size(); i++) {
-//                if (net.getTokens().get(i).getToken_amount() < 0) {
-//                    return false;
-//                }
-//            }
-//
-//            ArrayList<String> enabledTransitions = new ArrayList<>();
-//            for (String transitionKey : connectionsTransitionST.keySet()) {
-//                boolean hasInput = false;
-//                boolean hasOutput = false;
-//                boolean isEnabled = checkTransition(net, connectionsTransitionST, transitionKey);
-//
-//                if (isEnabled) {
-//                    enabledTransitions.add(transitionKey);
-//                }
-//                if (connectionsTransitionFT.get(transitionKey).size() > 0) {
-//                    hasInput = true;
-//                }
-//                if (connectionsTransitionST.get(transitionKey).size() > 0) {
-//                    hasOutput = true;
-//                }
-//
-//                if (!hasInput || !hasOutput) {
-//                    return false;
-//                }
-//            }
-//
-//            return !enabledTransitions.isEmpty();
-//        }
-//
-//        return false;
-//    }
-//
-    private void fireTransition(SimulationNet net, String transitionKey, ArrayList<String> changes,
+    public SimulationNet checkNetRun(SimulationNet net) {
+        String lastPlace = "";
+        for (int j = net.getElements().size() - 1; j >= 0; j--) {
+            if (Objects.equals(net.getElements().get(j).getType(), "pn.Place")) {
+                lastPlace = net.getElements().get(j).getId();
+                break;
+            }
+        }
+
+        ArrayList<String> reason = new ArrayList<>();
+
+        boolean placeExist = false;
+        boolean transitionExist = false;
+
+        for (int i = 0; i < net.getElements().size(); i++) {
+            if (Objects.equals(net.getElements().get(i).getType(), "pn.Place")) {
+                placeExist = true;
+            }
+            if (Objects.equals(net.getElements().get(i).getType(), "pn.Transition")) {
+                transitionExist = true;
+            }
+        }
+
+        if (!placeExist || !transitionExist || net.getConnections().size() <= 0) {
+            reason.add("Model nie jest poprawny!");
+            net.setChanges(reason);
+            return net;
+        }
+
+        if (isBlocked(net)) {
+            reason.add("Model posiada stan zblokowany!");
+            net.setChanges(reason);
+            return net;
+        }
+
+        for (int i = 0; i < 1000; i++) {
+            if (Objects.equals(net.getElements().get(i).getType(), "pn.Place")) {
+                if (net.getElements().get(i).getTokens() < 0) {
+                    reason.add("Model posiada stan ujemny!");
+                    net.setChanges(reason);
+                    return net;
+                }
+                if (!isReachablePlace(net, net.getElements().get(i).getId(), i)) {
+                    reason.add("Model posiada stan nieosiągalny");
+                    net.setChanges(reason);
+                    return net;
+                }
+                if (Objects.equals(net.getElements().get(i).getId(), lastPlace)) {
+                    net.setChanges(reason);
+                    return net;
+                }
+            }
+        }
+        reason.add("Nie osiągnięto stanu końcowego!");
+        net.setChanges(reason);
+        return net;
+    }
+
+    private SimulationNet fireTransition(SimulationNet net, String transitionKey, ArrayList<String> changes,
                                 Map<String, ArrayList<String>> connectionsTransitionST,
                                 Map<String, ArrayList<String>> connectionsTransitionFT) {
 
@@ -132,6 +142,8 @@ public record SimulationService() {
         }
 
         addByOutputArc(net, changes, connectionsTransitionFT, transitionKey);
+
+        return net;
     }
 
     private boolean checkTransition(SimulationNet net, Map<String, ArrayList<String>> connectionsTransitionST, Map<String, ArrayList<String>> connectionsTransitionFT, String transitionKey) {
@@ -213,5 +225,123 @@ public record SimulationService() {
             connectionsST.put(element, tempConnectionsST);
             connectionsFT.put(element, tempConnectionsFT);
         }
+    }
+
+    private boolean isBlocked(SimulationNet net) {
+        ArrayList<ArrayList<Integer>> states = generateStates(net);
+
+        ArrayList<String> transitions = new ArrayList<>();
+        Map<String, ArrayList<String>> connectionsTransitionST = new HashMap<>();
+        Map<String, ArrayList<String>> connectionsTransitionFT = new HashMap<>();
+        for (int i = 0; i < net.getElements().size(); i++) {
+            if (Objects.equals(net.getElements().get(i).getType(), "pn.Transition")) {
+                transitions.add(net.getElements().get(i).getId());
+            }
+        }
+
+        getConnectionMap(net, transitions, connectionsTransitionST, connectionsTransitionFT);
+
+        for (int i = 0; i < states.size(); i++) {
+            int counter = 0;
+            for (int j = 0; j < net.getElements().size(); j++) {
+                if (Objects.equals(net.getElements().get(j).getType(), "pn.Place")) {
+                    net.getElements().get(j).setTokens(states.get(i).get(counter));
+                    counter++;
+                }
+            }
+            ArrayList<String> enabledTransitions = new ArrayList<>();
+            for (String transitionKey : connectionsTransitionST.keySet()) {
+                boolean isEnabled = checkTransition(net, connectionsTransitionST, connectionsTransitionFT, transitionKey);
+                if (isEnabled) {
+                    enabledTransitions.add(transitionKey);
+                }
+            }
+            if (enabledTransitions.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isReachablePlace(SimulationNet net, String placeId, int index) {
+        ArrayList<ArrayList<Integer>> states = generateStates(net);
+        int placeCounter = 0;
+        for (int i = 0; i < net.getElements().size(); i++) {
+            if (Objects.equals(net.getElements().get(i).getType(), "pn.Place") && !Objects.equals(net.getElements().get(i).getId(), placeId)) {
+                placeCounter++;
+            }
+        }
+
+        for (int i = 0; i < states.size(); i++) {
+            if (states.get(i).get(placeCounter) > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private ArrayList<Integer> generateState(SimulationNet net) {
+        ArrayList<Integer> state = new ArrayList<>();
+        ArrayList<String> transitions = new ArrayList<>();
+        Map<String, ArrayList<String>> connectionsTransitionST = new HashMap<>();
+        Map<String, ArrayList<String>> connectionsTransitionFT = new HashMap<>();
+        for (int i = 0; i < net.getElements().size(); i++) {
+            if (Objects.equals(net.getElements().get(i).getType(), "pn.Transition")) {
+                transitions.add(net.getElements().get(i).getId());
+            }
+        }
+
+        getConnectionMap(net, transitions, connectionsTransitionST, connectionsTransitionFT);
+
+        for (int i = 0; i < net.getElements().size(); i++) {
+            if (Objects.equals(net.getElements().get(i).getType(), "pn.Place")) {
+                state.add(net.getElements().get(i).getTokens());
+            }
+        }
+
+        return state;
+    }
+
+    private ArrayList<ArrayList<Integer>> generateStates(SimulationNet net) {
+        ArrayList<ArrayList<Integer>> states = new ArrayList<>();
+        ArrayList<Integer> state = generateState(net);
+        ArrayList<String> transitions = new ArrayList<>();
+        ArrayList<String> changes = new ArrayList<>();
+        Map<String, Integer> visitedTransitions = new HashMap<>();
+        Map<String, ArrayList<String>> connectionsTransitionST = new HashMap<>();
+        Map<String, ArrayList<String>> connectionsTransitionFT = new HashMap<>();
+        for (int i = 0; i < net.getElements().size(); i++) {
+            if (Objects.equals(net.getElements().get(i).getType(), "pn.Transition")) {
+                transitions.add(net.getElements().get(i).getId());
+            }
+        }
+
+        getConnectionMap(net, transitions, connectionsTransitionST, connectionsTransitionFT);
+
+        while (!states.contains(state)) {
+            states.add(state);
+            ArrayList<String> enabledTransitions = new ArrayList<>();
+            for (String transitionKey : connectionsTransitionST.keySet()) {
+                boolean isEnabled = checkTransition(net, connectionsTransitionST, connectionsTransitionFT, transitionKey);
+                if (isEnabled) {
+                    enabledTransitions.add(transitionKey);
+                }
+            }
+
+            for (String transition : enabledTransitions) {
+                if (visitedTransitions.get(transition) == null) {
+                    visitedTransitions.put(transition, 1);
+                } else {
+                    int visitCount = visitedTransitions.get(transition);
+                    visitedTransitions.put(transition, visitCount + 1);
+                }
+                if (visitedTransitions.get(transition) < 50) {
+                    fireTransition(net, transition, changes, connectionsTransitionST, connectionsTransitionFT);
+                    state = generateState(net);
+                }
+            }
+        }
+
+        return states;
     }
 }

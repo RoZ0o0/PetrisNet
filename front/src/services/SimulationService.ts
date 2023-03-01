@@ -7,7 +7,6 @@ export default class SimulationServices {
       type: '',
       x: 0,
       y: 0,
-      weight: 0,
       tokens: 0,
       id: '',
       r: 0,
@@ -40,8 +39,8 @@ export default class SimulationServices {
     return (await axios.post<ISimulation>('http://localhost:8081/api/simulation', simulation)).data;
   }
 
-  public static async checkNet(simulation: ISimulation): Promise<boolean> {
-    return (await axios.post<boolean>('http://localhost:8081/api/simulation/check', simulation)).data;
+  public static async checkNet(simulation: ISimulation): Promise<ISimulation> {
+    return (await axios.post<ISimulation>('http://localhost:8081/api/simulation/check', simulation)).data;
   }
 }
 
@@ -56,7 +55,6 @@ export interface IElements {
     type: string;
     x: number;
     y: number;
-    weight: number;
     tokens: number;
     id: string;
     r: number;

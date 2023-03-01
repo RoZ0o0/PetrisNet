@@ -225,7 +225,7 @@ export default defineComponent({
     },
 
     getUserInfo(userId: number) {
-      return this.resultUsers.find(name => name.id === userId)?.firstName + ' ' + this.resultUsers.find(name => name.id === userId)?.lastName;
+      return this.resultUsers.find(name => name.id === userId)?.firstName + ' ' + this.resultUsers.find(name => name.id === userId)?.lastName + ' | ' + this.resultUsers.find(name => name.id === userId)?.email;
     },
 
     returnPublic(isPublic: boolean) {
@@ -251,7 +251,7 @@ export default defineComponent({
     editExampleNetAlert(net: IExampleNet, id: number) {
       Swal.fire({
         title: 'Edytujesz nazwę sieci: ' + net.netName,
-        html: '<input type="text" id="edit" class="swal2-input">',
+        html: '<input type="text" id="edit" class="swal2-input" autocomplete="off">',
         cancelButtonText: 'Anuluj',
         showCancelButton: true,
         preConfirm: () => {

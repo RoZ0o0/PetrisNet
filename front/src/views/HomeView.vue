@@ -1,7 +1,13 @@
 <template>
   <div class="px-6 py-6 w-full h-full">
     <div class="overflow-auto rounded-xl w-3/5 h-full mx-auto">
-      <div class="grid grid-cols-2 gap-10 bg-orange-100 h-full p-4">
+      <div class="h-1/6 flex justify-center items-center flex-col color-F6C453 border-1 border-black rounded-t-xl">
+        <h1 class="text-xl border-b-2 border-b-black">Edytor Sieci Petriego Online</h1>
+        <p class='mt-4'>Aby tworzyć swoją sieć udaj się na zakładkę <b>"Kreator"</b>.</p>
+        <p>Jeśli chcesz sprawdzić sieci innych użytkowników, bądź przykładowe sieci, kliknij na wybraną nazwę poniżej!</p>
+        <p><b>Zaloguj się</b> aby mieć dodatkowe możliwości!</p>
+      </div>
+      <div class="grid grid-cols-2 gap-10 bg-orange-100 h-5/6 p-4">
         <div class="text-center border-2 rounded-xl color-F6C453 p-6 flex flex-col">
           <span class="border-b-2">Sieci innych użytkowników</span>
           <ul v-for="save in resultPublicNets" :key="save" class="mt-2 font-mono">
@@ -51,7 +57,7 @@ export default defineComponent({
       exampleNetSize: 0,
       userNetSelected: 0,
       exampleNetSelected: 0,
-      pageSize: 20,
+      pageSize: 15,
       type: 'home'
     };
   },

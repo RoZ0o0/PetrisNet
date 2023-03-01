@@ -7,7 +7,7 @@
       <div class='flex flex-col relative'>
         <span class='text-xl'>Link do modelu!</span>
         <div class='my-6 flex flex-row align-middle justify-center rounded-xl'>
-          <input type='test' class='bg-gray-300 text-xl p-2 pl-4 pr-0 rounded-l-xl w-full' :value='this.result' ref='reflink' disabled>
+          <input type='text' class='bg-gray-300 text-xl p-2 pl-4 pr-0 rounded-l-xl w-full' :value='this.result' ref='reflink' disabled>
           <ContentCopyIcon class='self-center bg-gray-300 hover:text-red-300 pl-4 pr-2 py-3 rounded-r-xl' :size='this.iconSize' @click='copyContent()'/>
         </div>
       </div>

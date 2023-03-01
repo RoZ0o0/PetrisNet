@@ -19,8 +19,6 @@ public class Elements {
 
     private int y;
 
-    private int weight;
-
     private int tokens;
 
     private String id;

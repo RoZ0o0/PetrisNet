@@ -14,6 +14,7 @@
           id="email"
           type="text"
           v-model="this.result.email"
+          autocomplete="off"
         />
       </div>
 
@@ -44,6 +45,7 @@
           type="password"
           placeholder="********"
           v-model="this.result.password"
+          autocomplete="off"
         />
       </div>
 

@@ -5,6 +5,8 @@ import net.petri.springboot.service.SimulationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+
 @CrossOrigin
 @RestController
 @RequestMapping({"/api/simulation"})
@@ -17,6 +19,9 @@ public class SimulationController {
 
     @PostMapping()
     public SimulationNet simulation(@RequestBody SimulationNet net) { return simulationService.simulation(net); }
+
+    @PostMapping("/check")
+    public SimulationNet check(@RequestBody SimulationNet net) { return simulationService.checkNetRun(net); }
 //
 //    @PostMapping("/check")
 //    public boolean checkNet(@RequestBody SimulationNet net) { return simulationService.checkNetRun(net); }

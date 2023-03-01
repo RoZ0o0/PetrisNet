@@ -110,8 +110,6 @@ export default defineComponent({
       resultSimulation: SimulationServices.getBlankSimulationTemplate(),
       elements: [] as any,
       connections: [] as any,
-      tokens: [] as any,
-      connection_weight: [] as any,
       isModalVisible: false,
       refSave: 0,
       size: 0,
@@ -193,7 +191,7 @@ export default defineComponent({
       return await SaveNetServices.setPublic(save, id);
     },
 
-    async checkNet(result: ISimulation): Promise<boolean> {
+    async checkNet(result: ISimulation): Promise<ISimulation> {
       return await SimulationServices.checkNet(result);
     },
 
@@ -210,7 +208,7 @@ export default defineComponent({
       this.resultEditSave = SaveNetServices.getBlankSaveNetTemplate();
       Swal.fire({
         title: 'Edytujesz nazwę ' + saveName,
-        html: '<input type="text" id="edit" class="swal2-input">',
+        html: '<input type="text" id="edit" class="swal2-input" autocomplete="off">',
         cancelButtonText: 'Anuluj',
         showCancelButton: true,
         preConfirm: () => {
@@ -253,7 +251,7 @@ export default defineComponent({
       this.resultEdit = UserServices.getBlankUserTemplate();
       Swal.fire({
         title: 'Edytujesz: ' + name,
-        html: '<input type="text" id="edit" class="swal2-input">',
+        html: '<input type="text" id="edit" class="swal2-input" autocomplete="off">',
         cancelButtonText: 'Anuluj',
         showCancelButton: true,
         preConfirm: () => {
@@ -334,81 +332,61 @@ export default defineComponent({
       });
     },
 
-    // setPublicAlert(save: ISaveNet, id: number) {
-    //   console.log(save.netExport);
-    //   this.getNetFromExport(save.netExport);
+    setPublicAlert(save: ISaveNet, id: number) {
+      this.getNetFromExport(save.netExport);
 
-    //   this.resultSimulation.elements = this.elements;
-    //   this.resultSimulation.connections = this.connections;
-    //   this.resultSimulation.tokens = this.tokens;
-    //   this.resultSimulation.connectionWeights = this.connection_weight;
+      this.resultSimulation.elements = this.elements;
+      this.resultSimulation.connections = this.connections;
 
-    //   this.checkNet(this.resultSimulation).then((data) => {
-    //     if (data) {
-    //       Swal.fire({
-    //         icon: 'info',
-    //         title: 'Czy napewno chcesz ustawić swój model jako publiczny?',
-    //         text: 'Bo zmianie, będzie on widoczny dla innych użytkowników na stronie głównej!',
-    //         showCancelButton: true,
-    //         confirmButtonColor: '#3085d6',
-    //         cancelButtonColor: '#d33',
-    //         confirmButtonText: 'Tak',
-    //         cancelButtonText: 'Anuluj'
-    //       }).then((result) => {
-    //         if (result.isConfirmed) {
-    //           this.setPublic(save, id);
-    //           Swal.fire(
-    //             'Gotowe!',
-    //             'Twój model został udostępniony.',
-    //             'success'
-    //           );
-    //           this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
-    //         }
-    //       });
-    //     } else {
-    //       Swal.fire(
-    //         'Sprawdzenie!',
-    //         'Niepoprawna sieć!',
-    //         'error'
-    //       );
-    //     }
-    //   });
-    // },
+      console.log(this.resultSimulation);
+
+      this.checkNet(this.resultSimulation).then((data) => {
+        if (data.changes.length === 0) {
+          Swal.fire({
+            icon: 'info',
+            title: 'Czy napewno chcesz ustawić swój model jako publiczny?',
+            text: 'Bo zmianie, będzie on widoczny dla innych użytkowników na stronie głównej!',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Tak',
+            cancelButtonText: 'Anuluj'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              this.setPublic(save, id);
+              Swal.fire(
+                'Gotowe!',
+                'Twój model został udostępniony.',
+                'success'
+              );
+              this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
+            }
+          });
+        } else {
+          Swal.fire(
+            'Sprawdzenie!',
+            'Model nie jest wystarczająco wymagający!',
+            'error'
+          );
+        }
+      });
+    },
 
     getNetFromExport(netExport: string) {
-      try {
-        for (let i = 0; i < JSON.parse(netExport)[1].length; i++) {
-          this.connections.push(JSON.parse(netExport)[1][i]);
-        }
-        for (let i = 0; i < JSON.parse(netExport)[2].length; i++) {
-          this.tokens.push(JSON.parse(netExport)[2][i]);
-        }
-        for (let i = 0; i < JSON.parse(netExport)[3].length; i++) {
-          this.connection_weight.push(JSON.parse(netExport)[3][i]);
-        }
-        for (let i = 0; i < JSON.parse(netExport)[0].length; i++) {
-          const objectType = JSON.parse(netExport)[0][i].name.substring(1, 2);
-          if (objectType !== 'C' && objectType !== 'T' && objectType !== 'A' && objectType !== 'E' && objectType !== 'L' && objectType !== 'W') {
-            this.connections = [];
-            this.tokens = [];
-            this.connection_weight = [];
-            this.elements = [];
-            return false;
-          }
-          this.elements.push(JSON.parse(netExport)[0][i]);
-        }
-      } catch (e) {
+      for (let i = 0; i < JSON.parse(netExport)[0].length; i++) {
+        this.elements.push(JSON.parse(netExport)[0][i]);
       }
-
-      return true;
+      for (let i = 0; i < JSON.parse(netExport)[1].length; i++) {
+        this.connections.push(JSON.parse(netExport)[1][i]);
+      }
     },
 
     editPassword() {
       this.resultEdit = UserServices.getBlankUserTemplate();
       Swal.fire({
         title: 'Edytujesz hasło',
-        html: `<input type="password" id="password" class="swal2-input" placeholder="Hasło">
-               <input type="password" id="password_check" class="swal2-input" placeholder="Powtórz hasło">`,
+        html: `<input type="password" id="password" class="swal2-input" placeholder="Hasło" autocomplete="off">
+               <input type="password" id="password_check" class="swal2-input" placeholder="Powtórz hasło" autocomplete="off">`,
         cancelButtonText: 'Anuluj',
         focusConfirm: false,
         showCancelButton: true,
