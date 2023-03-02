@@ -47,6 +47,9 @@ public class ExampleNetsController {
         return exampleNetsService.findByNetName(netName);
     }
 
+    @GetMapping("/search")
+    public List<ExampleNetsVM> search(@RequestParam int page, @RequestParam int size, @RequestParam String search) { return exampleNetsService.search(page, size, search); }
+
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) { exampleNetsService.delete(id); }
 }

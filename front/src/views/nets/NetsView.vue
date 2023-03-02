@@ -1,6 +1,8 @@
 <template>
   <div class='pt-7 pr-6 w-4/5 flex items-center justify-center'>
     <span />
+    <input v-if="this.selectOption === 'users'" type="text" class="justify-end py-2 text-center rounded-md border-black border-2 ml-6" v-model="this.searchUserSaved" placeholder="Szukaj"/>
+    <input v-if="this.selectOption === 'examples'" type="text" class="justify-end py-2 text-center rounded-md border-black border-2 ml-6" v-model="this.searchExample" placeholder="Szukaj"/>
     <PaginationBar
       ref='pagination'
       class='w-1/2 ml-auto'
@@ -116,6 +118,8 @@ export default defineComponent({
       resultLoggedUser: LoginServices.getBlankLoginTemplate(),
       resultUsers: [UserServices.getBlankUserTemplate()],
       selectOption: 'users',
+      searchExample: '',
+      searchUserSaved: '',
       editedNet: 0,
       size: 0,
       selected: 0,
@@ -128,6 +132,18 @@ export default defineComponent({
       if (this.resultLoggedUser.role !== 'ROLE_ADMIN') {
         this.$router.push('/');
       }
+    },
+
+    searchUserSaved() {
+      this.selected = 0;
+      this.searchUserNets(this.selected, this.pageSize, this.searchUserSaved).then((data) => (this.resultUserNets = data));
+      this.searchUserNets(this.selected, 100000, this.searchUserSaved).then((data) => (this.size = data.length));
+    },
+
+    searchExample() {
+      this.selected = 0;
+      this.searchExampleNets(this.selected, this.pageSize, this.searchExample).then((data) => (this.resultExampleNets = data));
+      this.searchExampleNets(this.selected, 100000, this.searchExample).then((data) => (this.size = data.length));
     }
   },
 
@@ -143,9 +159,9 @@ export default defineComponent({
         (newVal: any) => {
           this.selected = newVal;
           if (this.selectOption === 'users') {
-            this.getUserNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultUserNets = data));
+            this.searchUserNets(this.selected, this.pageSize, this.searchUserSaved).then((data) => (this.resultUserNets = data));
           } else {
-            this.getExampleNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultExampleNets = data));
+            this.searchExampleNets(this.selected, this.pageSize, this.searchExample).then((data) => (this.resultExampleNets = data));
           }
         }
       );
@@ -154,9 +170,9 @@ export default defineComponent({
         (newVal: any) => {
           this.pageSize = newVal;
           if (this.selectOption === 'users') {
-            this.getUserNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultUserNets = data));
+            this.searchUserNets(this.selected, this.pageSize, this.searchUserSaved).then((data) => (this.resultUserNets = data));
           } else {
-            this.getExampleNetsPaginated(this.selected, this.pageSize).then((data) => (this.resultExampleNets = data));
+            this.searchExampleNets(this.selected, this.pageSize, this.searchExample).then((data) => (this.resultExampleNets = data));
           }
         }
       );
@@ -176,6 +192,14 @@ export default defineComponent({
 
     async getUserNets(): Promise<Array<ISaveNet>> {
       return await SaveNetServices.fetchAll();
+    },
+
+    async searchUserNets(page: number, pageSize: number, search: string): Promise<Array<ISaveNet>> {
+      return await SaveNetServices.searchAllNetsPaginated(page, pageSize, search);
+    },
+
+    async searchExampleNets(page: number, pageSize: number, search: string): Promise<Array<IExampleNet>> {
+      return await ExampleNetServices.search(page, pageSize, search);
     },
 
     async getUsers(): Promise<Array<IUser>> {

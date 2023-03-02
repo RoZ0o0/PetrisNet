@@ -63,6 +63,12 @@ public class SavedNetsController {
     @GetMapping("/public/fetchAll")
     public List<SavedNetsVM> findByPublicPaginated(@RequestParam int page, @RequestParam int size) { return savedNetsService.getPublicPaginated(true, page, size); }
 
+    @GetMapping("/public/search")
+    public List<SavedNetsVM> searchPublic(@RequestParam int page, @RequestParam int size, @RequestParam String search) { return savedNetsService.search(page, size, search); }
+
+    @GetMapping("/public/searchAll")
+    public List<SavedNetsVM> searchAll(@RequestParam int page, @RequestParam int size, @RequestParam String search) { return savedNetsService.searchAll(page, size, search); }
+
     @PutMapping("/public")
     public SavedNetsVM setPublic(@RequestBody SavedNetsFM newEntity, @RequestParam Long id, Authentication authentication) {
         return savedNetsService.setPublic(newEntity, id, authentication);

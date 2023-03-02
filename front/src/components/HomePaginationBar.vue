@@ -55,7 +55,7 @@ export default defineComponent({
   props: ['size', 'type'],
   mounted() {
     if (this.type === 'home') {
-      this.pageSize = 20;
+      this.pageSize = 14;
     } else {
       this.pageSize = 6;
     }

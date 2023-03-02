@@ -1,13 +1,16 @@
 package net.petri.springboot.service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import net.petri.springboot.components.ExampleNetsValidator;
 import net.petri.springboot.entity.ExampleNets;
+import net.petri.springboot.entity.SavedNets;
 import net.petri.springboot.mapper.ExampleNetsMapper;
 import net.petri.springboot.model.FM.ExampleNetsFM;
 import net.petri.springboot.model.VM.ExampleNetsVM;
+import net.petri.springboot.model.VM.SavedNetsVM;
 import net.petri.springboot.repository.ExampleNetsRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -95,6 +98,21 @@ public record ExampleNetsService(ExampleNetsRepository exampleNetsRepository, Ex
         }
 
         return true;
+    }
+
+    public List<ExampleNetsVM> search(int page, int size, String search) {
+        Pageable getPage = PageRequest.of(page, size);
+        Page<ExampleNets> entity;
+
+        if (Objects.equals(search, "")) {
+            entity = exampleNetsRepository.findAll(getPage);
+        } else {
+            entity = exampleNetsRepository.findByNetNameContaining(search, getPage);
+        }
+
+        List<ExampleNetsVM> entities = exampleNetsMapper.mapToListPage(entity);
+
+        return entities;
     }
 
     public void delete(Long id) {

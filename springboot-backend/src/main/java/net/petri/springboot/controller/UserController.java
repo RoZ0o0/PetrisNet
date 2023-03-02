@@ -54,4 +54,7 @@ public class UserController {
     public UserVM editProfile(@RequestParam Long userId, @RequestBody UserFM newEntity, Authentication authentication) {
         return userService.editProfile(userId, newEntity, authentication);
     }
+    
+    @GetMapping("/search")
+    public List<UserVM> search (@RequestParam int page, @RequestParam int size, @RequestParam String search) { return userService.search(page, size, search); }
 }

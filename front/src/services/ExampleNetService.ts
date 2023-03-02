@@ -23,6 +23,10 @@ export default class ExampleNetServices {
     })).data;
   }
 
+  public static async search(page: number, size: number, search: string): Promise<Array<IExampleNet>> {
+    return (await axios.get<Array<IExampleNet>>('http://localhost:8081/api/example_nets/search?page=' + page + '&size=' + size + '&search=' + search)).data;
+  }
+
   public static async fetchById(id: number): Promise<IExampleNet> {
     return (await axios.get<IExampleNet>('http://localhost:8081/api/example_nets/' + id)).data;
   }

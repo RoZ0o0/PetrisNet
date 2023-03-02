@@ -2,6 +2,8 @@ package net.petri.springboot.repository;
 
 
 import net.petri.springboot.entity.ExampleNets;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -13,4 +15,6 @@ public interface ExampleNetsRepository extends JpaRepository<ExampleNets, Long> 
     Optional<ExampleNets> findById(Long id);
 
     Optional<ExampleNets> findByNetName(String netName);
+
+    Page<ExampleNets> findByNetNameContaining(String search, Pageable pageable);
 }

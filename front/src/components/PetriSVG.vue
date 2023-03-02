@@ -2276,6 +2276,8 @@ export default defineComponent({
       this.resultSimulation.elements = elements;
       this.resultSimulation.connections = connections;
 
+      console.log(this.resultSimulation);
+
       this.checkNet(this.resultSimulation).then((data) => {
         if (data.changes.length === 0) {
           Swal.fire(

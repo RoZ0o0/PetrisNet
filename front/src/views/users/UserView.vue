@@ -1,10 +1,13 @@
 <template>
   <div class="px-6 pb-4 pt-7 w-4/5">
-    <PaginationBar
-      ref='pagination'
-      class='w-1/2 m-auto'
-      :size='this.size'
-    />
+    <div class="flex">
+      <input type="text" class="justify-end py-2 text-center rounded-md border-black border-2" v-model="this.searchUser" placeholder="Szukaj"/>
+      <PaginationBar
+        ref='pagination'
+        class='w-1/2 m-auto'
+        :size='this.size'
+      />
+    </div>
     <div class="overflow-auto rounded-xl mt-8 block table-height overflow-y-scroll hide-scrollbar">
       <table class="min-w-full">
         <thead class="table-style text-white">
@@ -83,6 +86,7 @@ export default defineComponent({
       resultLoggedUser: UserServices.getBlankUserTemplate(),
       resultEdit: UserServices.getBlankUserTemplate(),
       editedUser: '',
+      searchUser: '',
       closed: false,
       deleted: false,
       size: 0,
@@ -94,14 +98,14 @@ export default defineComponent({
   watch: {
     closed() {
       if (this.closed) {
-        this.getData(this.selected, this.pageSize).then((data) => (this.result = data));
-        this.getUsers().then((data) => (this.size = data.length));
+        this.searchUsers(this.selected, this.pageSize, this.searchUser).then((data) => (this.result = data));
+        this.searchUsers(this.selected, 100000, this.searchUser).then((data) => (this.size = data.length));
       }
     },
     deleted() {
       if (this.deleted) {
-        this.getData(this.selected, this.pageSize).then((data) => (this.result = data));
-        this.getUsers().then((data) => (this.size = data.length));
+        this.searchUsers(this.selected, this.pageSize, this.searchUser).then((data) => (this.result = data));
+        this.searchUsers(this.selected, 100000, this.searchUser).then((data) => (this.size = data.length));
       }
     },
 
@@ -109,6 +113,12 @@ export default defineComponent({
       if (this.resultLoggedUser.role !== 'ROLE_ADMIN') {
         this.$router.push('/');
       }
+    },
+
+    searchUser() {
+      this.selected = 0;
+      this.searchUsers(this.selected, this.pageSize, this.searchUser).then((data) => (this.result = data));
+      this.searchUsers(this.selected, 100000, this.searchUser).then((data) => (this.size = data.length));
     }
   },
 
@@ -122,14 +132,14 @@ export default defineComponent({
         '$refs.pagination.selected',
         (newVal: any) => {
           this.selected = newVal;
-          this.getData(this.selected, this.pageSize).then((data) => (this.result = data));
+          this.searchUsers(this.selected, this.pageSize, this.searchUser).then((data) => (this.result = data));
         }
       );
       this.$watch(
         '$refs.pagination.pageSize',
         (newVal: any) => {
           this.pageSize = newVal;
-          this.getData(0, this.pageSize).then((data) => (this.result = data));
+          this.searchUsers(this.selected, this.pageSize, this.searchUser).then((data) => (this.result = data));
         }
       );
     } else {
@@ -144,6 +154,10 @@ export default defineComponent({
 
     async getData(page: number, pageSize: number): Promise<Array<IUser>> {
       return await UserServices.fetchPaginated(page, pageSize);
+    },
+
+    async searchUsers(page: number, pageSize: number, search: string): Promise<Array<IUser>> {
+      return await UserServices.searchPaginated(page, pageSize, search);
     },
 
     async getUsers(): Promise<Array<IUser>> {

@@ -8,14 +8,17 @@ import java.util.Random;
 import net.petri.springboot.components.SavedNetsValidator;
 import net.petri.springboot.components.UserValidator;
 import net.petri.springboot.entity.SavedNets;
+import net.petri.springboot.entity.User;
 import net.petri.springboot.mapper.SavedNetsMapper;
 import net.petri.springboot.model.FM.SavedNetsFM;
 import net.petri.springboot.model.VM.SavedNetsVM;
 import net.petri.springboot.model.VM.UserVM;
 import net.petri.springboot.repository.SavedNetsRepository;
+import net.petri.springboot.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -124,6 +127,37 @@ public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNet
         }
         List<SavedNets> entity = savedNetsRepository.findByUserEmail(email);
         List<SavedNetsVM> entities = savedNetsMapper.mapToList(entity);
+
+        return entities;
+    }
+
+    public List<SavedNetsVM> search(int page, int size, String search) {
+        Pageable getPage = PageRequest.of(page, size);
+        Page<SavedNets> entity;
+
+        if (Objects.equals(search, "")) {
+            entity = savedNetsRepository.findByIsPublic(true, getPage);
+        } else {
+            entity = savedNetsRepository.findByIsPublicAndSaveNameContaining(true, search, getPage);
+        }
+
+        List<SavedNetsVM> entities = savedNetsMapper.mapToListPage(entity);
+
+        return entities;
+    }
+
+    public List<SavedNetsVM> searchAll(int page, int size, String search) {
+        Pageable getPage = PageRequest.of(page, size);
+        Page<SavedNets> entity;
+
+        if (Objects.equals(search, "")) {
+            entity = savedNetsRepository.findAll(getPage);
+        } else {
+            Specification<SavedNets> specification = SavedNetsRepository.search(search);
+            entity = savedNetsRepository.findAll(specification, getPage);
+        }
+
+        List<SavedNetsVM> entities = savedNetsMapper.mapToListPage(entity);
 
         return entities;
     }
