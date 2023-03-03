@@ -122,7 +122,7 @@ export default defineComponent({
         return;
       }
 
-      if (this.resultSaveNet.saveName.length > 16) {
+      if (this.resultSaveNet.saveName.length > 20) {
         document.getElementById('err')?.classList.remove('hidden');
         document.getElementById('err')?.replaceChildren(document.createTextNode('Podana nazwa jest za długa!'));
         return;

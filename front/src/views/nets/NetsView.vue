@@ -286,7 +286,7 @@ export default defineComponent({
           if (editValue.length < 3) {
             Swal.showValidationMessage('Podana nazwa jest za krótka');
           }
-          if (editValue.length > 16) {
+          if (editValue.length > 20) {
             Swal.showValidationMessage('Podana nazwa jest za długa');
           }
 

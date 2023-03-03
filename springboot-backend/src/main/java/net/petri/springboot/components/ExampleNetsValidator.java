@@ -16,7 +16,7 @@ public class ExampleNetsValidator extends Validator{
     }
 
     public boolean validateNetName(ExampleNetsFM exampleNetsFM) {
-        if (exampleNetsFM.getNetName().isEmpty() || exampleNetsFM.getNetName().length() < 3 || exampleNetsFM.getNetName().length() > 16) {
+        if (exampleNetsFM.getNetName().isEmpty() || exampleNetsFM.getNetName().length() < 3 || exampleNetsFM.getNetName().length() > 20) {
             return false;
         }
 

@@ -1089,10 +1089,10 @@ export default defineComponent({
                 let r: any;
                 if (element.attributes.type === 'pn.Place' && element.attributes.selected) {
                   const name = element.attr('.label/text');
-                  tokens = element.attributes.tokens;
+                  tokens = parseInt(element.attributes.tokens);
                   r = element.attr('circle/r');
                   lastStep.push({ element: element, name: name, r: r, tokens: tokens });
-                  element.attributes.tokens = tokenInput.value;
+                  element.attributes.tokens = parseInt(tokenInput.value);
                   if (parseInt(tokenInput.value) === 0) {
                     this.graph.getCells().forEach((ele: any) => {
                       if (ele.attributes.place === element.attributes.id) {
@@ -1124,7 +1124,7 @@ export default defineComponent({
                           'pointer-events': 'none'
                         },
                         text: {
-                          text: tokenText,
+                          text: parseInt(tokenText).toString(),
                           'font-size': 16,
                           'text-anchor': 'middle',
                           'y-alignment': 'middle',
@@ -1227,8 +1227,8 @@ export default defineComponent({
 
               this.graph.getCells().forEach((element: any) => {
                 if (element.attributes.type === 'pn.Link' && element.attributes.selected) {
-                  const weight = element.attributes.weight;
-                  element.attributes.weight = weightInput.value;
+                  const weight = parseInt(element.attributes.weight);
+                  element.attributes.weight = parseInt(weightInput.value);
                   if (parseInt(weightInput.value) > 0 && weightInput.value.length <= 4) {
                     const link = new joint.shapes.pn.Link({
                       source: { id: element.attributes.source.id },
@@ -1243,7 +1243,7 @@ export default defineComponent({
                         '.marker-vertex-remove-area': { fill: 'transparent' },
                         '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
                       },
-                      weight: weightInput.value,
+                      weight: parseInt(weightInput.value),
                       selected: false
                     });
 
@@ -1254,7 +1254,7 @@ export default defineComponent({
                     link.appendLabel({
                       attrs: {
                         text: {
-                          text: weightInput.value,
+                          text: parseInt(weightInput.value).toString(),
                           'pointer-events': 'none',
                           'font-size': 20,
                           'font-weight': 'bold',
@@ -1500,7 +1500,7 @@ export default defineComponent({
             saveButton.onclick = () => {
               if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition') {
                 if ((cellView as any).model.get('type') === 'pn.Place') {
-                  lastStep.push({ element: (cellView as any).model, name: name, r: r, tokens: tokens });
+                  lastStep.push({ element: (cellView as any).model, name: name, r: r, tokens: parseInt(tokens) });
                 }
                 if ((cellView as any).model.get('type') === 'pn.Transition') {
                   lastStep.push({ element: (cellView as any).model, name: name, width: width, height: height });
@@ -1530,7 +1530,7 @@ export default defineComponent({
                   sizeInput.value = '10';
                 }
                 (cellView as any).model.attr('circle/r', sizeInput.value);
-                (cellView as any).model.set('tokens', tokenInput.value);
+                (cellView as any).model.set('tokens', parseInt(tokenInput.value));
                 if (parseInt(tokenInput.value) === 0) {
                   this.graph.getCells().forEach((element: any) => {
                     if (element.attributes.place === (cellView as any).model.get('id')) {
@@ -1563,7 +1563,7 @@ export default defineComponent({
                         'pointer-events': 'none'
                       },
                       text: {
-                        text: tokenText,
+                        text: parseInt(tokenText).toString(),
                         'font-size': 16,
                         'text-anchor': 'middle',
                         'y-alignment': 'middle',
@@ -1616,7 +1616,7 @@ export default defineComponent({
                     '.marker-vertex-remove-area': { fill: 'transparent' },
                     '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
                   },
-                  weight: weightInput.value,
+                  weight: parseInt(weightInput.value),
                   selected: false
                 });
 
@@ -1627,7 +1627,7 @@ export default defineComponent({
                 link.appendLabel({
                   attrs: {
                     text: {
-                      text: weightInput.value,
+                      text: parseInt(weightInput.value).toString(),
                       'pointer-events': 'none',
                       'font-size': 20,
                       'font-weight': 'bold',
@@ -1766,7 +1766,6 @@ export default defineComponent({
               if (element.attributes.selected) {
                 this.graph.getCells().forEach((text: any) => {
                   if (element.id === text.attributes.place) {
-                    lastStep.push(text);
                     text.remove();
                   }
                 });
@@ -1805,6 +1804,44 @@ export default defineComponent({
               if (modelState.action === 'removed') {
                 modelState.lastStep.forEach((element: any) => {
                   this.graph.addCell(element);
+                });
+                this.graph.getCells().forEach((element: any) => {
+                  if (element.attributes.type === 'pn.Place') {
+                    if (element.attributes.tokens > 0) {
+                      const circle = new joint.shapes.basic.Circle({
+                        position: { x: element.position().x, y: element.position().y },
+                        attrs: {
+                          circle: {
+                            attrs: {
+                              r: 20
+                            },
+                            fill: 'black',
+                            'pointer-events': 'none'
+                          },
+                          text: {
+                            text: element.attributes.tokens,
+                            'font-size': 16,
+                            'text-anchor': 'middle',
+                            'y-alignment': 'middle',
+                            'pointer-events': 'none',
+                            fill: 'white'
+                          }
+                        },
+                        'pointer-events': 'none',
+                        place: element.attributes.id,
+                        locked: true,
+                        interactive: false
+                      });
+                      this.graph.addCell(circle);
+                      circle.attr('circle/r', parseInt(element.attributes.attrs.circle.r) / 2);
+                      element.on('change:position', () => {
+                        circle.position(
+                          element.position().x,
+                          element.position().y
+                        );
+                      });
+                    }
+                  }
                 });
               }
               if (modelState.action === 'modified') {
@@ -2427,7 +2464,7 @@ export default defineComponent({
               let data = '';
               this.graph.getCells().forEach((element: any) => {
                 if (element.attributes.type === 'pn.Place') {
-                  data = data + 'p ' + element.attributes.position.x + '.0 ' + element.attributes.position.y + '.0 ' + element.attributes.attrs['.label'].text + ' ' + element.attributes.tokens;
+                  data = data + 'p ' + (element.attributes.position.x + 30) + '.0 ' + element.attributes.position.y + '.0 ' + element.attributes.attrs['.label'].text + ' ' + element.attributes.tokens;
 
                   data = data + ' n\n';
                 }
@@ -2470,7 +2507,7 @@ export default defineComponent({
                   data = data + '\t\t<place id="' + element.attributes.attrs['.label'].text + '">\n';
 
                   data = data + '\t\t\t<graphics>\n';
-                  data = data + '\t\t\t\t<position x="' + element.attributes.position.x + '.0" y="' + element.attributes.position.y + '.0"/>\n';
+                  data = data + '\t\t\t\t<position x="' + (element.attributes.position.x + 30) + '.0" y="' + element.attributes.position.y + '.0"/>\n';
                   data = data + '\t\t\t</graphics>\n';
 
                   data = data + '\t\t\t<name>\n';
@@ -2751,7 +2788,11 @@ export default defineComponent({
             reader.readAsText(this.selectedFile);
           }
         } else {
-          console.log('Zły plik');
+          Swal.fire(
+            'Błąd!',
+            'Zły plik!',
+            'error'
+          );
         }
       }
     },
@@ -2976,140 +3017,148 @@ export default defineComponent({
       if (this.rectRangeAdd && this.graph.getCell(this.rectRangeAdd.attributes.id)) {
         this.rectRangeAdd.remove();
       }
-      this.selectedElement = '';
-      if (!this.running) {
-        const elements = [] as any;
-        const connections = [] as any;
-        this.getGraphData(elements, connections);
-        if (history.state.editUserSave || history.state.editExampleNet) {
-          Swal.fire({
-            icon: 'warning',
-            title: 'Czy napewno chcesz edytować tą sieć?',
-            text: 'Nie będziesz mógł tego cofnąć!',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Tak, edytuj!',
-            cancelButtonText: 'Anuluj'
-          }).then((result) => {
-            if (result.isConfirmed) {
-              if (history.state.editUserSave) {
-                this.saveResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
-                this.update(history.state.editId);
-              } else {
-                this.exampleEditResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
-                this.updateExampleNet(history.state.editId);
+      if (this.graph.getCells().length > 0) {
+        this.selectedElement = '';
+        if (!this.running) {
+          const elements = [] as any;
+          const connections = [] as any;
+          this.getGraphData(elements, connections);
+          if (history.state.editUserSave || history.state.editExampleNet) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'Czy napewno chcesz edytować tą sieć?',
+              text: 'Nie będziesz mógł tego cofnąć!',
+              showCancelButton: true,
+              confirmButtonColor: '#3085d6',
+              cancelButtonColor: '#d33',
+              confirmButtonText: 'Tak, edytuj!',
+              cancelButtonText: 'Anuluj'
+            }).then((result) => {
+              if (result.isConfirmed) {
+                if (history.state.editUserSave) {
+                  this.saveResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
+                  this.update(history.state.editId);
+                } else {
+                  this.exampleEditResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
+                  this.updateExampleNet(history.state.editId);
+                }
+                Swal.fire(
+                  'Zapisane!',
+                  'Twój model został zedytowany!',
+                  'success'
+                );
               }
-              Swal.fire(
-                'Zapisane!',
-                'Twój model został zedytowany!',
-                'success'
-              );
-            }
-          });
-        } else {
-          Swal.fire({
-            title: 'Podaj nazwę!',
-            input: 'text',
-            cancelButtonText: 'Anuluj',
-            showCancelButton: true,
-            inputPlaceholder: 'Wpisz nazwę!'
-          }).then((result) => {
-            if (result.value === '') {
-              Swal.fire({
-                title: 'Nie podałeś nazwy!'
-              });
-            } else if ((result.value).length < 3) {
-              Swal.fire({
-                title: 'Nazwa jest za krótka!'
-              });
-            } else if ((result.value).length > 16) {
-              Swal.fire({
-                title: 'Nazwa jest za długa!'
-              });
-            } else {
-              if (this.graph.getCells().length === 0) {
+            });
+          } else {
+            Swal.fire({
+              title: 'Podaj nazwę!',
+              input: 'text',
+              cancelButtonText: 'Anuluj',
+              showCancelButton: true,
+              inputPlaceholder: 'Wpisz nazwę!'
+            }).then((result) => {
+              if (result.value === '') {
                 Swal.fire({
-                  icon: 'error',
-                  title: 'Błąd!',
-                  text: 'Nie możesz zapisać pustego modelu!'
+                  title: 'Nie podałeś nazwy!'
+                });
+              } else if ((result.value).length < 3) {
+                Swal.fire({
+                  title: 'Nazwa jest za krótka!'
+                });
+              } else if ((result.value).length > 20) {
+                Swal.fire({
+                  title: 'Nazwa jest za długa!'
                 });
               } else {
-                if (!this.checkIfCreateExample()) {
-                  this.saveResult.userId = this.loginResult.id;
-                  this.saveResult.saveName = result.value;
-                  this.saveResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
-                  this.findByUserAndSaveName(result.value).then((id) => {
-                    if (id !== 0) {
-                      Swal.fire({
-                        icon: 'warning',
-                        title: 'Posiadasz już model z taką nazwą!',
-                        text: 'Czy napewno chcesz nadpisać model? Nie będziesz mógł tego cofnąć!',
-                        showCancelButton: true,
-                        confirmButtonColor: '#d33',
-                        cancelButtonColor: '#3085d6',
-                        confirmButtonText: 'Tak, zapisz!',
-                        cancelButtonText: 'Anuluj'
-                      }).then((result) => {
-                        if (result.isConfirmed) {
-                          this.update(id);
-                          Swal.fire(
-                            'Zapisane!',
-                            'Twój model został zapisany.',
-                            'success'
-                          );
-                        }
-                      });
-                    } else {
-                      this.create().then((result) => {
-                        if (result !== 0) {
-                          Swal.fire({
-                            icon: 'error',
-                            title: 'Błąd!',
-                            text: 'Wystąpił błąd!'
-                          });
-                        } else {
-                          Swal.fire(
-                            'Zapisane!',
-                            'Twój model został zapisany.',
-                            'success'
-                          );
-                        }
-                      });
-                    }
+                if (this.graph.getCells().length === 0) {
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'Błąd!',
+                    text: 'Nie możesz zapisać pustego modelu!'
                   });
                 } else {
-                  this.exampleNetResult.netName = result.value;
-                  this.exampleNetResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
-                  this.findByNetName(result.value).then((exist) => {
-                    if (exist) {
-                      Swal.fire({
-                        icon: 'warning',
-                        title: 'Istnieje już model z taką nazwą!'
-                      });
-                    } else {
-                      this.createExampleNet().then((result) => {
-                        if (result !== 0) {
-                          Swal.fire({
-                            icon: 'error',
-                            title: 'Błąd!',
-                            text: 'Wystąpił błąd!'
-                          });
-                        } else {
-                          Swal.fire(
-                            'Zapisane!',
-                            'Model przykładowy został zapisany.',
-                            'success'
-                          );
-                        }
-                      });
-                    }
-                  });
+                  if (!this.checkIfCreateExample()) {
+                    this.saveResult.userId = this.loginResult.id;
+                    this.saveResult.saveName = result.value;
+                    this.saveResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
+                    this.findByUserAndSaveName(result.value).then((id) => {
+                      if (id !== 0) {
+                        Swal.fire({
+                          icon: 'warning',
+                          title: 'Posiadasz już model z taką nazwą!',
+                          text: 'Czy napewno chcesz nadpisać model? Nie będziesz mógł tego cofnąć!',
+                          showCancelButton: true,
+                          confirmButtonColor: '#d33',
+                          cancelButtonColor: '#3085d6',
+                          confirmButtonText: 'Tak, zapisz!',
+                          cancelButtonText: 'Anuluj'
+                        }).then((result) => {
+                          if (result.isConfirmed) {
+                            this.update(id);
+                            Swal.fire(
+                              'Zapisane!',
+                              'Twój model został zapisany.',
+                              'success'
+                            );
+                          }
+                        });
+                      } else {
+                        this.create().then((result) => {
+                          if (result !== 0) {
+                            Swal.fire({
+                              icon: 'error',
+                              title: 'Błąd!',
+                              text: 'Wystąpił błąd!'
+                            });
+                          } else {
+                            Swal.fire(
+                              'Zapisane!',
+                              'Twój model został zapisany.',
+                              'success'
+                            );
+                          }
+                        });
+                      }
+                    });
+                  } else {
+                    this.exampleNetResult.netName = result.value;
+                    this.exampleNetResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
+                    this.findByNetName(result.value).then((exist) => {
+                      if (exist) {
+                        Swal.fire({
+                          icon: 'warning',
+                          title: 'Istnieje już model z taką nazwą!'
+                        });
+                      } else {
+                        this.createExampleNet().then((result) => {
+                          if (result !== 0) {
+                            Swal.fire({
+                              icon: 'error',
+                              title: 'Błąd!',
+                              text: 'Wystąpił błąd!'
+                            });
+                          } else {
+                            Swal.fire(
+                              'Zapisane!',
+                              'Model przykładowy został zapisany.',
+                              'success'
+                            );
+                          }
+                        });
+                      }
+                    });
+                  }
                 }
               }
-            }
-          });
+            });
+          }
         }
+      } else {
+        Swal.fire(
+          'Błąd!',
+          'Nie możesz zapisać pustego modelu!',
+          'error'
+        );
       }
     },
 

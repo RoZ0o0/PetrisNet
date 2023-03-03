@@ -24,7 +24,7 @@ public class SavedNetsValidator extends Validator {
         if (!checkNetUser(savedNetsFM, authentication)) {
             return false;
         }
-        if (savedNetsFM.getSaveName().isEmpty() || savedNetsFM.getSaveName().length() < 3 || savedNetsFM.getSaveName().length() > 16) {
+        if (savedNetsFM.getSaveName().isEmpty() || savedNetsFM.getSaveName().length() < 3 || savedNetsFM.getSaveName().length() > 20) {
             return false;
         }
 
