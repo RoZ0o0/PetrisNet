@@ -64,6 +64,19 @@
         <SaveIcon class="inline-block align-middle" />
         <span class="inline-block align-middle select-none">Zapisz</span>
       </button>
+      <div class="flex flex-wrap items-center ml-4 border-2 color-F6C453 border-black rounded-bl-xl rounded-tr-xl px-2 py-1">
+        <el-dropdown class="border-0">
+          <HelpIcon class="inline-block align-middle" />
+          <template #dropdown>
+            <p class="text-center font-bold px-1">Aby wybrać jedną z opcji tworzenia sieci, można użyć klawiszy (1, 2, 3, 4).</p>
+            <p class="text-center font-bold px-1">Aby stworzyć połączenie, należy przytrzymać klawisz CTRL i przeciągnąć z elementu.</p>
+            <p class="text-center font-bold px-1">Po wybraniu opcji szybkiego dodawania, pojawia się zasięg w jakim zostanie dodane połączenie.</p>
+            <p class="text-center font-bold px-1">Klawiszem TAB przełącza się pomiędzy stawianiem miejsca bądź przejścia.</p>
+            <p class="text-center font-bold px-1">Aby dodać wielę połączeń, można zaznaczyć wielę miejsc bądź przejść, a następnie z klawiszem CTRL przeciągnać do innego elementu.</p>
+            <p class="text-center font-bold px-1">Aby dodać wiele tokenów bądź wag połączeń, wystarczy zaznaczyć odpowiednie elementy, po czym wcisnąć prawy przycisk myszy i wprowadzić wartość.</p>
+          </template>
+        </el-dropdown>
+      </div>
     </div>
   </div>
 </template>
@@ -79,6 +92,7 @@ import StopIcon from 'vue-material-design-icons/Stop.vue';
 import ImportIcon from 'vue-material-design-icons/ArrowBottomRight.vue';
 import ExportIcon from 'vue-material-design-icons/ArrowTopRight.vue';
 import SaveIcon from 'vue-material-design-icons/ContentSaveAll.vue';
+import HelpIcon from 'vue-material-design-icons/Help.vue';
 import CheckNetIcon from 'vue-material-design-icons/CheckNetwork.vue';
 import SaveNetServices, { ISaveNet } from '@/services/SaveNetService';
 import Swal from 'sweetalert2';
@@ -127,7 +141,8 @@ export default defineComponent({
     ImportIcon,
     ExportIcon,
     SaveIcon,
-    CheckNetIcon
+    CheckNetIcon,
+    HelpIcon
   },
   data() {
     return {
