@@ -817,7 +817,25 @@ export default defineComponent({
             this.graph.getCells().forEach((element: any) => {
               const point = this.paper.pageToLocalPoint({ x: event.clientX, y: event.clientY });
               const bbox = element.getBBox();
-              if (point.x >= bbox.x && point.x <= bbox.x + bbox.width && point.y >= bbox.y && point.y <= bbox.y + bbox.height) {
+              let newBBox;
+              if (element.attributes.type === 'pn.Place') {
+                newBBox = {
+                  x: parseInt(element.get('position').x) - parseInt(element.attr('circle/r')),
+                  y: parseInt(element.get('position').y) - parseInt(element.attr('circle/r')),
+                  width: parseInt(element.attr('circle/r')) * 2 + 40,
+                  height: parseInt(element.attr('circle/r')) * 2 + 40
+                };
+              } else if (element.attributes.type === 'pn.Transition') {
+                newBBox = {
+                  x: parseInt(element.get('position').x),
+                  y: parseInt(element.get('position').y),
+                  width: parseInt(element.attr('rect/width')),
+                  height: parseInt(element.attr('rect/height'))
+                };
+              } else {
+                newBBox = bbox;
+              }
+              if (point.x >= newBBox.x && point.x <= newBBox.x + newBBox.width && point.y >= newBBox.y && point.y <= newBBox.y + newBBox.height) {
                 if (element instanceof joint.shapes.pn.Place || element instanceof joint.shapes.pn.Transition) {
                   found = true;
                   if (element.id === cellView.model.id) {
@@ -857,7 +875,25 @@ export default defineComponent({
             this.graph.getCells().forEach((element: any) => {
               const point = this.paper.pageToLocalPoint({ x: event.clientX, y: event.clientY });
               const bbox = element.getBBox();
-              if (point.x >= bbox.x && point.x <= bbox.x + bbox.width && point.y >= bbox.y && point.y <= bbox.y + bbox.height) {
+              let newBBox;
+              if (element.attributes.type === 'pn.Place') {
+                newBBox = {
+                  x: parseInt(element.get('position').x) - parseInt(element.attr('circle/r')),
+                  y: parseInt(element.get('position').y) - parseInt(element.attr('circle/r')),
+                  width: parseInt(element.attr('circle/r')) * 2 + 40,
+                  height: parseInt(element.attr('circle/r')) * 2 + 40
+                };
+              } else if (element.attributes.type === 'pn.Transition') {
+                newBBox = {
+                  x: parseInt(element.get('position').x),
+                  y: parseInt(element.get('position').y),
+                  width: parseInt(element.attr('rect/width')),
+                  height: parseInt(element.attr('rect/height'))
+                };
+              } else {
+                newBBox = bbox;
+              }
+              if (point.x >= newBBox.x && point.x <= newBBox.x + newBBox.width && point.y >= newBBox.y && point.y <= newBBox.y + newBBox.height) {
                 if (element instanceof joint.shapes.pn.Place || element instanceof joint.shapes.pn.Transition) {
                   found = true;
                   if (element.id === cellView.model.id) {
