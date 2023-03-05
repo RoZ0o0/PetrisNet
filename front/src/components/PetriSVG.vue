@@ -1,41 +1,45 @@
 <!-- eslint-disable vue/no-v-text-v-html-on-component -->
 <template>
   <div class="flex w-full h-16 items-center">
-    <div class="flex flex-row w-full h-16 items-center justify-start">
-      <div class="flex items-center petri-nav w-3/12 select-none ml-8 justify-center">
+    <div class="flex flex-row w-full h-16 items-center justify-center">
+      <div v-if='checkIfCreateExample() || checkIfEdited() || checkIfExampleEdited()' class="flex items-center petri-nav w-2/12 select-none ml-8 justify-center">
         <span v-if='checkIfCreateExample()' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>Tworzenie przykładowej sieci</span>
         <span v-if='checkIfEdited()' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>Edytowanie sieci: {{ this.saveResult.saveName }} <br> Użytkownika: {{ this.editedSaveUserEmail }} </span>
         <span v-if='checkIfExampleEdited()' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>Edytowanie przykładowej sieci: {{ this.exampleEditResult.netName }}</span>
       </div>
       <div class="flex ml-4 items-center petri-nav">
-        <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center" @click='run(); this.running = true;' :disabled='this.running && !this.wait' :style='this.running ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
+        <button class="border-2 border-black rounded-xl p-2 items-center" @click='run(); this.running = true;' :disabled='this.running && !this.wait' :style='this.running ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
           <RunIcon class="inline-block align-middle" :disabled='this.running && !this.wait' />
           <span class="inline-block align-middle select-none" :disabled='this.running && !this.wait'>Start</span>
         </button>
-        <button class="border-2 border-black border-l-0 rounded-br-xl rounded-tr-xl p-2 items-center" @click='stop()'>
+        <button class="border-2 border-black rounded-xl p-2 items-center ml-2" @click='stop()'>
           <StopIcon class="inline-block align-middle" />
           <span class="inline-block align-middle select-none">Stop</span>
         </button>
       </div>
-      <div class="flex ml-4 items-center petri-nav">
-        <button class="border-2 border-black rounded-bl-xl rounded-tl-xl p-2 items-center" v-on:click="switchPlace" :style='this.selectedElement === "place" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
+      <div class="flex ml-6 items-center petri-nav">
+        <button class="border-2 border-black rounded-xl p-2 items-center" v-on:click="switchPlace" :style='this.selectedElement === "place" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
           <CircleIcon class="inline-block align-middle" />
           <span class="inline-block align-middle select-none">Miejsce [1]</span>
         </button>
-        <button class="border-2 border-black border-l-0 p-2 items-center" v-on:click="switchTransition" :style='this.selectedElement === "transition" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
+        <button class="border-2 border-black rounded-xl p-2 items-center ml-2" v-on:click="switchTransition" :style='this.selectedElement === "transition" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
           <SquareIcon class="inline-block align-middle" />
           <span class="inline-block align-middle select-none">Przejście [2]</span>
         </button>
-        <button class="border-2 border-black border-l-0 p-2 items-center" v-on:click="switchFastAdd" :style='this.selectedElement === "fastadd" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
+        <button class="border-2 border-black rounded-xl p-2 items-center ml-2" v-on:click="switchFastAdd" :style='this.selectedElement === "fastadd" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
           <CircleIcon class="inline-block align-middle" v-if='!this.tab_clicked' />
           <SquareIcon class="inline-block align-middle" v-if='this.tab_clicked' />
           <span class="inline-block align-middle select-none">Szybkie dodawanie [3]</span>
         </button>
-        <button class="border-2 border-black border-l-0 border-r-0 p-2 items-center" v-on:click="switchDelete" :style='this.selectedElement === "delete" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
-          <RemoveIcon class="inline-block align-middle" />
-          <span class="inline-block align-middle select-none">Usuń [4]</span>
+        <button class="border-2 border-black rounded-xl p-2 items-center ml-2" v-on:click="switchLabel" :style='this.selectedElement === "label" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
+          <TextIcon class="inline-block align-middle" />
+          <span class="inline-block align-middle select-none">Etykieta [4]</span>
         </button>
-        <button class="border-2 border-black rounded-br-xl rounded-tr-xl p-2 items-center" v-on:click="clear" :disabled="this.running">
+        <button class="border-2 border-black rounded-xl p-2 items-center ml-2" v-on:click="switchDelete" :style='this.selectedElement === "delete" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
+          <RemoveIcon class="inline-block align-middle" />
+          <span class="inline-block align-middle select-none">Usuń [5]</span>
+        </button>
+        <button class="border-2 border-black rounded-xl p-2 items-center ml-2" v-on:click="clear" :disabled="this.running">
           <ClearIcon class="inline-block align-middle" />
           <span class="inline-block align-middle select-none">Wyczyść</span>
         </button>
@@ -68,12 +72,12 @@
         <el-dropdown class="border-0">
           <HelpIcon class="inline-block align-middle" />
           <template #dropdown>
-            <p class="text-center font-bold px-1">Aby wybrać jedną z opcji tworzenia sieci, można użyć klawiszy (1, 2, 3, 4).</p>
-            <p class="text-center font-bold px-1">Aby stworzyć połączenie, należy przytrzymać klawisz CTRL i przeciągnąć z elementu.</p>
-            <p class="text-center font-bold px-1">Po wybraniu opcji szybkiego dodawania, pojawia się zasięg w jakim zostanie dodane połączenie.</p>
-            <p class="text-center font-bold px-1">Klawiszem TAB przełącza się pomiędzy stawianiem miejsca bądź przejścia.</p>
-            <p class="text-center font-bold px-1">Aby dodać wielę połączeń, można zaznaczyć wielę miejsc bądź przejść, a następnie z klawiszem CTRL przeciągnać do innego elementu.</p>
-            <p class="text-center font-bold px-1">Aby dodać wiele tokenów bądź wag połączeń, wystarczy zaznaczyć odpowiednie elementy, po czym wcisnąć prawy przycisk myszy i wprowadzić wartość.</p>
+            <p class="text-center font-bold px-1 text-base">Aby wybrać jedną z opcji tworzenia sieci, można użyć klawiszy (1, 2, 3, 4).</p>
+            <p class="text-center font-bold px-1 text-base">Aby stworzyć połączenie, należy przytrzymać klawisz CTRL i przeciągnąć z elementu.</p>
+            <p class="text-center font-bold px-1 text-base">Po wybraniu opcji szybkiego dodawania, pojawia się zasięg w jakim zostanie dodane połączenie.</p>
+            <p class="text-center font-bold px-1 text-base">Klawiszem TAB przełącza się pomiędzy stawianiem miejsca bądź przejścia.</p>
+            <p class="text-center font-bold px-1 text-base">Aby dodać wielę połączeń, można zaznaczyć wielę miejsc bądź przejść, a następnie z klawiszem CTRL przeciągnać do innego elementu.</p>
+            <p class="text-center font-bold px-1 text-base">Aby dodać wiele tokenów bądź wag połączeń, wystarczy zaznaczyć odpowiednie elementy, po czym wcisnąć prawy przycisk myszy i wprowadzić wartość.</p>
           </template>
         </el-dropdown>
       </div>
@@ -94,6 +98,7 @@ import ExportIcon from 'vue-material-design-icons/ArrowTopRight.vue';
 import SaveIcon from 'vue-material-design-icons/ContentSaveAll.vue';
 import HelpIcon from 'vue-material-design-icons/Help.vue';
 import CheckNetIcon from 'vue-material-design-icons/CheckNetwork.vue';
+import TextIcon from 'vue-material-design-icons/FormatText.vue';
 import SaveNetServices, { ISaveNet } from '@/services/SaveNetService';
 import Swal from 'sweetalert2';
 import UserServices, { IUser } from '@/services/UserService';
@@ -140,6 +145,7 @@ export default defineComponent({
     StopIcon,
     ImportIcon,
     ExportIcon,
+    TextIcon,
     SaveIcon,
     CheckNetIcon,
     HelpIcon
@@ -262,6 +268,8 @@ export default defineComponent({
     let startX: any, startY: any;
     let moveX: any, moveY: any;
 
+    let currentMousePos: any;
+
     (this.paper as any).on('cell:pointerdown', (cellView: any, event: any, x: any, y: any) => {
       if (!this.running) {
         if (this.selectedElement === '') {
@@ -292,6 +300,8 @@ export default defineComponent({
 
                     element.attr('.marker-vertices/display', 'none');
                     element.attr('.connection/stroke', 'black');
+                  } else if (element.attributes.type === 'basic.Text') {
+                    element.attr('text/fill', 'black');
                   }
                 });
               }
@@ -314,6 +324,8 @@ export default defineComponent({
                 link.attr('.marker-vertex', { circle: { r: 5 } });
                 link.attr('.marker-vertex-remove-area', { fill: 'transparent', stroke: 'transparent' });
                 cellView.model.attr('.connection/stroke', 'red');
+              } else if (cellView.model.attributes.type === 'basic.Text') {
+                cellView.model.attr('text/fill', 'red');
               }
             } else {
               if (this.shift_pressed) {
@@ -334,6 +346,8 @@ export default defineComponent({
                   const link = this.graph.getCell(cellView.model.attributes.id);
                   link.attr('.marker-vertices/display', 'none');
                   link.attr('.connection/stroke', 'black');
+                } else if (cellView.model.attributes.type === 'basic.Text') {
+                  cellView.model.attr('text/fill', 'black');
                 }
               }
             }
@@ -353,6 +367,9 @@ export default defineComponent({
                     '.marker-vertex-remove-area': { fill: 'transparent' },
                     '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
                   },
+                  connector: {
+                    name: 'normal'
+                  },
                   weight: 1,
                   selected: false
                 });
@@ -362,7 +379,7 @@ export default defineComponent({
                 link.appendLabel({
                   attrs: {
                     text: {
-                      text: '1',
+                      text: '',
                       'pointer-events': 'none',
                       'font-size': 20,
                       'font-weight': 'bold',
@@ -418,6 +435,9 @@ export default defineComponent({
                       '.marker-vertex-remove-area': { fill: 'transparent' },
                       '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
                     },
+                    connector: {
+                      name: 'normal'
+                    },
                     weight: 1,
                     selected: false
                   });
@@ -427,7 +447,7 @@ export default defineComponent({
                   link.appendLabel({
                     attrs: {
                       text: {
-                        text: '1',
+                        text: '',
                         'pointer-events': 'none',
                         'font-size': 20,
                         'font-weight': 'bold',
@@ -471,6 +491,9 @@ export default defineComponent({
                           '.marker-vertex-remove-area': { fill: 'transparent' },
                           '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
                         },
+                        connector: {
+                          name: 'normal'
+                        },
                         weight: 1,
                         selected: false
                       });
@@ -480,7 +503,7 @@ export default defineComponent({
                       link.appendLabel({
                         attrs: {
                           text: {
-                            text: '1',
+                            text: '',
                             'pointer-events': 'none',
                             'font-size': 20,
                             'font-weight': 'bold',
@@ -516,6 +539,7 @@ export default defineComponent({
     });
 
     (this.paper as any).on('blank:pointerdown', (evt: any, x: number, y: number) => {
+      currentMousePos = { x: evt.pageX, y: evt.pageY };
       if (!this.running) {
         if (this.selectedElement === 'place') {
           const place = this.addPlace(x - 30, y - 30);
@@ -571,6 +595,9 @@ export default defineComponent({
                     '.marker-vertex-remove-area': { fill: 'transparent' },
                     '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
                   },
+                  connector: {
+                    name: 'normal'
+                  },
                   weight: 1,
                   selected: false
                 });
@@ -580,7 +607,7 @@ export default defineComponent({
                 link.appendLabel({
                   attrs: {
                     text: {
-                      text: '1',
+                      text: '',
                       'pointer-events': 'none',
                       'font-size': 20,
                       'font-weight': 'bold',
@@ -650,6 +677,9 @@ export default defineComponent({
                     '.marker-vertex-remove-area': { fill: 'transparent' },
                     '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
                   },
+                  connector: {
+                    name: 'normal'
+                  },
                   weight: 1,
                   selected: false
                 });
@@ -659,7 +689,7 @@ export default defineComponent({
                 link.appendLabel({
                   attrs: {
                     text: {
-                      text: '1',
+                      text: '',
                       'pointer-events': 'none',
                       'font-size': 20,
                       'font-weight': 'bold',
@@ -687,43 +717,50 @@ export default defineComponent({
 
             this.modelStates.push({ action: 'added', lastStep: lastStep });
           }
+        } else if (this.selectedElement === 'label') {
+          const label = this.addLabel(x, y);
+          const lastStep = [] as any;
+          lastStep.push(label);
+          this.modelStates.push({ action: 'added', lastStep: lastStep });
         } else if (this.selectedElement === '') {
-          startPoint = { x, y };
+          if (!this.ctrl_pressed) {
+            startPoint = { x, y };
 
-          this.selectRect = new joint.shapes.basic.Rect({
-            position: {
-              x: Math.min(startPoint.x, startPoint.x),
-              y: Math.min(startPoint.y, startPoint.y)
-            },
-            size: {
-              width: Math.abs(startPoint.x - startPoint.x),
-              height: Math.abs(startPoint.y - startPoint.y)
-            },
-            attrs: {
-              rect: {
-                stroke: 'black',
-                'stroke-width': 1,
-                fill: 'gray',
-                opacity: 0.2
+            this.selectRect = new joint.shapes.basic.Rect({
+              position: {
+                x: Math.min(startPoint.x, startPoint.x),
+                y: Math.min(startPoint.y, startPoint.y)
+              },
+              size: {
+                width: Math.abs(startPoint.x - startPoint.x),
+                height: Math.abs(startPoint.y - startPoint.y)
+              },
+              attrs: {
+                rect: {
+                  stroke: 'black',
+                  'stroke-width': 1,
+                  fill: 'gray',
+                  opacity: 0.2
+                }
               }
-            }
-          });
-
-          this.graph.addCell(this.selectRect);
-
-          (this.paper as any).on('blank:pointermove', (event: any, x: any, y: any) => {
-            endPoint = { x, y };
-
-            (this.selectRect as any).set('size', {
-              width: Math.abs(startPoint.x - endPoint.x),
-              height: Math.abs(startPoint.y - endPoint.y)
             });
 
-            (this.selectRect as any).set('position', {
-              x: Math.min(startPoint.x, endPoint.x),
-              y: Math.min(startPoint.y, endPoint.y)
+            this.graph.addCell(this.selectRect);
+
+            (this.paper as any).on('blank:pointermove', (event: any, x: any, y: any) => {
+              endPoint = { x, y };
+
+              (this.selectRect as any).set('size', {
+                width: Math.abs(startPoint.x - endPoint.x),
+                height: Math.abs(startPoint.y - endPoint.y)
+              });
+
+              (this.selectRect as any).set('position', {
+                x: Math.min(startPoint.x, endPoint.x),
+                y: Math.min(startPoint.y, endPoint.y)
+              });
             });
-          });
+          }
         }
       }
     });
@@ -737,7 +774,7 @@ export default defineComponent({
                 moveX = cellView.model.get('position').x - startX;
                 moveY = cellView.model.get('position').y - startY;
                 this.graph.getCells().forEach((element: any) => {
-                  if ((element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition') && element.attributes.selected && element.cid !== cellView.model.cid) {
+                  if ((element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition' || element.attributes.type === 'basic.Text') && element.attributes.selected && element.cid !== cellView.model.cid) {
                     const position = element.get('position');
                     element.set('position', { x: position.x + moveX, y: position.y + moveY });
                   }
@@ -811,6 +848,18 @@ export default defineComponent({
       }
     });
 
+    (this.paper as any).on('blank:pointermove', (event: any, x: any, y: any) => {
+      if (this.ctrl_pressed) {
+        const diff = {
+          x: this.paper.translate().tx + (event.pageX - currentMousePos.x),
+          y: this.paper.translate().ty + (event.pageY - currentMousePos.y)
+        };
+
+        this.paper.translate(diff.x, diff.y);
+        currentMousePos = { x: event.pageX, y: event.pageY };
+      }
+    });
+
     (this.paper as any).on('cell:pointerup', (cellView: any, event: any, x: any, y: any) => {
       if (!this.running) {
         if (this.selectedElement === 'delete') {
@@ -872,6 +921,7 @@ export default defineComponent({
                     const linkView = link;
                     link.remove();
                     this.graph.addCell(linkView);
+                    linkView.set('connector', { name: 'normal' });
                     this.current_connection = null;
                   }
                 }
@@ -932,6 +982,7 @@ export default defineComponent({
                       const linkView = link;
                       link.remove();
                       this.graph.addCell(linkView);
+                      linkView.set('connector', { name: 'normal' });
                     }
                   }
                 }
@@ -948,7 +999,7 @@ export default defineComponent({
       }
     });
 
-    (this.paper as any).on('blank:pointerup', () => {
+    (this.paper as any).on('blank:pointerup', (event: any) => {
       if (!this.running) {
         if (this.selectRect && this.graph.getCell(this.selectRect.attributes.id)) {
           if (this.selectedElement === '') {
@@ -969,10 +1020,12 @@ export default defineComponent({
               } else if (element.attributes.type === 'pn.Link') {
                 element.attr('.marker-vertices/display', 'none');
                 element.attr('.connection/stroke', 'black');
+              } else if (element.attributes.type === 'basic.Text') {
+                element.attr('text/fill', 'black');
               }
             });
             this.graph.getCells().forEach((element: any) => {
-              if (element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition' || element.attributes.type === 'pn.Link') {
+              if (element.attributes.type === 'pn.Place' || element.attributes.type === 'pn.Transition' || element.attributes.type === 'pn.Link' || element.attributes.type === 'basic.Text') {
                 let placeX: any;
                 let placeY: any;
                 let placeWidth: any;
@@ -1014,6 +1067,8 @@ export default defineComponent({
                     });
                   } else if (element.attributes.type === 'pn.Link') {
                     element.attr('.connection/stroke', 'red');
+                  } else if (element.attributes.type === 'basic.Text') {
+                    element.attr('text/fill', 'red');
                   }
                 }
               }
@@ -1107,12 +1162,6 @@ export default defineComponent({
                       }
                     });
 
-                    let tokenText = element.attributes.tokens.toString();
-
-                    if (parseInt(element.attributes.tokens) === 1) {
-                      tokenText = '';
-                    }
-
                     const circle = new joint.shapes.basic.Circle({
                       position: { x: element.position().x, y: element.position().y },
                       attrs: {
@@ -1120,16 +1169,17 @@ export default defineComponent({
                           attrs: {
                             r: 20
                           },
-                          fill: 'black',
+                          fill: 'transparent',
+                          stroke: 'transparent',
                           'pointer-events': 'none'
                         },
                         text: {
-                          text: parseInt(tokenText).toString(),
+                          text: element.attributes.tokens.toString(),
                           'font-size': 16,
                           'text-anchor': 'middle',
                           'y-alignment': 'middle',
                           'pointer-events': 'none',
-                          fill: 'white'
+                          fill: 'black'
                         }
                       },
                       'pointer-events': 'none',
@@ -1243,6 +1293,9 @@ export default defineComponent({
                         '.marker-vertex-remove-area': { fill: 'transparent' },
                         '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
                       },
+                      connector: {
+                        name: element.attributes.connector.name
+                      },
                       weight: parseInt(weightInput.value),
                       selected: false
                     });
@@ -1251,10 +1304,16 @@ export default defineComponent({
 
                     const distance = 18 + (4 * weightInput.value.toString().length);
 
+                    let weight = '';
+
+                    if (weightInput.value > 1) {
+                      weight = weightInput.value;
+                    }
+
                     link.appendLabel({
                       attrs: {
                         text: {
-                          text: parseInt(weightInput.value).toString(),
+                          text: weight,
                           'pointer-events': 'none',
                           'font-size': 20,
                           'font-weight': 'bold',
@@ -1322,7 +1381,7 @@ export default defineComponent({
             (container as any).appendChild(editWindow);
           }
         } else {
-          if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition' || (cellView as any).model.get('type') === 'pn.Link') {
+          if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition' || (cellView as any).model.get('type') === 'pn.Link' || (cellView as any).model.get('type') === 'basic.Text') {
             let nameDiv: any;
             let nameInput: any;
             let textName: any;
@@ -1347,6 +1406,14 @@ export default defineComponent({
             let heightInput: any;
             let textHeight: any;
 
+            let fontNameDiv: any;
+            let fontNameInput: any;
+            let textFontName: any;
+
+            let fontDiv: any;
+            let fontInput: any;
+            let textFont: any;
+
             const editWindow = document.createElement('div');
             if ((cellView as any).model.get('type') === 'pn.Place' || (cellView as any).model.get('type') === 'pn.Transition') {
               nameDiv = document.createElement('div');
@@ -1361,6 +1428,10 @@ export default defineComponent({
             }
             if ((cellView as any).model.get('type') === 'pn.Link') {
               weightDiv = document.createElement('div');
+            }
+            if ((cellView as any).model.get('type') === 'basic.Text') {
+              fontDiv = document.createElement('div');
+              fontNameDiv = document.createElement('div');
             }
             editWindow.classList.add('editElements');
             editWindow.style.position = 'absolute';
@@ -1481,6 +1552,33 @@ export default defineComponent({
               textWeight.innerHTML = 'Waga';
             }
 
+            if ((cellView as any).model.get('type') === 'basic.Text') {
+              fontInput = document.createElement('input');
+              fontInput.style.border = 'thin solid black';
+              fontInput.style.borderRadius = '0.25rem';
+              fontInput.style.marginLeft = 'auto';
+              fontInput.style.paddingLeft = '2px';
+              fontInput.style.marginLeft = 'auto';
+              fontInput.type = 'number';
+              fontInput.setAttribute('min', '0');
+              fontInput.value = (cellView as any).model.attr('text/font-size');
+
+              textFont = document.createElement('p');
+              textFont.innerHTML = 'Czcionka';
+
+              fontNameInput = document.createElement('input');
+              fontNameInput.style.border = 'thin solid black';
+              fontNameInput.style.borderRadius = '0.25rem';
+              fontNameInput.style.marginLeft = 'auto';
+              fontNameInput.style.paddingLeft = '2px';
+              fontNameInput.style.marginLeft = 'auto';
+              fontNameInput.type = 'text';
+              fontNameInput.value = (cellView as any).model.attr('text/text');
+
+              textFontName = document.createElement('p');
+              textFontName.innerHTML = 'Tekst';
+            }
+
             const name = (cellView as any).model.attr('.label/text');
             let width: any;
             let height: any;
@@ -1546,12 +1644,6 @@ export default defineComponent({
                     }
                   });
 
-                  let tokenText = (cellView as any).model.get('tokens').toString();
-
-                  if (parseInt((cellView as any).model.get('tokens')) === 1) {
-                    tokenText = '';
-                  }
-
                   const circle = new joint.shapes.basic.Circle({
                     position: { x: (cellView as any).model.position().x, y: (cellView as any).model.position().y },
                     attrs: {
@@ -1559,16 +1651,17 @@ export default defineComponent({
                         attrs: {
                           r: 20
                         },
-                        fill: 'black',
+                        fill: 'transparent',
+                        stroke: 'transparent',
                         'pointer-events': 'none'
                       },
                       text: {
-                        text: parseInt(tokenText).toString(),
+                        text: (cellView as any).model.get('tokens').toString(),
                         'font-size': 16,
                         'text-anchor': 'middle',
                         'y-alignment': 'middle',
                         'pointer-events': 'none',
-                        fill: 'white'
+                        fill: 'black'
                       }
                     },
                     'pointer-events': 'none',
@@ -1616,6 +1709,9 @@ export default defineComponent({
                     '.marker-vertex-remove-area': { fill: 'transparent' },
                     '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
                   },
+                  connector: {
+                    name: (cellView as any).model.attributes.connector.name
+                  },
                   weight: parseInt(weightInput.value),
                   selected: false
                 });
@@ -1624,10 +1720,16 @@ export default defineComponent({
 
                 const distance = 18 + (4 * weightInput.value.toString().length);
 
+                let weight = '';
+
+                if (weightInput.value > 1) {
+                  weight = weightInput.value;
+                }
+
                 link.appendLabel({
                   attrs: {
                     text: {
-                      text: parseInt(weightInput.value).toString(),
+                      text: weight,
                       'pointer-events': 'none',
                       'font-size': 20,
                       'font-weight': 'bold',
@@ -1656,6 +1758,23 @@ export default defineComponent({
 
                 (cellView as any).model.remove();
               }
+              if ((cellView as any).model.get('type') === 'basic.Text') {
+                if (fontInput.value === '') {
+                  fontInput.value = 20;
+                }
+                if (fontInput.value < 10) {
+                  fontInput.value = 10;
+                }
+
+                if (fontNameInput.value === '') {
+                  fontNameInput.value = (cellView as any).model.attr('text/text');
+                }
+
+                lastStep.push({ element: (cellView as any).model, font: (cellView as any).model.attr('text/font-size'), name: (cellView as any).model.attr('text/text') });
+
+                (cellView as any).model.attr('text/font-size', fontInput.value);
+                (cellView as any).model.attr('text/text', fontNameInput.value);
+              }
               editWindow.remove();
               this.contextShow = false;
               this.modelStates.push({ action: 'modified', lastStep: lastStep });
@@ -1664,6 +1783,22 @@ export default defineComponent({
             const cancelButton = document.createElement('button');
             cancelButton.innerHTML = 'Anuluj';
             cancelButton.onclick = () => {
+              editWindow.remove();
+              this.contextShow = false;
+            };
+
+            const bezierButton = document.createElement('button');
+            bezierButton.innerHTML = 'Zamień na beziera';
+            bezierButton.onclick = () => {
+              (cellView as any).model.set('connector', { name: 'smooth' });
+              editWindow.remove();
+              this.contextShow = false;
+            };
+
+            const standardLinkButton = document.createElement('button');
+            standardLinkButton.innerHTML = 'Zamień na normalny';
+            standardLinkButton.onclick = () => {
+              (cellView as any).model.set('connector', { name: 'normal' });
               editWindow.remove();
               this.contextShow = false;
             };
@@ -1712,6 +1847,20 @@ export default defineComponent({
               weightDiv.appendChild(textWeight);
               weightDiv.appendChild(weightInput);
               editWindow.appendChild(weightDiv);
+              if ((cellView as any).model.get('connector').name === 'smooth') {
+                editWindow.appendChild(standardLinkButton);
+              } else {
+                editWindow.appendChild(bezierButton);
+              }
+            }
+
+            if ((cellView as any).model.get('type') === 'basic.Text') {
+              fontDiv.appendChild(textFont);
+              fontDiv.appendChild(fontInput);
+              fontNameDiv.appendChild(textFontName);
+              fontNameDiv.appendChild(fontNameInput);
+              editWindow.appendChild(fontNameDiv);
+              editWindow.appendChild(fontDiv);
             }
 
             editWindow.appendChild(saveButton);
@@ -1751,6 +1900,15 @@ export default defineComponent({
           this.switchFastAdd();
         }
         if (evt.key === '4') {
+          if (this.selectRect && this.graph.getCell(this.selectRect.attributes.id)) {
+            this.selectRect.remove();
+          }
+          if (this.rectRangeAdd && this.graph.getCell(this.rectRangeAdd.attributes.id)) {
+            this.rectRangeAdd.remove();
+          }
+          this.switchLabel();
+        }
+        if (evt.key === '5') {
           if (this.selectRect && this.graph.getCell(this.selectRect.attributes.id)) {
             this.selectRect.remove();
           }
@@ -1815,7 +1973,8 @@ export default defineComponent({
                             attrs: {
                               r: 20
                             },
-                            fill: 'black',
+                            fill: 'transparent',
+                            stroke: 'transparent',
                             'pointer-events': 'none'
                           },
                           text: {
@@ -1824,7 +1983,7 @@ export default defineComponent({
                             'text-anchor': 'middle',
                             'y-alignment': 'middle',
                             'pointer-events': 'none',
-                            fill: 'white'
+                            fill: 'black'
                           }
                         },
                         'pointer-events': 'none',
@@ -1851,6 +2010,12 @@ export default defineComponent({
 
                     link.attributes.weight = element.weight.toString();
                     link.attr('text/text', element.weight.toString());
+                  }
+                  if (element.element.attributes.type === 'basic.Text') {
+                    const label = this.graph.getCell(element.element.attributes.id);
+
+                    label.attr('text/font-size', element.font);
+                    label.attr('text/text', element.name);
                   }
                   if (element.element.attributes.type === 'pn.Place') {
                     const place = this.graph.getCell(element.element.attributes.id);
@@ -1879,7 +2044,8 @@ export default defineComponent({
                               attrs: {
                                 r: 20
                               },
-                              fill: 'black',
+                              fill: 'transparent',
+                              stroke: 'transparent',
                               'pointer-events': 'none'
                             },
                             text: {
@@ -1888,7 +2054,7 @@ export default defineComponent({
                               'text-anchor': 'middle',
                               'y-alignment': 'middle',
                               'pointer-events': 'none',
-                              fill: 'white'
+                              fill: 'black'
                             }
                           },
                           'pointer-events': 'none',
@@ -2168,6 +2334,9 @@ export default defineComponent({
           let sourcePosition: any;
           let targetPosition: any;
 
+          let sourceElement: any;
+          let targetElement: any;
+
           this.resultSimulation.changes.forEach((ele: any) => {
             this.graph.getCells().forEach((element: any) => {
               if (element.attributes.type === 'pn.Link') {
@@ -2176,6 +2345,23 @@ export default defineComponent({
                   if (this.running) {
                     sourcePosition = element.getSourcePoint();
                     targetPosition = element.getTargetPoint();
+
+                    sourceElement = element.getSourceElement();
+                    targetElement = element.getTargetElement();
+
+                    this.graph.getCells().forEach((cells: any) => {
+                      if (cells.attributes.type === 'pn.Transition') {
+                        cells.attr('rect/stroke', 'black');
+                      }
+                    });
+
+                    if (sourceElement.attributes.type === 'pn.Transition') {
+                      sourceElement.attr('rect/stroke', 'red');
+                    }
+
+                    if (sourceElement.attributes.type === 'pn.Transition') {
+                      targetElement.attr('rect/stroke', 'red');
+                    }
 
                     const connector = joint.connectors.normal;
 
@@ -2267,7 +2453,8 @@ export default defineComponent({
                         attrs: {
                           r: 20
                         },
-                        fill: 'black',
+                        fill: 'transparent',
+                        stroke: 'transparent',
                         'pointer-events': 'none'
                       },
                       text: {
@@ -2276,7 +2463,7 @@ export default defineComponent({
                         'text-anchor': 'middle',
                         'y-alignment': 'middle',
                         'pointer-events': 'none',
-                        fill: 'white'
+                        fill: 'black'
                       }
                     },
                     'pointer-events': 'none',
@@ -2305,6 +2492,11 @@ export default defineComponent({
           element.remove();
         }
       });
+      this.graph.getCells().forEach((cells: any) => {
+        if (cells.attributes.type === 'pn.Transition') {
+          cells.attr('rect/stroke', 'black');
+        }
+      });
     },
 
     async customTimeout(ms: number) {
@@ -2324,10 +2516,12 @@ export default defineComponent({
         let source = '';
         let target = '';
         let vertices = [];
+        let connector = '';
         if (element.attributes.type === 'pn.Link') {
           weight = parseInt(element.attributes.weight);
           source = element.attributes.source.id;
           target = element.attributes.target.id;
+          connector = element.attributes.connector.name;
           if (element.attributes.vertices) {
             vertices = element.attributes.vertices;
           }
@@ -2346,11 +2540,17 @@ export default defineComponent({
           width = parseInt(element.attributes.attrs.rect.width);
           height = parseInt(element.attributes.attrs.rect.height);
         }
+        if (element.attributes.type === 'basic.Text') {
+          name = element.attr('text/text');
+          r = element.attr('text/font-size');
+          x = element.attributes.position.x;
+          y = element.attributes.position.y;
+        }
         if (element.attributes.type !== 'basic.Circle') {
           if (element.attributes.type !== 'pn.Link') {
             elements.push({ name: name, type: element.attributes.type, x: x, y: y, tokens: tokens, id: element.attributes.id, r: r, width: width, height: height });
           } else {
-            connections.push({ source: source, target: target, weight: weight, vertices: vertices });
+            connections.push({ source: source, target: target, weight: weight, vertices: vertices, connector: connector });
           }
         }
       });
@@ -2363,8 +2563,6 @@ export default defineComponent({
       this.getGraphData(elements, connections);
       this.resultSimulation.elements = elements;
       this.resultSimulation.connections = connections;
-
-      console.log(this.resultSimulation);
 
       this.checkNet(this.resultSimulation).then((data) => {
         if (data.changes.length === 0) {
@@ -2420,6 +2618,29 @@ export default defineComponent({
       this.graph.addCell(transition);
 
       return transition;
+    },
+
+    addLabel(x: number, y: number) {
+      const label = new joint.shapes.basic.Text({
+        position: { x: x, y: y },
+        size: { width: 50, height: 20 },
+        attrs: {
+          text: {
+            text: 'Etykieta',
+            'font-size': 14,
+            'font-weight': 'bold',
+            'text-anchor': 'middle',
+            'ref-x': 0.5,
+            'ref-y': 0.5,
+            'y-alignment': 'middle',
+            'x-alignment': 'middle'
+          }
+        }
+      });
+
+      this.graph.addCell(label);
+
+      return label;
     },
 
     clear() {
@@ -2586,6 +2807,30 @@ export default defineComponent({
                   data = data + '\t\t\t\t<value>false</value>\n';
                   data = data + '\t\t\t</tagged>\n';
 
+                  if (element.attributes.connector.name === 'smooth') {
+                    let counter = 0;
+                    this.graph.getCell(element.attributes.id).get('vertices').forEach((vertices: any) => {
+                      let arcPathId = '';
+                      for (let i = 0; i < (3 - counter.toString().length); i++) {
+                        arcPathId += '0';
+                      }
+                      arcPathId += counter.toString();
+                      data = data + '\t\t\t<arcpath id="' + arcPathId + '" x="' + vertices.x + '" y="' + vertices.y + '" curvePoint="true">\n';
+                      counter++;
+                    });
+                  } else {
+                    let counter = 0;
+                    this.graph.getCell(element.attributes.id).get('vertices').forEach((vertices: any) => {
+                      let arcPathId = '';
+                      for (let i = 0; i < (3 - counter.toString().length); i++) {
+                        arcPathId += '0';
+                      }
+                      arcPathId += counter.toString();
+                      data = data + '\t\t\t<arcpath id="' + arcPathId + '" x="' + vertices.x + '" y="' + vertices.y + '" curvePoint="false">\n';
+                      counter++;
+                    });
+                  }
+
                   data = data + '\t\t\t<type value="normal"/>\n';
 
                   data = data + '\t\t</arc>\n';
@@ -2660,12 +2905,6 @@ export default defineComponent({
                 place.attr('circle/r', parseInt(r));
 
                 if (element.tokens > 0) {
-                  let tokenText = element.tokens;
-
-                  if (parseInt(element.tokens) === 1) {
-                    tokenText = '';
-                  }
-
                   const circle = new joint.shapes.basic.Circle({
                     position: { x: element.x, y: element.y },
                     attrs: {
@@ -2673,16 +2912,17 @@ export default defineComponent({
                         attrs: {
                           r: 20
                         },
-                        fill: 'black',
+                        fill: 'transparent',
+                        stroke: 'transparent',
                         'pointer-events': 'none'
                       },
                       text: {
-                        text: tokenText,
+                        text: element.tokens,
                         'font-size': 16,
                         'text-anchor': 'middle',
                         'y-alignment': 'middle',
                         'pointer-events': 'none',
-                        fill: 'white'
+                        fill: 'black'
                       }
                     },
                     'pointer-events': 'none',
@@ -2727,6 +2967,12 @@ export default defineComponent({
                 transition.attr('rect/width', parseInt(width));
                 transition.attr('rect/height', parseInt(height));
               }
+              if (element.type === 'basic.Text') {
+                const label = this.addLabel(element.x, element.y);
+
+                label.attr('text/text', element.name);
+                label.attr('text/font-size', element.r);
+              }
             });
             JSON.parse(this.dest)[1].forEach((element: any) => {
               const link = new joint.shapes.pn.Link({
@@ -2742,6 +2988,9 @@ export default defineComponent({
                   '.marker-vertex-remove-area': { fill: 'transparent' },
                   '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
                 },
+                connector: {
+                  name: element.connector
+                },
                 weight: element.weight,
                 selected: false
               });
@@ -2749,10 +2998,16 @@ export default defineComponent({
 
               const distance = 18 + (4 * element.weight.toString().length);
 
+              let weight = '';
+
+              if (element.weight > 1) {
+                weight = element.weight.toString();
+              }
+
               link.appendLabel({
                 attrs: {
                   text: {
-                    text: element.weight.toString(),
+                    text: weight,
                     'pointer-events': 'none',
                     'font-size': 20,
                     'font-weight': 'bold',
@@ -2777,11 +3032,6 @@ export default defineComponent({
 
               link.attr('.marker-arrowhead[end=target]', { d: 'M 8 -14 L -13 0 L 8 14 L 0 0 Z', class: 'arrowhead' });
               link.attr('.marker-arrowhead[end=source]', { d: 'M -10 0 L -10 0 L -10 0 z', style: { 'pointer-events': 'none' } });
-
-              (link as any).on('change:vertices', (link: any) => {
-                const lastStep = this.graph.toJSON();
-                this.modelStates.push(lastStep);
-              });
             });
           };
           if (this.selectedFile != null) {
@@ -2824,12 +3074,6 @@ export default defineComponent({
             place.attr('circle/r', parseInt(r));
 
             if (element.tokens > 0) {
-              let tokenText = element.tokens;
-
-              if (parseInt(element.tokens) === 1) {
-                tokenText = '';
-              }
-
               const circle = new joint.shapes.basic.Circle({
                 position: { x: element.x, y: element.y },
                 attrs: {
@@ -2837,16 +3081,17 @@ export default defineComponent({
                     attrs: {
                       r: 20
                     },
-                    fill: 'black',
+                    fill: 'transparent',
+                    stroke: 'transparent',
                     'pointer-events': 'none'
                   },
                   text: {
-                    text: tokenText,
+                    text: element.tokens,
                     'font-size': 16,
                     'text-anchor': 'middle',
                     'y-alignment': 'middle',
                     'pointer-events': 'none',
-                    fill: 'white'
+                    fill: 'black'
                   }
                 },
                 'pointer-events': 'none',
@@ -2891,6 +3136,12 @@ export default defineComponent({
             transition.attr('rect/width', parseInt(width));
             transition.attr('rect/height', parseInt(height));
           }
+          if (element.type === 'basic.Text') {
+            const label = this.addLabel(element.x, element.y);
+
+            label.attr('text/font-size', element.r);
+            label.attr('text/text', element.name);
+          }
         });
         JSON.parse(netExport)[1].forEach((element: any) => {
           const link = new joint.shapes.pn.Link({
@@ -2906,6 +3157,9 @@ export default defineComponent({
               '.marker-vertex-remove-area': { fill: 'transparent' },
               '.marker-vertex': { r: 7, stroke: 'black', fill: 'transparent', 'stroke-width': 1 }
             },
+            connector: {
+              name: element.connector
+            },
             weight: element.weight,
             selected: false
           });
@@ -2913,10 +3167,16 @@ export default defineComponent({
 
           const distance = 18 + (4 * element.weight.toString().length);
 
+          let weight = '';
+
+          if (element.weight > 1) {
+            weight = element.weight;
+          }
+
           link.appendLabel({
             attrs: {
               text: {
-                text: element.weight.toString(),
+                text: weight,
                 'pointer-events': 'none',
                 'font-size': 20,
                 'font-weight': 'bold',
@@ -2982,7 +3242,8 @@ export default defineComponent({
                     attrs: {
                       r: 20
                     },
-                    fill: 'black',
+                    fill: 'transparent',
+                    stroke: 'transparent',
                     'pointer-events': 'none'
                   },
                   text: {
@@ -2991,7 +3252,7 @@ export default defineComponent({
                     'text-anchor': 'middle',
                     'y-alignment': 'middle',
                     'pointer-events': 'none',
-                    fill: 'white'
+                    fill: 'black'
                   }
                 },
                 'pointer-events': 'none',
@@ -3250,6 +3511,17 @@ export default defineComponent({
         });
 
         this.graph.addCell(this.rectRangeAdd);
+      }
+    },
+
+    switchLabel() {
+      if (this.rectRangeAdd && this.graph.getCell(this.rectRangeAdd.attributes.id)) {
+        this.rectRangeAdd.remove();
+      }
+      if (this.selectedElement === 'label') {
+        this.selectedElement = '';
+      } else {
+        this.selectedElement = 'label';
       }
     },
 
