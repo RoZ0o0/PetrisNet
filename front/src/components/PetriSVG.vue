@@ -2,10 +2,11 @@
 <template>
   <div class="flex w-full h-16 items-center">
     <div class="flex flex-row w-full h-16 items-center justify-center">
-      <div v-if='checkIfCreateExample() || checkIfEdited() || checkIfExampleEdited()' class="flex items-center petri-nav w-2/12 select-none ml-8 justify-center">
+      <div v-if='checkIfCreateExample() || checkIfEdited() || checkIfExampleEdited() || this.saveResult.saveName !== ""' class="flex items-center petri-nav w-2/12 select-none ml-8 justify-self-start">
         <span v-if='checkIfCreateExample()' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>Tworzenie przykładowej sieci</span>
         <span v-if='checkIfEdited()' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>Edytowanie sieci: {{ this.saveResult.saveName }} <br> Użytkownika: {{ this.editedSaveUserEmail }} </span>
         <span v-if='checkIfExampleEdited()' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>Edytowanie przykładowej sieci: {{ this.exampleEditResult.netName }}</span>
+        <span v-if='this.saveResult.saveName !== ""' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>{{ this.saveResult.saveName }}</span>
       </div>
       <div class="flex ml-4 items-center petri-nav">
         <button class="border-2 border-black rounded-xl p-2 items-center" @click='run(); this.running = true;' :disabled='this.running && !this.wait' :style='this.running ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
@@ -107,7 +108,6 @@ import LoginServices, { ILogin } from '@/services/LoginService';
 import ExampleNetServices, { IExampleNet } from '@/services/ExampleNetService';
 import SimulationServices, { ISimulation } from '@/services/SimulationService';
 import * as joint from 'jointjs';
-import _ from 'lodash';
 
 const placeSettings = {
   circle: {
@@ -186,7 +186,8 @@ export default defineComponent({
       beforeSimulation: SimulationServices.getBlankSimulationTemplate(),
       simulationCounter: 0,
       running: false,
-      wait: false
+      wait: false,
+      saveName: ''
     };
   },
   watch: {
@@ -3278,148 +3279,132 @@ export default defineComponent({
       if (this.rectRangeAdd && this.graph.getCell(this.rectRangeAdd.attributes.id)) {
         this.rectRangeAdd.remove();
       }
-      if (this.graph.getCells().length > 0) {
-        this.selectedElement = '';
-        if (!this.running) {
-          const elements = [] as any;
-          const connections = [] as any;
-          this.getGraphData(elements, connections);
-          if (history.state.editUserSave || history.state.editExampleNet) {
-            Swal.fire({
-              icon: 'warning',
-              title: 'Czy napewno chcesz edytować tą sieć?',
-              text: 'Nie będziesz mógł tego cofnąć!',
-              showCancelButton: true,
-              confirmButtonColor: '#3085d6',
-              cancelButtonColor: '#d33',
-              confirmButtonText: 'Tak, edytuj!',
-              cancelButtonText: 'Anuluj'
-            }).then((result) => {
-              if (result.isConfirmed) {
-                if (history.state.editUserSave) {
-                  this.saveResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
-                  this.update(history.state.editId);
-                } else {
-                  this.exampleEditResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
-                  this.updateExampleNet(history.state.editId);
-                }
-                Swal.fire(
-                  'Zapisane!',
-                  'Twój model został zedytowany!',
-                  'success'
-                );
-              }
-            });
-          } else {
-            Swal.fire({
-              title: 'Podaj nazwę!',
-              input: 'text',
-              cancelButtonText: 'Anuluj',
-              showCancelButton: true,
-              inputPlaceholder: 'Wpisz nazwę!'
-            }).then((result) => {
-              if (result.value === '') {
-                Swal.fire({
-                  title: 'Nie podałeś nazwy!'
-                });
-              } else if ((result.value).length < 3) {
-                Swal.fire({
-                  title: 'Nazwa jest za krótka!'
-                });
-              } else if ((result.value).length > 20) {
-                Swal.fire({
-                  title: 'Nazwa jest za długa!'
-                });
+      this.selectedElement = '';
+      if (!this.running) {
+        const elements = [] as any;
+        const connections = [] as any;
+        this.getGraphData(elements, connections);
+        if (history.state.editUserSave || history.state.editExampleNet) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Czy napewno chcesz edytować tą sieć?',
+            text: 'Nie będziesz mógł tego cofnąć!',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Tak, edytuj!',
+            cancelButtonText: 'Anuluj'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              if (history.state.editUserSave) {
+                this.saveResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
+                this.update(history.state.editId);
               } else {
-                if (this.graph.getCells().length === 0) {
-                  Swal.fire({
-                    icon: 'error',
-                    title: 'Błąd!',
-                    text: 'Nie możesz zapisać pustego modelu!'
-                  });
-                } else {
-                  if (!this.checkIfCreateExample()) {
-                    this.saveResult.userId = this.loginResult.id;
-                    this.saveResult.saveName = result.value;
-                    this.saveResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
-                    this.findByUserAndSaveName(result.value).then((id) => {
-                      if (id !== 0) {
-                        Swal.fire({
-                          icon: 'warning',
-                          title: 'Posiadasz już model z taką nazwą!',
-                          text: 'Czy napewno chcesz nadpisać model? Nie będziesz mógł tego cofnąć!',
-                          showCancelButton: true,
-                          confirmButtonColor: '#d33',
-                          cancelButtonColor: '#3085d6',
-                          confirmButtonText: 'Tak, zapisz!',
-                          cancelButtonText: 'Anuluj'
-                        }).then((result) => {
-                          if (result.isConfirmed) {
-                            this.update(id);
-                            Swal.fire(
-                              'Zapisane!',
-                              'Twój model został zapisany.',
-                              'success'
-                            );
-                          }
-                        });
-                      } else {
-                        this.create().then((result) => {
-                          if (result !== 0) {
-                            Swal.fire({
-                              icon: 'error',
-                              title: 'Błąd!',
-                              text: 'Wystąpił błąd!'
-                            });
-                          } else {
-                            Swal.fire(
-                              'Zapisane!',
-                              'Twój model został zapisany.',
-                              'success'
-                            );
-                          }
-                        });
+                this.exampleEditResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
+                this.updateExampleNet(history.state.editId);
+              }
+              Swal.fire(
+                'Zapisane!',
+                'Twój model został zedytowany!',
+                'success'
+              );
+            }
+          });
+        } else {
+          Swal.fire({
+            title: 'Podaj nazwę!',
+            input: 'text',
+            cancelButtonText: 'Anuluj',
+            showCancelButton: true,
+            inputPlaceholder: 'Wpisz nazwę!'
+          }).then((result) => {
+            if (result.value === '') {
+              Swal.fire({
+                title: 'Nie podałeś nazwy!'
+              });
+            } else if ((result.value).length < 3) {
+              Swal.fire({
+                title: 'Nazwa jest za krótka!'
+              });
+            } else if ((result.value).length > 20) {
+              Swal.fire({
+                title: 'Nazwa jest za długa!'
+              });
+            } else {
+              if (!this.checkIfCreateExample()) {
+                this.saveResult.userId = this.loginResult.id;
+                this.saveResult.saveName = result.value;
+                this.saveResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
+                this.findByUserAndSaveName(result.value).then((id) => {
+                  if (id !== 0) {
+                    Swal.fire({
+                      icon: 'warning',
+                      title: 'Posiadasz już model z taką nazwą!',
+                      text: 'Czy napewno chcesz nadpisać model? Nie będziesz mógł tego cofnąć!',
+                      showCancelButton: true,
+                      confirmButtonColor: '#d33',
+                      cancelButtonColor: '#3085d6',
+                      confirmButtonText: 'Tak, zapisz!',
+                      cancelButtonText: 'Anuluj'
+                    }).then((result) => {
+                      if (result.isConfirmed) {
+                        this.update(id);
+                        Swal.fire(
+                          'Zapisane!',
+                          'Twój model został zapisany.',
+                          'success'
+                        );
                       }
                     });
                   } else {
-                    this.exampleNetResult.netName = result.value;
-                    this.exampleNetResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
-                    this.findByNetName(result.value).then((exist) => {
-                      if (exist) {
+                    this.create().then((result) => {
+                      if (result !== 0) {
                         Swal.fire({
-                          icon: 'warning',
-                          title: 'Istnieje już model z taką nazwą!'
+                          icon: 'error',
+                          title: 'Błąd!',
+                          text: 'Wystąpił błąd!'
                         });
                       } else {
-                        this.createExampleNet().then((result) => {
-                          if (result !== 0) {
-                            Swal.fire({
-                              icon: 'error',
-                              title: 'Błąd!',
-                              text: 'Wystąpił błąd!'
-                            });
-                          } else {
-                            Swal.fire(
-                              'Zapisane!',
-                              'Model przykładowy został zapisany.',
-                              'success'
-                            );
-                          }
-                        });
+                        Swal.fire(
+                          'Zapisane!',
+                          'Twój model został zapisany.',
+                          'success'
+                        );
                       }
                     });
                   }
-                }
+                });
+              } else {
+                this.exampleNetResult.netName = result.value;
+                this.exampleNetResult.netExport = '[' + JSON.stringify(elements) + ',' + JSON.stringify(connections) + ']';
+                this.findByNetName(result.value).then((exist) => {
+                  if (exist) {
+                    Swal.fire({
+                      icon: 'warning',
+                      title: 'Istnieje już model z taką nazwą!'
+                    });
+                  } else {
+                    this.createExampleNet().then((result) => {
+                      if (result !== 0) {
+                        Swal.fire({
+                          icon: 'error',
+                          title: 'Błąd!',
+                          text: 'Wystąpił błąd!'
+                        });
+                      } else {
+                        Swal.fire(
+                          'Zapisane!',
+                          'Model przykładowy został zapisany.',
+                          'success'
+                        );
+                      }
+                    });
+                  }
+                });
               }
-            });
-          }
+            }
+          });
         }
-      } else {
-        Swal.fire(
-          'Błąd!',
-          'Nie możesz zapisać pustego modelu!',
-          'error'
-        );
       }
     },
 

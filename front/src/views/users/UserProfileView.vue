@@ -1,11 +1,21 @@
 <template>
-  <div class="px-6 pb-40 pt-40 w-3/5 h-full">
+  <div class="px-6 pb-40 pt-40 w-4/5 h-full">
     <div class="overflow-auto rounded-xl h-full">
       <table class="min-w-full h-full">
         <thead class="bg-gray-800 text-white color-F6C453">
           <tr class="rounded-xl">
             <th colspan="2" class="text-center py-3 px-4 uppercase font-semibold text-sm w-1/3">
               Twój profil
+              <el-dropdown class="border-0 float-right">
+                <HelpIcon class="inline-block align-middle" />
+                <template #dropdown>
+                  <p class='text-center font-bold px-1 text-base'>Aby edytować profil, kliknij w ikonę edycji elementu, który chcesz edytować bądź guzik do edycji hasła.</p>
+                  <p class='text-center font-bold px-1 text-base'>Jeśli posiadasz zapisane sieci, możesz edytować także te sieci. Możesz usunąć bądź edytować nazwę zapisu.</p>
+                  <p class='text-center font-bold px-1 text-base'>Klikając na ikonkę linku, tworzysz kod referencyjny wraz z linkiem, który możesz udostępniać innym użytkownikom.</p>
+                  <p class='text-center font-bold px-1 text-base'>Ikoną udostępniania możesz ustawić sieć jako publiczna jeśli spełnia wymagania.</p>
+                  <p class='text-center font-bold px-1 text-base'>Kliknięciem nazwy sieci, możesz wyświetlić swoją sieć. Aby ją edytować wystarczy, że zapiszesz ją pod tą samą nazwą.</p>
+                </template>
+              </el-dropdown>
             </th>
           </tr>
         </thead>
@@ -87,6 +97,7 @@ import PencilIcon from 'vue-material-design-icons/Pencil.vue';
 import ShareIcon from 'vue-material-design-icons/Share.vue';
 import DeleteIcon from 'vue-material-design-icons/Delete.vue';
 import LinkIcon from 'vue-material-design-icons/Link.vue';
+import HelpIcon from 'vue-material-design-icons/Help.vue';
 
 import HomePaginationBar from '../../components/HomePaginationBar.vue';
 import RefLinkModal from '../../components/RefLinkModal.vue';
@@ -98,6 +109,7 @@ export default defineComponent({
     ShareIcon,
     DeleteIcon,
     LinkIcon,
+    HelpIcon,
     HomePaginationBar,
     RefLinkModal
   },
