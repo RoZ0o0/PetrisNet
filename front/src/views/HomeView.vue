@@ -1,5 +1,5 @@
 <template>
-  <div class="px-6 py-6 w-full h-full">
+  <div class="px-6 py-2 w-full h-full">
     <div class="overflow-auto rounded-xl w-3/5 h-full mx-auto">
       <h1 class="text-xl text-center mb-2 font-bold">Edytor Sieci Petriego Online</h1>
       <div class="h-1/12 flex justify-center items-start flex-col color-F6C453 border-1 border-black rounded-t-xl pl-6">

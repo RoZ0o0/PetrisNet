@@ -35,12 +35,16 @@ export default class SimulationServices {
     return tempSimulation;
   }
 
-  public static async simulation(simulation: ISimulation): Promise<ISimulation> {
-    return (await axios.post<ISimulation>('http://localhost:8081/api/simulation', simulation)).data;
+  public static async simulation(simulation: ISimulation, transitionKey: string): Promise<ISimulation> {
+    return (await axios.post<ISimulation>('http://localhost:8081/api/simulation?transitionKey=' + transitionKey, simulation)).data;
   }
 
   public static async checkNet(simulation: ISimulation): Promise<ISimulation> {
     return (await axios.post<ISimulation>('http://localhost:8081/api/simulation/check', simulation)).data;
+  }
+
+  public static async checkTransitions(simulation: ISimulation): Promise<Array<string>> {
+    return (await axios.post<Array<string>>('http://localhost:8081/api/simulation/transition', simulation)).data;
   }
 }
 

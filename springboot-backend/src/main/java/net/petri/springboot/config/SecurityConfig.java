@@ -85,6 +85,7 @@ public class SecurityConfig {
                 .antMatchers(HttpMethod.GET, "/api/users/search").permitAll()
                 .antMatchers("/api/simulation").permitAll()
                 .antMatchers("/api/simulation/check").permitAll()
+                .antMatchers("/api/simulation/transition").permitAll()
                 .antMatchers(HttpMethod.GET, "/api/auth/user").hasAnyRole("ADMIN", "USER")
                 .antMatchers(HttpMethod.GET, "/api/auth/user/role").hasAnyRole("ADMIN", "USER")
                 .antMatchers(HttpMethod.PUT, "/api/example_nets").hasAnyRole("ADMIN")

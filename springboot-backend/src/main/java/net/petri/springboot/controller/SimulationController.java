@@ -18,10 +18,13 @@ public class SimulationController {
     public SimulationController(SimulationService simulationService) { this.simulationService = simulationService; }
 
     @PostMapping()
-    public SimulationNet simulation(@RequestBody SimulationNet net) { return simulationService.simulation(net); }
+    public SimulationNet simulation(@RequestBody SimulationNet net, @RequestParam String transitionKey) { return simulationService.simulation(net, transitionKey); }
 
     @PostMapping("/check")
     public SimulationNet check(@RequestBody SimulationNet net) { return simulationService.checkNetRun(net); }
+
+    @PostMapping("/transition")
+    public ArrayList<String> transitions(@RequestBody SimulationNet net) { return simulationService.getActiveTransitions(net); }
 //
 //    @PostMapping("/check")
 //    public boolean checkNet(@RequestBody SimulationNet net) { return simulationService.checkNetRun(net); }

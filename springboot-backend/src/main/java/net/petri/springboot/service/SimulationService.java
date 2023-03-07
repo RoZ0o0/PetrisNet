@@ -12,7 +12,7 @@ import java.util.*;
 @Service
 public record SimulationService() {
 
-    public SimulationNet simulation(SimulationNet net) {
+    public SimulationNet simulation(SimulationNet net, String passedTransition) {
         if (net.getElements().size() > 0) {
             Random random = new Random();
             ArrayList<String> changes = new ArrayList<>();
@@ -37,19 +37,22 @@ public record SimulationService() {
             }
 
             if (!enabledTransitions.isEmpty()) {
-
                 String chosenTransition = "";
+                if (Objects.equals(passedTransition, "")) {
 
-                int indexTransition = random.nextInt(enabledTransitions.size());
+                    int indexTransition = random.nextInt(enabledTransitions.size());
 
-                int counter = 0;
+                    int counter = 0;
 
-                for (String key : enabledTransitions) {
-                    if (counter == indexTransition) {
-                        chosenTransition = key;
+                    for (String key : enabledTransitions) {
+                        if (counter == indexTransition) {
+                            chosenTransition = key;
+                        }
+
+                        counter++;
                     }
-
-                    counter++;
+                } else {
+                    chosenTransition = passedTransition;
                 }
 
                 fireTransition(net, chosenTransition, changes, connectionsTransitionST, connectionsTransitionFT);
@@ -59,6 +62,33 @@ public record SimulationService() {
         }
 
         return net;
+    }
+
+    public ArrayList<String> getActiveTransitions(SimulationNet net) {
+        ArrayList<String> enabledTransitions = new ArrayList<>();
+        if (net.getElements().size() > 0) {
+            ArrayList<String> changes = new ArrayList<>();
+            net.setChanges(changes);
+            ArrayList<String> transitions = new ArrayList<>();
+            Map<String, ArrayList<String>> connectionsTransitionST = new HashMap<>();
+            Map<String, ArrayList<String>> connectionsTransitionFT = new HashMap<>();
+            for (int i = 0; i < net.getElements().size(); i++) {
+                if (Objects.equals(net.getElements().get(i).getType(), "pn.Transition")) {
+                    transitions.add(net.getElements().get(i).getId());
+                }
+            }
+
+            getConnectionMap(net, transitions, connectionsTransitionST, connectionsTransitionFT);
+
+            for (String transitionKey : connectionsTransitionST.keySet()) {
+                boolean isEnabled = checkTransition(net, connectionsTransitionST, connectionsTransitionFT, transitionKey);
+                if (isEnabled) {
+                    enabledTransitions.add(transitionKey);
+                }
+            }
+        }
+
+        return enabledTransitions;
     }
 
     public SimulationNet checkNetRun(SimulationNet net) {

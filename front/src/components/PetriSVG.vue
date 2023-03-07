@@ -2,47 +2,51 @@
 <template>
   <div class="flex w-full h-16 items-center">
     <div class="flex flex-row w-full h-16 items-center justify-center">
-      <div v-if='checkIfCreateExample() || checkIfEdited() || checkIfExampleEdited() || this.saveResult.saveName !== ""' class="flex items-center petri-nav w-2/12 select-none ml-8 justify-self-start">
+      <div v-if='checkIfCreateExample() || checkIfEdited() || checkIfExampleEdited() || this.saveResult.saveName !== ""' class="justify-self-start flex items-center petri-nav w-2/12 select-none ml-8">
         <span v-if='checkIfCreateExample()' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>Tworzenie przykładowej sieci</span>
         <span v-if='checkIfEdited()' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>Edytowanie sieci: {{ this.saveResult.saveName }} <br> Użytkownika: {{ this.editedSaveUserEmail }} </span>
         <span v-if='checkIfExampleEdited()' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>Edytowanie przykładowej sieci: {{ this.exampleEditResult.netName }}</span>
-        <span v-if='this.saveResult.saveName !== ""' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>{{ this.saveResult.saveName }}</span>
+        <span v-if='this.saveResult.saveName !== "" && !checkIfEdited()' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>{{ this.saveResult.saveName }}</span>
       </div>
-      <div class="flex ml-4 items-center petri-nav">
-        <button class="border-2 border-black rounded-xl p-2 items-center" @click='run(); this.running = true;' :disabled='this.running && !this.wait' :style='this.running ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
-          <RunIcon class="inline-block align-middle" :disabled='this.running && !this.wait' />
-          <span class="inline-block align-middle select-none" :disabled='this.running && !this.wait'>Start</span>
+      <div class="flex ml-4 items-end petri-nav">
+        <button class="border-2 border-black rounded-xl p-1 items-center" @click='run(); this.running = true;' :style='this.running && !this.skip ? {"background-color":"#fada8f"} : this.running && this.skip ? {"background-color":"rgb(172, 172, 172)"} : {"background-color":"#F6C453"}' :disabled='this.running && this.skip'>
+          <RunIcon class="inline-block align-middle" :disabled='this.running && this.skip' />
+          <span class="inline-block align-middle select-none" :disabled='this.running && this.skip'>Start</span>
         </button>
-        <button class="border-2 border-black rounded-xl p-2 items-center ml-2" @click='stop()'>
+        <button class="border-2 border-black rounded-xl p-1 items-center ml-4" @click='step(""); this.running = true;' :style='this.running && this.skip ? {"background-color":"#fada8f"} : this.running && !this.skip ? {"background-color":"rgb(172, 172, 172)"} : {"background-color":"#F6C453"}' :disabled='this.running && !this.skip'>
+          <SkipForwardIcon class="inline-block align-middle" :disabled='this.running && !this.skip' />
+          <span class="inline-block align-middle select-none" :disabled='this.running && !this.skip'>Krok</span>
+        </button>
+        <button class="border-2 border-black rounded-xl p-1 items-center ml-4" @click='stop()'>
           <StopIcon class="inline-block align-middle" />
           <span class="inline-block align-middle select-none">Stop</span>
         </button>
       </div>
-      <div class="flex ml-6 items-center petri-nav">
-        <button class="border-2 border-black rounded-xl p-2 items-center" v-on:click="switchPlace" :style='this.selectedElement === "place" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
-          <CircleIcon class="inline-block align-middle" />
+      <div class="flex ml-8 items-end petri-nav">
+        <button class="border-2 border-black rounded-xl p-1 items-center" v-on:click="switchPlace" :style='!this.running ? this.selectedElement === "place" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"} : {"background-color":"rgb(172, 172, 172)"}' :disabled="this.running">
+          <CircleIcon class="inline-block align-middle" :disabled="this.running"/>
           <span class="inline-block align-middle select-none">Miejsce [1]</span>
         </button>
-        <button class="border-2 border-black rounded-xl p-2 items-center ml-2" v-on:click="switchTransition" :style='this.selectedElement === "transition" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
-          <SquareIcon class="inline-block align-middle" />
-          <span class="inline-block align-middle select-none">Przejście [2]</span>
+        <button class="border-2 border-black rounded-xl p-1 items-center ml-4" v-on:click="switchTransition" :style='!this.running ? this.selectedElement === "transition" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"} : {"background-color":"rgb(172, 172, 172)"}' :disabled="this.running">
+          <SquareIcon class="inline-block align-middle" :disabled="this.running"/>
+          <span class="inline-block align-middle select-none" :disabled="this.running">Przejście [2]</span>
         </button>
-        <button class="border-2 border-black rounded-xl p-2 items-center ml-2" v-on:click="switchFastAdd" :style='this.selectedElement === "fastadd" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
-          <CircleIcon class="inline-block align-middle" v-if='!this.tab_clicked' />
-          <SquareIcon class="inline-block align-middle" v-if='this.tab_clicked' />
-          <span class="inline-block align-middle select-none">Szybkie dodawanie [3]</span>
+        <button class="border-2 border-black rounded-xl p-1 items-center ml-4" v-on:click="switchFastAdd" :style='!this.running ? this.selectedElement === "fastadd" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"} : {"background-color":"rgb(172, 172, 172)"}' :disabled="this.running">
+          <CircleIcon class="inline-block align-middle" v-if='!this.tab_clicked' :disabled="this.running" />
+          <SquareIcon class="inline-block align-middle" v-if='this.tab_clicked' :disabled="this.running" />
+          <span class="inline-block align-middle select-none" :disabled="this.running">Szybkie dodawanie [3]</span>
         </button>
-        <button class="border-2 border-black rounded-xl p-2 items-center ml-2" v-on:click="switchLabel" :style='this.selectedElement === "label" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
-          <TextIcon class="inline-block align-middle" />
-          <span class="inline-block align-middle select-none">Etykieta [4]</span>
+        <button class="border-2 border-black rounded-xl p-1 items-center ml-4" v-on:click="switchLabel" :style='!this.running ? this.selectedElement === "label" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"} : {"background-color":"rgb(172, 172, 172)"}' :disabled="this.running">
+          <TextIcon class="inline-block align-middle" :disabled="this.running"/>
+          <span class="inline-block align-middle select-none" :disabled="this.running">Etykieta [4]</span>
         </button>
-        <button class="border-2 border-black rounded-xl p-2 items-center ml-2" v-on:click="switchDelete" :style='this.selectedElement === "delete" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"}'>
-          <RemoveIcon class="inline-block align-middle" />
-          <span class="inline-block align-middle select-none">Usuń [5]</span>
+        <button class="border-2 border-black rounded-xl p-1 items-center ml-4" v-on:click="switchDelete" :style='!this.running ? this.selectedElement === "delete" ? {"background-color":"#fada8f"} : {"background-color":"#F6C453"} : {"background-color":"rgb(172, 172, 172)"}' :disabled="this.running">
+          <RemoveIcon class="inline-block align-middle" :disabled="this.running"/>
+          <span class="inline-block align-middle select-none" :disabled="this.running">Usuń [5]</span>
         </button>
-        <button class="border-2 border-black rounded-xl p-2 items-center ml-2" v-on:click="clear" :disabled="this.running">
-          <ClearIcon class="inline-block align-middle" />
-          <span class="inline-block align-middle select-none">Wyczyść</span>
+        <button class="border-2 border-black rounded-xl p-1 items-center ml-4" v-on:click="clear" :style='!this.running ? {"background-color":"#F6C453"} : {"background-color":"rgb(172, 172, 172)"}' :disabled="this.running">
+          <ClearIcon class="inline-block align-middle" :disabled="this.running"/>
+          <span class="inline-block align-middle select-none" :disabled="this.running">Wyczyść</span>
         </button>
       </div>
     </div>
@@ -52,33 +56,33 @@
   </div>
   <div class="flex w-full h-16 items-center justify-center">
     <div class="flex items-center petri-nav">
-      <button class="border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center" v-on:click="checkNetAlert">
-        <CheckNetIcon class="inline-block align-middle" />
-        <span class="inline-block align-middle select-none">Sprawdź sieć</span>
+      <button class="border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center" v-on:click="checkNetAlert" :style='!this.running ? {"background-color":"#F6C453"} : {"background-color":"rgb(172, 172, 172)"}' :disabled="this.running">
+        <CheckNetIcon class="inline-block align-middle" :disabled="this.running"/>
+        <span class="inline-block align-middle select-none" :disabled="this.running">Sprawdź sieć</span>
       </button>
-      <button class="ml-4 border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center" v-on:click="importNet">
-        <ImportIcon class="inline-block align-middle" />
-        <span class="inline-block align-middle select-none">Import</span>
+      <button class="ml-4 border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center" v-on:click="importNet" :style='!this.running ? {"background-color":"#F6C453"} : {"background-color":"rgb(172, 172, 172)"}' :disabled="this.running">
+        <ImportIcon class="inline-block align-middle" :disabled="this.running"/>
+        <span class="inline-block align-middle select-none" :disabled="this.running">Import</span>
       </button>
       <input ref='import' type='file' class='hidden' @change='importNetChanged'>
-      <button class="ml-4 border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center" v-on:click="exportNet">
-        <ExportIcon class="inline-block align-middle" />
-        <span class="inline-block align-middle select-none">Export</span>
+      <button class="ml-4 border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center" v-on:click="exportNet" :style='!this.running ? {"background-color":"#F6C453"} : {"background-color":"rgb(172, 172, 172)"}' :disabled="this.running">
+        <ExportIcon class="inline-block align-middle" :disabled="this.running"/>
+        <span class="inline-block align-middle select-none" :disabled="this.running">Export</span>
       </button>
-      <button v-if="checkIfLogged()" @click="saveModal()" class="ml-4 border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center" data-bs-toggle="modal" data-bs-target="#saveNetModal">
-        <SaveIcon class="inline-block align-middle" />
-        <span class="inline-block align-middle select-none">Zapisz</span>
+      <button v-if="checkIfLogged()" @click="saveModal()" class="ml-4 border-2 border-black rounded-bl-xl rounded-tr-xl px-2 py-1 items-center" data-bs-toggle="modal" data-bs-target="#saveNetModal" :style='!this.running ? {"background-color":"#F6C453"} : {"background-color":"rgb(172, 172, 172)"}' :disabled="this.running">
+        <SaveIcon class="inline-block align-middle" :disabled="this.running"/>
+        <span class="inline-block align-middle select-none" :disabled="this.running">Zapisz</span>
       </button>
       <div class="flex flex-wrap items-center ml-4 border-2 color-F6C453 border-black rounded-bl-xl rounded-tr-xl px-2 py-1">
         <el-dropdown class="border-0">
           <HelpIcon class="inline-block align-middle" />
           <template #dropdown>
-            <p class="text-center font-bold px-1 text-base">Aby wybrać jedną z opcji tworzenia sieci, można użyć klawiszy (1, 2, 3, 4).</p>
-            <p class="text-center font-bold px-1 text-base">Aby stworzyć połączenie, należy przytrzymać klawisz CTRL i przeciągnąć z elementu.</p>
-            <p class="text-center font-bold px-1 text-base">Po wybraniu opcji szybkiego dodawania, pojawia się zasięg w jakim zostanie dodane połączenie.</p>
-            <p class="text-center font-bold px-1 text-base">Klawiszem TAB przełącza się pomiędzy stawianiem miejsca bądź przejścia.</p>
-            <p class="text-center font-bold px-1 text-base">Aby dodać wielę połączeń, można zaznaczyć wielę miejsc bądź przejść, a następnie z klawiszem CTRL przeciągnać do innego elementu.</p>
-            <p class="text-center font-bold px-1 text-base">Aby dodać wiele tokenów bądź wag połączeń, wystarczy zaznaczyć odpowiednie elementy, po czym wcisnąć prawy przycisk myszy i wprowadzić wartość.</p>
+            <p class="text-center font-bold px-6 pt-2 text-base">Aby wybrać jedną z opcji tworzenia sieci, można użyć klawiszy (1, 2, 3, 4).</p>
+            <p class="text-center font-bold px-6 text-base">Aby stworzyć połączenie, należy przytrzymać klawisz CTRL i przeciągnąć z elementu.</p>
+            <p class="text-center font-bold px-6 text-base">Po wybraniu opcji szybkiego dodawania, pojawia się zasięg w jakim zostanie dodane połączenie.</p>
+            <p class="text-center font-bold px-6 text-base">Klawiszem TAB przełącza się pomiędzy stawianiem miejsca bądź przejścia.</p>
+            <p class="text-center font-bold px-6 text-base">Aby dodać wielę połączeń, można zaznaczyć wielę miejsc bądź przejść, a następnie z klawiszem CTRL przeciągnać do innego elementu.</p>
+            <p class="text-center font-bold px-6 pb-2 text-base">Aby dodać wiele tokenów bądź wag połączeń, wystarczy zaznaczyć odpowiednie elementy, po czym wcisnąć prawy przycisk myszy i wprowadzić wartość.</p>
           </template>
         </el-dropdown>
       </div>
@@ -99,6 +103,7 @@ import ExportIcon from 'vue-material-design-icons/ArrowTopRight.vue';
 import SaveIcon from 'vue-material-design-icons/ContentSaveAll.vue';
 import HelpIcon from 'vue-material-design-icons/Help.vue';
 import CheckNetIcon from 'vue-material-design-icons/CheckNetwork.vue';
+import SkipForwardIcon from 'vue-material-design-icons/SkipForward.vue';
 import TextIcon from 'vue-material-design-icons/FormatText.vue';
 import SaveNetServices, { ISaveNet } from '@/services/SaveNetService';
 import Swal from 'sweetalert2';
@@ -148,7 +153,8 @@ export default defineComponent({
     TextIcon,
     SaveIcon,
     CheckNetIcon,
-    HelpIcon
+    HelpIcon,
+    SkipForwardIcon
   },
   data() {
     return {
@@ -163,6 +169,7 @@ export default defineComponent({
       counterPoints: 0,
       current_connection: null as any,
       current_connections: [] as any,
+      active_transitions: [] as any,
       current_x: null as any,
       current_y: null as any,
       modelStates: [] as any,
@@ -187,7 +194,9 @@ export default defineComponent({
       simulationCounter: 0,
       running: false,
       wait: false,
-      saveName: ''
+      skip: false,
+      saveName: '',
+      nextStep: false
     };
   },
   watch: {
@@ -534,6 +543,12 @@ export default defineComponent({
                 }
               }
             }
+          }
+        }
+      } else {
+        if ((cellView as any).model.attributes.type === 'pn.Transition') {
+          if ((cellView as any).model.attr('rect/stroke') === 'red') {
+            this.step((cellView as any).model.attributes.id);
           }
         }
       }
@@ -2306,8 +2321,12 @@ export default defineComponent({
       return await SimulationServices.checkNet(result);
     },
 
-    async simulation(result: ISimulation): Promise<ISimulation> {
-      return await SimulationServices.simulation(result);
+    async getActiveTransitions(result:ISimulation): Promise<Array<string>> {
+      return await SimulationServices.checkTransitions(result);
+    },
+
+    async simulation(result: ISimulation, transition: string): Promise<ISimulation> {
+      return await SimulationServices.simulation(result, transition);
     },
 
     async run() {
@@ -2317,7 +2336,6 @@ export default defineComponent({
       this.selectedElement = '';
       try {
         this.running = true;
-
         while (this.running) {
           const elements = [] as any;
           const connections = [] as any;
@@ -2328,7 +2346,7 @@ export default defineComponent({
           this.resultSimulation.elements = elements;
           this.resultSimulation.connections = connections;
 
-          await this.simulation(this.resultSimulation).then((data) => (this.resultSimulation = data));
+          await this.simulation(this.resultSimulation, '').then((data) => (this.resultSimulation = data));
 
           await this.netChangeSimulation(this.resultSimulation);
 
@@ -2421,12 +2439,142 @@ export default defineComponent({
       }
     },
 
+    async step(transition: string) {
+      if (this.rectRangeAdd && this.graph.getCell(this.rectRangeAdd.attributes.id)) {
+        this.rectRangeAdd.remove();
+      }
+      this.selectedElement = '';
+      try {
+        this.running = true;
+        this.skip = true;
+        const elements = [] as any;
+        const connections = [] as any;
+
+        await this.simulationCounter++;
+
+        this.getGraphData(elements, connections);
+        this.resultSimulation.elements = elements;
+        this.resultSimulation.connections = connections;
+
+        await this.getActiveTransitions(this.resultSimulation).then((data) => (this.active_transitions = data));
+
+        this.graph.getCells().forEach((cells: any) => {
+          if (cells.attributes.type === 'pn.Transition') {
+            cells.attr('rect/stroke', 'black');
+          }
+        });
+
+        this.active_transitions.forEach((transitions: any) => {
+          const transition = this.graph.getCell(transitions);
+
+          transition.attr('rect/stroke', 'red');
+        });
+
+        if (this.simulationCounter > 1) {
+          if (transition === '') {
+            await this.simulation(this.resultSimulation, '').then((data) => (this.resultSimulation = data));
+          } else {
+            await this.simulation(this.resultSimulation, transition).then((data) => (this.resultSimulation = data));
+          }
+
+          await this.netChangeSimulation(this.resultSimulation);
+
+          let sourcePosition: any;
+          let targetPosition: any;
+
+          let sourceElement: any;
+          let targetElement: any;
+
+          this.resultSimulation.changes.forEach((ele: any) => {
+            this.graph.getCells().forEach((element: any) => {
+              if (element.attributes.type === 'pn.Link') {
+                if (element.attributes.source.id === ele.split(' ')[0] &&
+                    element.attributes.target.id === ele.split(' ')[1]) {
+                  if (this.running) {
+                    sourcePosition = element.getSourcePoint();
+                    targetPosition = element.getTargetPoint();
+
+                    sourceElement = element.getSourceElement();
+                    targetElement = element.getTargetElement();
+
+                    const connector = joint.connectors.normal;
+
+                    let pathData: any;
+
+                    if (element.get('vertices')) {
+                      pathData = connector(sourcePosition, targetPosition, element.get('vertices'));
+                    } else {
+                      pathData = 'M ' + sourcePosition.x + ' ' + sourcePosition.y + ' L ' + targetPosition.x + ' ' + targetPosition.y;
+                    }
+
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', pathData.toString());
+                    const pathLength = path.getTotalLength();
+
+                    const circle = new joint.shapes.basic.Circle({
+                      position: { x: element.getSourcePoint().x, y: element.getSourcePoint().y - 5 },
+                      size: { width: 20, height: 20 },
+                      attrs: { circle: { fill: 'black' } },
+                      simulation: true
+                    });
+                    this.graph.addCell(circle);
+
+                    let distance = 0;
+                    const step = (path.getTotalLength() / 60);
+
+                    function animate() {
+                      distance += step;
+
+                      const point = path.getPointAtLength(distance);
+                      const position = {
+                        x: point.x - (circle as any).attributes.size.width / 2,
+                        y: point.y - ((circle as any).attributes.size.height / 2) - 5
+                      };
+
+                      if (distance >= pathLength) {
+                        circle.position(targetPosition.x - (circle as any).attributes.size.width / 3, targetPosition.y - (circle as any).attributes.size.height / 3);
+                        circle.remove();
+                        return;
+                      }
+
+                      circle.position(position.x, position.y);
+
+                      requestAnimationFrame(animate);
+                    }
+                    animate();
+                  }
+                }
+              }
+            });
+          });
+
+          await this.getActiveTransitions(this.resultSimulation).then((data) => (this.active_transitions = data));
+
+          this.graph.getCells().forEach((cells: any) => {
+            if (cells.attributes.type === 'pn.Transition') {
+              cells.attr('rect/stroke', 'black');
+            }
+          });
+
+          this.active_transitions.forEach((transitions: any) => {
+            const transition = this.graph.getCell(transitions);
+
+            transition.attr('rect/stroke', 'red');
+          });
+
+          await this.customTimeout(1000);
+        }
+      } catch (e) {
+      }
+    },
+
     async stop() {
       if (this.rectRangeAdd && this.graph.getCell(this.rectRangeAdd.attributes.id)) {
         this.rectRangeAdd.remove();
       }
       this.selectedElement = '';
       this.running = false;
+      this.skip = false;
       this.beforeSimulation.elements.forEach((element: any) => {
         if (element.type === 'pn.Place') {
           this.graph.getCells().forEach((ele: any) => {
@@ -3440,10 +3588,12 @@ export default defineComponent({
       if (this.rectRangeAdd && this.graph.getCell(this.rectRangeAdd.attributes.id)) {
         this.rectRangeAdd.remove();
       }
-      if (this.selectedElement === 'place') {
-        this.selectedElement = '';
-      } else {
-        this.selectedElement = 'place';
+      if (!this.running) {
+        if (this.selectedElement === 'place') {
+          this.selectedElement = '';
+        } else {
+          this.selectedElement = 'place';
+        }
       }
     },
 
@@ -3451,10 +3601,12 @@ export default defineComponent({
       if (this.rectRangeAdd && this.graph.getCell(this.rectRangeAdd.attributes.id)) {
         this.rectRangeAdd.remove();
       }
-      if (this.selectedElement === 'transition') {
-        this.selectedElement = '';
-      } else {
-        this.selectedElement = 'transition';
+      if (!this.running) {
+        if (this.selectedElement === 'transition') {
+          this.selectedElement = '';
+        } else {
+          this.selectedElement = 'transition';
+        }
       }
     },
 
@@ -3462,40 +3614,44 @@ export default defineComponent({
       if (this.rectRangeAdd && this.graph.getCell(this.rectRangeAdd.attributes.id)) {
         this.rectRangeAdd.remove();
       }
-      if (this.selectedElement === 'delete') {
-        this.selectedElement = '';
-      } else {
-        this.selectedElement = 'delete';
+      if (!this.running) {
+        if (this.selectedElement === 'delete') {
+          this.selectedElement = '';
+        } else {
+          this.selectedElement = 'delete';
+        }
       }
     },
 
     switchFastAdd() {
-      if (this.selectedElement === 'fastadd') {
-        this.selectedElement = '';
-        this.rectRangeAdd.remove();
-      } else {
-        this.selectedElement = 'fastadd';
-        this.rectRangeAdd = new joint.shapes.basic.Rect({
-          position: {
-            x: -199,
-            y: -199
-          },
-          size: {
-            width: 200,
-            height: 200
-          },
-          attrs: {
-            rect: {
-              stroke: 'black',
-              'stroke-width': 1,
-              fill: 'gray',
-              opacity: 0.2,
-              'pointer-events': 'none'
+      if (!this.running) {
+        if (this.selectedElement === 'fastadd') {
+          this.selectedElement = '';
+          this.rectRangeAdd.remove();
+        } else {
+          this.selectedElement = 'fastadd';
+          this.rectRangeAdd = new joint.shapes.basic.Rect({
+            position: {
+              x: -199,
+              y: -199
+            },
+            size: {
+              width: 200,
+              height: 200
+            },
+            attrs: {
+              rect: {
+                stroke: 'black',
+                'stroke-width': 1,
+                fill: 'gray',
+                opacity: 0.2,
+                'pointer-events': 'none'
+              }
             }
-          }
-        });
+          });
 
-        this.graph.addCell(this.rectRangeAdd);
+          this.graph.addCell(this.rectRangeAdd);
+        }
       }
     },
 
@@ -3503,10 +3659,12 @@ export default defineComponent({
       if (this.rectRangeAdd && this.graph.getCell(this.rectRangeAdd.attributes.id)) {
         this.rectRangeAdd.remove();
       }
-      if (this.selectedElement === 'label') {
-        this.selectedElement = '';
-      } else {
-        this.selectedElement = 'label';
+      if (!this.running) {
+        if (this.selectedElement === 'label') {
+          this.selectedElement = '';
+        } else {
+          this.selectedElement = 'label';
+        }
       }
     },
 

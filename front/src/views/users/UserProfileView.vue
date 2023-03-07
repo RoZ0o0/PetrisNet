@@ -9,11 +9,11 @@
               <el-dropdown class="border-0 float-right">
                 <HelpIcon class="inline-block align-middle" />
                 <template #dropdown>
-                  <p class='text-center font-bold px-1 text-base'>Aby edytować profil, kliknij w ikonę edycji elementu, który chcesz edytować bądź guzik do edycji hasła.</p>
-                  <p class='text-center font-bold px-1 text-base'>Jeśli posiadasz zapisane sieci, możesz edytować także te sieci. Możesz usunąć bądź edytować nazwę zapisu.</p>
-                  <p class='text-center font-bold px-1 text-base'>Klikając na ikonkę linku, tworzysz kod referencyjny wraz z linkiem, który możesz udostępniać innym użytkownikom.</p>
-                  <p class='text-center font-bold px-1 text-base'>Ikoną udostępniania możesz ustawić sieć jako publiczna jeśli spełnia wymagania.</p>
-                  <p class='text-center font-bold px-1 text-base'>Kliknięciem nazwy sieci, możesz wyświetlić swoją sieć. Aby ją edytować wystarczy, że zapiszesz ją pod tą samą nazwą.</p>
+                  <p class='text-center font-bold px-6 pt-2 text-base'>Aby edytować profil, kliknij w ikonę edycji elementu, który chcesz edytować bądź guzik do edycji hasła.</p>
+                  <p class='text-center font-bold px-6 text-base'>Jeśli posiadasz zapisane sieci, możesz edytować także te sieci. Możesz usunąć bądź edytować nazwę zapisu.</p>
+                  <p class='text-center font-bold px-6 text-base'>Klikając na ikonkę linku, tworzysz kod referencyjny wraz z linkiem, który możesz udostępniać innym użytkownikom.</p>
+                  <p class='text-center font-bold px-6 text-base'>Ikoną udostępniania możesz ustawić sieć jako publiczna jeśli spełnia wymagania.</p>
+                  <p class='text-center font-bold px-6 pb-2 text-base'>Kliknięciem nazwy sieci, możesz wyświetlić swoją sieć. Aby ją edytować wystarczy, że zapiszesz ją pod tą samą nazwą.</p>
                 </template>
               </el-dropdown>
             </th>
@@ -196,6 +196,7 @@ export default defineComponent({
     },
 
     async editSaveName(id: number): Promise<ISaveNet> {
+      console.log(this.resultEditSave);
       return await SaveNetServices.update(this.resultEditSave, id);
     },
 
@@ -246,6 +247,7 @@ export default defineComponent({
             } else {
               this.resultEditSave.saveName = result.value?.editValue as string;
               this.resultEditSave.userId = this.result.id;
+              this.resultEditSave.netExport = save.netExport;
               this.editSaveName(save.id);
               Swal.fire(
                 'Gotowe!',
