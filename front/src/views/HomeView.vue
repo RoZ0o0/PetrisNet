@@ -10,7 +10,10 @@
       <div class="grid grid-cols-2 gap-10 bg-orange-100 h-5/6 p-4">
         <div class="text-center border-2 rounded-xl color-F6C453 p-6 flex flex-col">
           <span class="border-b-2">Sieci innych użytkowników</span>
-          <input class="mt-2 mb-2 rounded-md bg-gray-200 text-center p-1 w-1/2 mx-auto" v-model="this.searchUserSave" placeholder="Szukaj"/>
+          <div class='inline-block bg-gray-200 mt-2 mb-2 mx-auto p-1 rounded-md'>
+            <input class="rounded-l-md bg-gray-200 text-left pl-2 outline-none" v-model="this.searchUserSave" placeholder="Wyszukaj..">
+            <SearchIcon class='inline-block align-middle bg-gray-200' />
+          </div>
           <ul v-for="save in resultPublicNets" :key="save" class="mt-2 font-mono">
             <li @click='this.$router.push({ name:"creator", state: {redirectExport: save.netExport} })'>{{ save.saveName }}</li>
           </ul>
@@ -23,7 +26,10 @@
         </div>
         <div class="text-center border-2 rounded-xl color-F6C453 p-6 flex flex-col">
           <span class="border-b-2">Przykładowe sieci</span>
-          <input class="mt-2 mb-2 rounded-md bg-gray-200 text-center p-1 w-1/2 mx-auto" v-model="this.searchExampleName" placeholder="Szukaj"/>
+          <div class='inline-block bg-gray-200 mt-2 mb-2 mx-auto p-1 rounded-md'>
+            <input class="rounded-l-md bg-gray-200 text-left pl-2 outline-none" v-model="this.searchExampleName" placeholder="Wyszukaj..">
+            <SearchIcon class='inline-block align-middle bg-gray-200' />
+          </div>
           <ul v-for="exampleNets in resultExampleNets" :key="exampleNets" class="mt-2 font-mono">
             <li @click='this.$router.push({ name:"creator", state: {redirectExport: exampleNets.netExport} })'>{{ exampleNets.netName }}</li>
           </ul>
@@ -46,9 +52,12 @@ import { defineComponent } from 'vue';
 
 import HomePaginationBar from '../components/HomePaginationBar.vue';
 
+import SearchIcon from 'vue-material-design-icons/Magnify.vue';
+
 export default defineComponent({
   components: {
-    HomePaginationBar
+    HomePaginationBar,
+    SearchIcon
   },
   name: 'HomeView',
   data() {
@@ -61,7 +70,7 @@ export default defineComponent({
       exampleNetSelected: 0,
       searchUserSave: '',
       searchExampleName: '',
-      pageSize: 14,
+      pageSize: 13,
       type: 'home'
     };
   },

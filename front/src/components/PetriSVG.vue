@@ -9,17 +9,17 @@
         <span v-if='this.saveResult.saveName !== "" && !checkIfEdited()' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>{{ this.saveResult.saveName }}</span>
       </div>
       <div class="flex ml-4 items-end petri-nav">
-        <button v-if="this.pause" class="border-2 border-black rounded-xl p-1 items-center" @click='run(); this.running = true; this.pause = false;' :style='this.running && !this.skip ? {"background-color":"#fada8f"} : this.running && this.skip ? {"background-color":"rgb(172, 172, 172)"} : {"background-color":"#F6C453"}' :disabled='this.running && this.skip'>
-          <RunIcon class="inline-block align-middle" :disabled='this.running && this.skip' />
-          <span class="inline-block align-middle select-none" :disabled='this.running && this.skip'>Start</span>
+        <button v-if="!this.running || this.running && this.pause" class="border-2 border-black rounded-xl p-1 items-center" @click=' this.pause = false; run(); this.running = true;'>
+          <RunIcon class="inline-block align-middle" />
+          <span class="inline-block align-middle select-none">Start</span>
         </button>
-        <button v-if="!this.pause" class="border-2 border-black rounded-xl p-1 items-center" @click='this.pause = true;' :style='!this.running && !this.skip ? {"background-color":"#fada8f"} : !this.running && this.skip ? {"background-color":"rgb(172, 172, 172)"} : {"background-color":"#F6C453"}' :disabled='!this.running && this.skip'>
-          <PauseIcon class="inline-block align-middle" :disabled='!this.running && this.skip' />
-          <span class="inline-block align-middle select-none" :disabled='!this.running && this.skip'>Pauza</span>
+        <button v-if="!this.pause && this.running" class="border-2 border-black rounded-xl p-1 items-center" @click='this.pause = true; pauseSimulation();'>
+          <PauseIcon class="inline-block align-middle" />
+          <span class="inline-block align-middle select-none">Pauza</span>
         </button>
-        <button class="border-2 border-black rounded-xl p-1 items-center ml-4" @click='step(""); this.running = true;' :style='this.running && this.skip ? {"background-color":"#fada8f"} : this.running && !this.skip ? {"background-color":"rgb(172, 172, 172)"} : {"background-color":"#F6C453"}' :disabled='this.running && !this.skip'>
-          <SkipForwardIcon class="inline-block align-middle" :disabled='this.running && !this.skip' />
-          <span class="inline-block align-middle select-none" :disabled='this.running && !this.skip'>Krok</span>
+        <button class="border-2 border-black rounded-xl p-1 items-center ml-4" @click='step(""); this.running = true; this.pause = true' :style='this.running && this.pause || !this.running ? {"background-color":"#F6C453"} : {"background-color":"rgb(172, 172, 172)"}' :disabled='this.running && !this.pause'>
+          <SkipForwardIcon class="inline-block align-middle" :disabled='this.running && !this.pause'/>
+          <span class="inline-block align-middle select-none" :disabled='this.running && !this.pause'>Krok</span>
         </button>
         <button class="border-2 border-black rounded-xl p-1 items-center ml-4" @click='stop()'>
           <RestartIcon class="inline-block align-middle" />
@@ -557,7 +557,9 @@ export default defineComponent({
       } else {
         if ((cellView as any).model.attributes.type === 'pn.Transition') {
           if ((cellView as any).model.attr('rect/stroke') === 'green') {
-            this.step((cellView as any).model.attributes.id);
+            if (this.pause) {
+              this.step((cellView as any).model.attributes.id);
+            }
           }
         }
       }
@@ -2597,6 +2599,7 @@ export default defineComponent({
       this.selectedElement = '';
       this.running = false;
       this.skip = false;
+      this.pause = false;
       this.beforeSimulation.elements.forEach((element: any) => {
         if (element.type === 'pn.Place') {
           this.graph.getCells().forEach((ele: any) => {
@@ -2669,6 +2672,32 @@ export default defineComponent({
           cells.attr('rect/fill', 'white');
           cells.attr('rect/stroke-width', 1);
         }
+      });
+    },
+
+    async pauseSimulation() {
+      const elements = [] as any;
+      const connections = [] as any;
+
+      this.getGraphData(elements, connections);
+      this.resultSimulation.elements = elements;
+      this.resultSimulation.connections = connections;
+
+      await this.getActiveTransitions(this.resultSimulation).then((data) => (this.active_transitions = data));
+
+      this.graph.getCells().forEach((cells: any) => {
+        if (cells.attributes.type === 'pn.Transition') {
+          cells.attr('rect/stroke', 'black');
+          cells.attr('rect/stroke-width', '1');
+          cells.attr('rect/fill', 'white');
+        }
+      });
+
+      this.active_transitions.forEach((transitions: any) => {
+        const transition = this.graph.getCell(transitions);
+        transition.attr('rect/stroke', 'green');
+        transition.attr('rect/stroke-width', '4');
+        transition.attr('rect/fill', 'gray');
       });
     },
 
