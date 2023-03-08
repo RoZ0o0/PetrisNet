@@ -9,17 +9,21 @@
         <span v-if='this.saveResult.saveName !== "" && !checkIfEdited()' class='flex flex-row text-center rounded-xl color-F6C453 p-2'>{{ this.saveResult.saveName }}</span>
       </div>
       <div class="flex ml-4 items-end petri-nav">
-        <button class="border-2 border-black rounded-xl p-1 items-center" @click='run(); this.running = true;' :style='this.running && !this.skip ? {"background-color":"#fada8f"} : this.running && this.skip ? {"background-color":"rgb(172, 172, 172)"} : {"background-color":"#F6C453"}' :disabled='this.running && this.skip'>
+        <button v-if="this.pause" class="border-2 border-black rounded-xl p-1 items-center" @click='run(); this.running = true; this.pause = false;' :style='this.running && !this.skip ? {"background-color":"#fada8f"} : this.running && this.skip ? {"background-color":"rgb(172, 172, 172)"} : {"background-color":"#F6C453"}' :disabled='this.running && this.skip'>
           <RunIcon class="inline-block align-middle" :disabled='this.running && this.skip' />
           <span class="inline-block align-middle select-none" :disabled='this.running && this.skip'>Start</span>
+        </button>
+        <button v-if="!this.pause" class="border-2 border-black rounded-xl p-1 items-center" @click='this.pause = true;' :style='!this.running && !this.skip ? {"background-color":"#fada8f"} : !this.running && this.skip ? {"background-color":"rgb(172, 172, 172)"} : {"background-color":"#F6C453"}' :disabled='!this.running && this.skip'>
+          <PauseIcon class="inline-block align-middle" :disabled='!this.running && this.skip' />
+          <span class="inline-block align-middle select-none" :disabled='!this.running && this.skip'>Pauza</span>
         </button>
         <button class="border-2 border-black rounded-xl p-1 items-center ml-4" @click='step(""); this.running = true;' :style='this.running && this.skip ? {"background-color":"#fada8f"} : this.running && !this.skip ? {"background-color":"rgb(172, 172, 172)"} : {"background-color":"#F6C453"}' :disabled='this.running && !this.skip'>
           <SkipForwardIcon class="inline-block align-middle" :disabled='this.running && !this.skip' />
           <span class="inline-block align-middle select-none" :disabled='this.running && !this.skip'>Krok</span>
         </button>
         <button class="border-2 border-black rounded-xl p-1 items-center ml-4" @click='stop()'>
-          <StopIcon class="inline-block align-middle" />
-          <span class="inline-block align-middle select-none">Stop</span>
+          <RestartIcon class="inline-block align-middle" />
+          <span class="inline-block align-middle select-none">Restart</span>
         </button>
       </div>
       <div class="flex ml-8 items-end petri-nav">
@@ -82,7 +86,8 @@
             <p class="text-center font-bold px-6 text-base">Po wybraniu opcji szybkiego dodawania, pojawia się zasięg w jakim zostanie dodane połączenie.</p>
             <p class="text-center font-bold px-6 text-base">Klawiszem TAB przełącza się pomiędzy stawianiem miejsca bądź przejścia.</p>
             <p class="text-center font-bold px-6 text-base">Aby dodać wielę połączeń, można zaznaczyć wielę miejsc bądź przejść, a następnie z klawiszem CTRL przeciągnać do innego elementu.</p>
-            <p class="text-center font-bold px-6 pb-2 text-base">Aby dodać wiele tokenów bądź wag połączeń, wystarczy zaznaczyć odpowiednie elementy, po czym wcisnąć prawy przycisk myszy i wprowadzić wartość.</p>
+            <p class="text-center font-bold px-6 text-base">Aby dodać wiele tokenów bądź wag połączeń, wystarczy zaznaczyć odpowiednie elementy, po czym wcisnąć prawy przycisk myszy i wprowadzić wartość.</p>
+            <p class="text-center font-bold px-6 pb-2 text-base">W przypadku symulacji krokowej, można kliknąć guzik krok aby losowo wybrać jedną z dostępnych przejść do wykonania, lub kliknąc na jedną z nich.</p>
           </template>
         </el-dropdown>
       </div>
@@ -106,6 +111,8 @@ import CheckNetIcon from 'vue-material-design-icons/CheckNetwork.vue';
 import SkipForwardIcon from 'vue-material-design-icons/SkipForward.vue';
 import TextIcon from 'vue-material-design-icons/FormatText.vue';
 import SaveNetServices, { ISaveNet } from '@/services/SaveNetService';
+import RestartIcon from 'vue-material-design-icons/Restart.vue';
+import PauseIcon from 'vue-material-design-icons/Pause.vue';
 import Swal from 'sweetalert2';
 import UserServices, { IUser } from '@/services/UserService';
 import axios, { AxiosError } from 'axios';
@@ -147,14 +154,15 @@ export default defineComponent({
     RemoveIcon,
     ClearIcon,
     RunIcon,
-    StopIcon,
     ImportIcon,
     ExportIcon,
     TextIcon,
     SaveIcon,
     CheckNetIcon,
     HelpIcon,
-    SkipForwardIcon
+    SkipForwardIcon,
+    RestartIcon,
+    PauseIcon
   },
   data() {
     return {
@@ -196,7 +204,8 @@ export default defineComponent({
       wait: false,
       skip: false,
       saveName: '',
-      nextStep: false
+      nextStep: false,
+      pause: false
     };
   },
   watch: {
@@ -547,7 +556,7 @@ export default defineComponent({
         }
       } else {
         if ((cellView as any).model.attributes.type === 'pn.Transition') {
-          if ((cellView as any).model.attr('rect/stroke') === 'red') {
+          if ((cellView as any).model.attr('rect/stroke') === 'green') {
             this.step((cellView as any).model.attributes.id);
           }
         }
@@ -2336,7 +2345,7 @@ export default defineComponent({
       this.selectedElement = '';
       try {
         this.running = true;
-        while (this.running) {
+        while (this.running && !this.pause) {
           const elements = [] as any;
           const connections = [] as any;
 
@@ -2371,15 +2380,21 @@ export default defineComponent({
                     this.graph.getCells().forEach((cells: any) => {
                       if (cells.attributes.type === 'pn.Transition') {
                         cells.attr('rect/stroke', 'black');
+                        cells.attr('rect/fill', 'white');
+                        cells.attr('rect/stroke-width', 1);
                       }
                     });
 
                     if (sourceElement.attributes.type === 'pn.Transition') {
-                      sourceElement.attr('rect/stroke', 'red');
+                      sourceElement.attr('rect/stroke', 'green');
+                      sourceElement.attr('rect/fill', 'gray');
+                      sourceElement.attr('rect/stroke-width', '4');
                     }
 
                     if (sourceElement.attributes.type === 'pn.Transition') {
                       targetElement.attr('rect/stroke', 'red');
+                      targetElement.attr('rect/fill', 'gray');
+                      targetElement.attr('rect/stroke-width', '4');
                     }
 
                     const connector = joint.connectors.normal;
@@ -2461,13 +2476,16 @@ export default defineComponent({
         this.graph.getCells().forEach((cells: any) => {
           if (cells.attributes.type === 'pn.Transition') {
             cells.attr('rect/stroke', 'black');
+            cells.attr('rect/stroke-width', '1');
+            cells.attr('rect/fill', 'white');
           }
         });
 
         this.active_transitions.forEach((transitions: any) => {
           const transition = this.graph.getCell(transitions);
-
-          transition.attr('rect/stroke', 'red');
+          transition.attr('rect/stroke', 'green');
+          transition.attr('rect/stroke-width', '4');
+          transition.attr('rect/fill', 'gray');
         });
 
         if (this.simulationCounter > 1) {
@@ -2553,13 +2571,17 @@ export default defineComponent({
           this.graph.getCells().forEach((cells: any) => {
             if (cells.attributes.type === 'pn.Transition') {
               cells.attr('rect/stroke', 'black');
+              cells.attr('rect/stroke-width', '1');
+              cells.attr('rect/fill', 'white');
             }
           });
 
           this.active_transitions.forEach((transitions: any) => {
             const transition = this.graph.getCell(transitions);
 
-            transition.attr('rect/stroke', 'red');
+            transition.attr('rect/stroke', 'green');
+            transition.attr('rect/stroke-width', '4');
+            transition.attr('rect/fill', 'gray');
           });
 
           await this.customTimeout(1000);
@@ -2644,6 +2666,8 @@ export default defineComponent({
       this.graph.getCells().forEach((cells: any) => {
         if (cells.attributes.type === 'pn.Transition') {
           cells.attr('rect/stroke', 'black');
+          cells.attr('rect/fill', 'white');
+          cells.attr('rect/stroke-width', 1);
         }
       });
     },
