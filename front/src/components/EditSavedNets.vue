@@ -14,7 +14,7 @@
               Użytkownik:
             </label>
 
-            <select v-model='this.resultSaveNet.userId' class="shadow appearance-none border-2 border-red-600  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <select v-model='this.resultSaveNet.userId' class="shadow appearance-none border-2 border-yellow-600  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
               <option v-for='user in resultUser' v-bind:value='user.id' v-bind:key='user.id'>
                 {{ user.firstName }} {{ user.lastName }} {{ user.email }}
               </option>
@@ -27,7 +27,7 @@
             </label>
 
             <input
-              class="shadow appearance-none border-2 border-red-600  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              class="shadow appearance-none border-2 border-yellow-600  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               id="name"
               type="text"
               autocomplete="off"
@@ -41,7 +41,7 @@
               Publiczne:
             </label>
 
-            <select v-model='this.resultSaveNet.public' class="shadow appearance-none border-2 border-red-600  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <select v-model='this.resultSaveNet.public' class="shadow appearance-none border-2 border-yellow-600  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
               <option v-for='item in isPublic' v-bind:value='item.check' v-bind:key='item.check'>
                 {{ item.name }}
               </option>
@@ -49,7 +49,7 @@
           </div>
 
           <div class="text-center">
-            <button class="shadow appearance-none border-2 border-red-600 bg-red-400  rounded w-3/5 py-2 px-3 text-black leading-tight focus:outline-none focus:shadow-outline" @click='validateEdit()'>
+            <button class="shadow appearance-none border-2 border-yellow-600 color-F6C453 rounded w-3/5 py-2 px-3 text-black leading-tight focus:outline-none focus:shadow-outline" @click='validateEdit()'>
               <span class="inline-block align-middle">Edytuj sieć</span>
             </button>
           </div>
@@ -171,12 +171,9 @@ export default defineComponent({
   .modal-header {
     padding: 15px;
     display: flex;
-  }
-
-  .modal-header {
     position: relative;
     border-bottom: 1px solid #eeeeee;
-    color: #ee2d2d;
+    color: rgb(139, 139, 27);
     justify-content: space-between;
   }
 

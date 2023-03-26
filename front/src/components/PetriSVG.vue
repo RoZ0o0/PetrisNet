@@ -2140,8 +2140,8 @@ export default defineComponent({
           this.current_connections.forEach((element: any) => {
             const link = this.graph.getCell(element);
             link.remove();
-            this.current_connections.pop(element);
           });
+          this.current_connections = [];
         }
         this.paper.setInteractivity(true);
         this.ctrl_pressed = false;
@@ -2885,6 +2885,7 @@ export default defineComponent({
               anchor.click();
             } else if (result.isDenied) {
               let data = '';
+              let labelCounter = 0;
               this.graph.getCells().forEach((element: any) => {
                 if (element.attributes.type === 'pn.Place') {
                   data = data + 'p ' + (element.attributes.position.x + 30) + '.0 ' + element.attributes.position.y + '.0 ' + element.attributes.attrs['.label'].text + ' ' + element.attributes.tokens;
@@ -2894,6 +2895,10 @@ export default defineComponent({
 
                 if (element.attributes.type === 'pn.Transition') {
                   data = data + 't ' + element.attributes.position.x + '.0 ' + element.attributes.position.y + '.0 ' + element.attributes.attrs['.label'].text + ' 0 w n\n';
+                }
+                if (element.attributes.type === 'basic.Text') {
+                  data = data + 'a ' + element.attributes.position.x + '.0 ' + element.attributes.position.y + '.0 n' + labelCounter + ' 1 ' + element.attr('text/text') + '\n';
+                  labelCounter++;
                 }
               });
 
@@ -2925,6 +2930,13 @@ export default defineComponent({
               let data = '<?xml version="1.0" encoding="ISO-8859-1"?><pnml>\n';
               data = data + '\t<net id="Net-One" type="P/T net">\n';
               data = data + '\t\t<token id="Default" enabled="true" red="0" green="0" blue="0"/>\n';
+              this.graph.getCells().forEach((element: any) => {
+                if (element.attributes.type === 'basic.Text') {
+                  data = data + '\t\t<labels x="' + element.attributes.position.x + '" y="' + element.attributes.position.y + '" width="120" height="20" border="true">\n';
+                  data = data + '\t\t\t<text>' + element.attr('text/text') + '</text>\n';
+                  data = data + '\t\t</labels>\n';
+                }
+              });
               this.graph.getCells().forEach((element: any) => {
                 if (element.attributes.type === 'pn.Place') {
                   data = data + '\t\t<place id="' + element.attributes.attrs['.label'].text + '">\n';
@@ -3011,26 +3023,30 @@ export default defineComponent({
 
                   if (element.attributes.connector.name === 'smooth') {
                     let counter = 0;
-                    this.graph.getCell(element.attributes.id).get('vertices').forEach((vertices: any) => {
-                      let arcPathId = '';
-                      for (let i = 0; i < (3 - counter.toString().length); i++) {
-                        arcPathId += '0';
-                      }
-                      arcPathId += counter.toString();
-                      data = data + '\t\t\t<arcpath id="' + arcPathId + '" x="' + vertices.x + '" y="' + vertices.y + '" curvePoint="true">\n';
-                      counter++;
-                    });
+                    if (this.graph.getCell(element.attributes.id).get('vertices')) {
+                      this.graph.getCell(element.attributes.id).get('vertices').forEach((vertices: any) => {
+                        let arcPathId = '';
+                        for (let i = 0; i < (3 - counter.toString().length); i++) {
+                          arcPathId += '0';
+                        }
+                        arcPathId += counter.toString();
+                        data = data + '\t\t\t<arcpath id="' + arcPathId + '" x="' + vertices.x + '" y="' + vertices.y + '" curvePoint="true">\n';
+                        counter++;
+                      });
+                    }
                   } else {
                     let counter = 0;
-                    this.graph.getCell(element.attributes.id).get('vertices').forEach((vertices: any) => {
-                      let arcPathId = '';
-                      for (let i = 0; i < (3 - counter.toString().length); i++) {
-                        arcPathId += '0';
-                      }
-                      arcPathId += counter.toString();
-                      data = data + '\t\t\t<arcpath id="' + arcPathId + '" x="' + vertices.x + '" y="' + vertices.y + '" curvePoint="false">\n';
-                      counter++;
-                    });
+                    if (this.graph.getCell(element.attributes.id).get('vertices')) {
+                      this.graph.getCell(element.attributes.id).get('vertices').forEach((vertices: any) => {
+                        let arcPathId = '';
+                        for (let i = 0; i < (3 - counter.toString().length); i++) {
+                          arcPathId += '0';
+                        }
+                        arcPathId += counter.toString();
+                        data = data + '\t\t\t<arcpath id="' + arcPathId + '" x="' + vertices.x + '" y="' + vertices.y + '" curvePoint="false">\n';
+                        counter++;
+                      });
+                    }
                   }
 
                   data = data + '\t\t\t<type value="normal"/>\n';

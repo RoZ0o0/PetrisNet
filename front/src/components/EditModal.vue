@@ -15,7 +15,7 @@
             </label>
 
             <input
-              class="shadow appearance-none border-2 border-red-600  rounded w-3/5 py-2 px-3 pb-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              class="shadow appearance-none border-2 border-yellow-600  rounded w-3/5 py-2 px-3 pb-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               id="firstname"
               type="text"
               autocomplete="off"
@@ -30,7 +30,7 @@
             </label>
 
             <input
-              class="shadow appearance-none border-2 border-red-600  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              class="shadow appearance-none border-2 border-yellow-600  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               id="lastname"
               type="text"
               autocomplete="off"
@@ -45,7 +45,7 @@
             </label>
 
             <input
-              class="shadow appearance-none border-2 border-red-600  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              class="shadow appearance-none border-2 border-yellow-600  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               id="email"
               type="text"
               autocomplete="off"
@@ -59,7 +59,7 @@
               Rola:
             </label>
 
-            <select v-model='this.result.role' class="shadow appearance-none border-2 border-red-600  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <select v-model='this.result.role' class="shadow appearance-none border-2 border-yellow-600  rounded w-3/5 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
               <option v-for='item in roles' v-bind:value='item.role' v-bind:key='item.role'>
                 {{ item.name }}
               </option>
@@ -67,7 +67,7 @@
           </div>
 
           <div class="text-center">
-            <button class="shadow appearance-none border-2 border-red-600 bg-red-400  rounded w-3/5 py-2 px-3 text-black leading-tight focus:outline-none focus:shadow-outline" @click='validateEdit()'>
+            <button class="shadow appearance-none border-2 border-yellow-600 color-F6C453 rounded w-3/5 py-2 px-3 text-black leading-tight focus:outline-none focus:shadow-outline" @click='validateEdit()'>
               <span class="inline-block align-middle">Edytuj użytkownika</span>
             </button>
           </div>
@@ -182,12 +182,9 @@ export default defineComponent({
   .modal-header {
     padding: 15px;
     display: flex;
-  }
-
-  .modal-header {
     position: relative;
     border-bottom: 1px solid #eeeeee;
-    color: #ee2d2d;
+    color: rgb(139, 139, 27);
     justify-content: space-between;
   }
 
