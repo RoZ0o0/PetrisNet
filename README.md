@@ -7,7 +7,7 @@ Aplikacja internetowa do tworzenia sieci Petriego
 - [MySQL 8.0] (https://dev.mysql.com/doc/relnotes/mysql/8.0/en/)
 ## Konfiguracja projektu
 ### Plik **PetriNetApp/springboot-backend/src/main/java/resources/application.properties**
-Edytować dane bazy, logowania do bazy oraz smtp
+Edytujemy dane bazy, logowania do bazy oraz smtp
 ```application.properties
 spring.datasource.url= jdbc:mysql://localhost:3306/petri
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
