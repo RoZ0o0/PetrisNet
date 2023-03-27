@@ -26,7 +26,7 @@ spring.mail.username=
 spring.mail.password=
 ```
 ## Stawianie projektu
-Za pomocą MySQL tworzymy bazę danych o nazwie "petri".
+Za pomocą MySQL tworzymy bazę danych o nazwie "petri".  
 Z poziomu PetriNetApp/front wykonujemy polecenia: 
 ```powershell
 yarn
