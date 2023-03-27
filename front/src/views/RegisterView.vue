@@ -238,6 +238,8 @@ export default defineComponent({
         'Sprawdź swój email aby zweryfikować konto.',
         'success'
       );
+
+      this.$router.push('/login');
     }
   }
 });

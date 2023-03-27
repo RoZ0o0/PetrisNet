@@ -14,5 +14,5 @@ CREATE TABLE IF NOT EXIST user
 );
 
 INSERT INTO `user` (`id`, `first_name`, `last_name`, `email`, `password`, `role`)
-VALUES (NULL, 'Marek', 'Nowak', 'mnowak@example.com', 'testest', 'ROLE_ADMIN'),
-       (NULL, 'Adam', 'Kowalski', 'akowalski@example.com', 'testest', 'ROLE_USER');
+VALUES (NULL, 'Marek', 'Nowak', 'mnowak@example.com', 'Test12345', 'ROLE_ADMIN'),
+       (NULL, 'Adam', 'Kowalski', 'akowalski@example.com', 'Test12345', 'ROLE_USER');

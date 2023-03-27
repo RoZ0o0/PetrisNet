@@ -234,7 +234,7 @@ public record UserService(UserRepository userRepository, UserMapper userMapper,
         String fromAddress = "petri.auth@gmail.com";
         String senderName = "Petri Net";
         String subject = "Zweryfikuj swoją rejestracje!";
-        String content = "Dear [[name]],<br>"
+        String content = "Drogi [[name]],<br>"
                 + "Nacisnij w link poniżej aby zweryfikować swoją rejestracje:<br>"
                 + "<h3><a href=\"[[URL]]\" target=\"_self\">ZWERYFIKUJ</a></h3>"
                 + "Dziękujemy,<br>"
@@ -264,7 +264,7 @@ public record UserService(UserRepository userRepository, UserMapper userMapper,
         String fromAddress = "petri.auth@gmail.com";
         String senderName = "Petri Net";
         String subject = "Resetowanie hasła!";
-        String content = "Dear [[name]],<br>"
+        String content = "Drogi [[name]],<br>"
                 + "Nacisnij w link poniżej aby zresetować swoje hasło:<br>"
                 + "<h3><a href=\"[[URL]]\" target=\"_self\">RESETUJ</a></h3>"
                 + "Dziękujemy,<br>"
