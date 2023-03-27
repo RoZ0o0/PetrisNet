@@ -216,7 +216,7 @@ public record SavedNetsService(SavedNetsRepository savedNetsRepository, SavedNet
 
         entity = optionalSavedNets.get();
 
-        newEntity.setPublic(true);
+        newEntity.setPublic(!newEntity.isPublic());
         newEntity.setNetExport(entity.getNetExport());
         newEntity.setSaveName(entity.getSaveName());
         newEntity.setUserId(entity.getUser().getId());

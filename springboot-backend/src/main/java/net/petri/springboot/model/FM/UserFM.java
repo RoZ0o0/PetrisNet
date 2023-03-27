@@ -11,4 +11,7 @@ public class UserFM {
     private String email;
     private String password;
     private String role;
+    private String verificationCode;
+    private boolean enabled;
+    private String resetToken;
 }

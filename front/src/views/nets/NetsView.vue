@@ -27,7 +27,7 @@
             <th class="text-left py-3 px-4 uppercase font-semibold text-sm w-1/12">
               Publiczne
             </th>
-            <th class="text-center py-3 px-4 uppercase font-semibold text-sm w-2/12">
+            <th v-if="this.selectOption == 'examples'" class="text-center py-3 px-4 uppercase font-semibold text-sm w-2/12">
               Akcja
 
             </th>
@@ -54,11 +54,6 @@
             </td>
             <td class="text-left py-2 px-4">
               {{ returnPublic(userNets.public) }}
-            </td>
-            <td class="py-2 px-4 text-center">
-              <TableEditIcon class="inline-block align-middle" @click='this.$router.push({ name:"creator", state: {editUserSave: userNets.netExport, editId: userNets.id, userId: userNets.userId} })'/>
-              <PencilIcon class="inline-block align-middle" @click='showEditModal(userNets)'/>
-              <DeleteIcon class="inline-block align-middle" @click='deleteUserNetAlert(userNets.id)'/>
             </td>
           </tr>
         </tbody>

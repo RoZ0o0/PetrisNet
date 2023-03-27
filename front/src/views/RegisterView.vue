@@ -153,6 +153,7 @@
 import { Vue } from 'vue-class-component';
 import { defineComponent } from 'vue';
 import UserServices, { IUser } from '@/services/UserService';
+import Swal from 'sweetalert2';
 
 export default defineComponent({
   data() {
@@ -228,7 +229,15 @@ export default defineComponent({
         return;
       }
 
-      this.$router.push('/login');
+      this.result = UserServices.getBlankUserTemplate();
+      this.chck_email = '';
+      this.chck_password = '';
+
+      Swal.fire(
+        'Zarejestrowałeś się pomyślnie',
+        'Sprawdź swój email aby zweryfikować konto.',
+        'success'
+      );
     }
   }
 });

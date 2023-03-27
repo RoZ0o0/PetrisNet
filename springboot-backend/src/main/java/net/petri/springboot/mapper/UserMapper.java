@@ -28,6 +28,9 @@ public record UserMapper() {
         dest.setEmail(src.getEmail());
         dest.setPassword(src.getPassword());
         dest.setRole(src.getRole());
+        dest.setVerificationCode(src.getVerificationCode());
+        dest.setEnabled(src.isEnabled());
+        dest.setResetToken(src.getResetToken());
     }
 
     public User mapToEntity(UserFM src) {
@@ -37,6 +40,9 @@ public record UserMapper() {
         dest.setEmail(src.getEmail());
         dest.setPassword(src.getPassword());
         dest.setRole(src.getRole());
+        dest.setVerificationCode(src.getVerificationCode());
+        dest.setEnabled(src.isEnabled());
+        dest.setResetToken(src.getResetToken());
 
         return dest;
     }

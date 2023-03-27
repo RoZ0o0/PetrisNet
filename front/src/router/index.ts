@@ -9,6 +9,8 @@ import RegisterView from '../views/RegisterView.vue';
 import CreatorView from '../views/creator/CreatorView.vue';
 import UserProfileView from '../views/users/UserProfileView.vue';
 
+import ResetPasswordView from '../views/ResetPasswordView.vue';
+
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
@@ -44,6 +46,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/nets',
     name: 'nets',
     component: NetsView
+  },
+  {
+    path: '/reset',
+    name: 'reset',
+    component: ResetPasswordView
   }
 ];
 

@@ -58,6 +58,7 @@
                     </div>
                     <div class='ml-auto'>
                       <ShareIcon v-if='!save.public' class='inline-block align-middle pb-1' @click='setPublicAlert(save, save.id)'/>
+                      <ShareOffIcon v-if='save.public' class='inline-block align-middle pb-1' @click='setPublicAlert(save, save.id)'/>
                       <LinkIcon class='inline-block align-middle pb-1' @click='showRefLinkModal(save.id)'/>
                       <PencilIcon class='inline-block align-middle pb-1' @click='editSave(save, save.saveName)'/>
                       <DeleteIcon class='inline-block align-middle pb-1' @click='deleteSaveNetAlert(save.id)'/>
@@ -98,6 +99,7 @@ import ShareIcon from 'vue-material-design-icons/Share.vue';
 import DeleteIcon from 'vue-material-design-icons/Delete.vue';
 import LinkIcon from 'vue-material-design-icons/Link.vue';
 import HelpIcon from 'vue-material-design-icons/Help.vue';
+import ShareOffIcon from 'vue-material-design-icons/ShareOff.vue';
 
 import HomePaginationBar from '../../components/HomePaginationBar.vue';
 import RefLinkModal from '../../components/RefLinkModal.vue';
@@ -109,6 +111,7 @@ export default defineComponent({
     ShareIcon,
     DeleteIcon,
     LinkIcon,
+    ShareOffIcon,
     HelpIcon,
     HomePaginationBar,
     RefLinkModal
@@ -196,7 +199,6 @@ export default defineComponent({
     },
 
     async editSaveName(id: number): Promise<ISaveNet> {
-      console.log(this.resultEditSave);
       return await SaveNetServices.update(this.resultEditSave, id);
     },
 
@@ -349,41 +351,62 @@ export default defineComponent({
     setPublicAlert(save: ISaveNet, id: number) {
       this.getNetFromExport(save.netExport);
 
-      this.resultSimulation.elements = this.elements;
-      this.resultSimulation.connections = this.connections;
+      if (!save.public) {
+        this.resultSimulation.elements = this.elements;
+        this.resultSimulation.connections = this.connections;
 
-      console.log(this.resultSimulation);
-
-      this.checkNet(this.resultSimulation).then((data) => {
-        if (data.changes.length === 0) {
-          Swal.fire({
-            icon: 'info',
-            title: 'Czy napewno chcesz ustawić swój model jako publiczny?',
-            text: 'Bo zmianie, będzie on widoczny dla innych użytkowników na stronie głównej!',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Tak',
-            cancelButtonText: 'Anuluj'
-          }).then((result) => {
-            if (result.isConfirmed) {
-              this.setPublic(save, id);
-              Swal.fire(
-                'Gotowe!',
-                'Twój model został udostępniony.',
-                'success'
-              );
-              this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
-            }
-          });
-        } else {
-          Swal.fire(
-            'Sprawdzenie!',
-            'Model nie jest wystarczająco wymagający!',
-            'error'
-          );
-        }
-      });
+        this.checkNet(this.resultSimulation).then((data) => {
+          if (data.changes.length === 0) {
+            Swal.fire({
+              icon: 'info',
+              title: 'Czy napewno chcesz ustawić swój model jako publiczny?',
+              text: 'Bo zmianie, będzie on widoczny dla innych użytkowników na stronie głównej!',
+              showCancelButton: true,
+              confirmButtonColor: '#3085d6',
+              cancelButtonColor: '#d33',
+              confirmButtonText: 'Tak',
+              cancelButtonText: 'Anuluj'
+            }).then((result) => {
+              if (result.isConfirmed) {
+                this.setPublic(save, id);
+                Swal.fire(
+                  'Gotowe!',
+                  'Twój model został udostępniony.',
+                  'success'
+                );
+                this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
+              }
+            });
+          } else {
+            Swal.fire(
+              'Sprawdzenie!',
+              'Model nie jest wystarczająco wymagający!',
+              'error'
+            );
+          }
+        });
+      } else {
+        Swal.fire({
+          icon: 'info',
+          title: 'Czy napewno chcesz ustawić swój model jako niepubliczny?',
+          text: 'Nie będzie on dłużej wyświetlany na stronie głównej!',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'Tak',
+          cancelButtonText: 'Anuluj'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            this.setPublic(save, id);
+            Swal.fire(
+              'Gotowe!',
+              'Cofnięto udostępnianie modelu!',
+              'success'
+            );
+            this.getSavesPaginated(this.selected, this.pageSize).then((data) => (this.resultSaves = data));
+          }
+        });
+      }
     },
 
     getNetFromExport(netExport: string) {

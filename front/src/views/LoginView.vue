@@ -62,6 +62,7 @@
       </div>
       <div class='text-center'>
         <p>Nie posiadasz konta? <router-link to='/register' class='text-red-600'>Zarejestruj się!</router-link></p>
+        <p>Nie pamiętasz hasła? <a class='text-red-600' @click="resetSend()">Zresetuj!</a></p>
       </div>
       <p id="err" class="text-center hidden mt-2"></p>
     </div>
@@ -72,12 +73,34 @@
 import { Vue } from 'vue-class-component';
 import { defineComponent } from 'vue';
 import LoginServices, { ILogin } from '../services/LoginService';
+import UserServices from '@/services/UserService';
+import Swal from 'sweetalert2';
 
 export default defineComponent({
   data() {
     return {
       result: LoginServices.getBlankLoginTemplate()
     };
+  },
+  mounted() {
+    if (this.$route.query.verify) {
+      const verify = this.$route.query.verify as string;
+      this.verifyAccount(verify).then((data) => {
+        if (!data) {
+          Swal.fire(
+            'Błąd!',
+            'Wystąpił błąd!',
+            'error'
+          );
+        } else {
+          Swal.fire(
+            'Gratulacje!',
+            'Użytkownik został zweryfikowany',
+            'success'
+          );
+        }
+      });
+    }
   },
   methods: {
     async login(): Promise<void> {
@@ -91,6 +114,49 @@ export default defineComponent({
         this.result.email = '';
         this.result.password = '';
       });
+    },
+
+    async verifyAccount(code: string) {
+      return await UserServices.verify(code);
+    },
+
+    async sendResetMail(email: string) {
+      await UserServices.resetMail(email);
+    },
+
+    resetSend() {
+      Swal.fire({
+        title: 'Podaj email',
+        html: '<input type="email" id="edit" class="swal2-input" autocomplete="off">',
+        cancelButtonText: 'Anuluj',
+        showCancelButton: true,
+        preConfirm: () => {
+          const editValue = (document.getElementById('edit') as HTMLInputElement).value;
+          if (!editValue) {
+            Swal.showValidationMessage('Pole jest puste!');
+          }
+          if (!this.regexEmail(editValue)) {
+            Swal.showValidationMessage('Niepoprawny adres email!');
+          }
+
+          return { editValue };
+        }
+      }).then((result) => {
+        if (result.value) {
+          this.sendResetMail(result.value.editValue);
+          Swal.fire(
+            'Gotowe',
+            'Jeśli adres istnieje w bazie, zostanie wysłany email!',
+            'success'
+          );
+        }
+      });
+    },
+
+    regexEmail(email: string) {
+      const regex = /^[A-Za-z-\\.]+[A-Za-z0-9-\\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+      const matches = regex.exec(email);
+      return matches;
     }
   }
 });

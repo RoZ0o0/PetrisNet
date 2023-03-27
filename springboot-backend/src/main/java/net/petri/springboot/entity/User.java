@@ -32,6 +32,15 @@ public class User {
     @Column(name = "role")
     private String role;
 
+    @Column(name= "verification_code")
+    private String verificationCode;
+
+    @Column(name = "enabled")
+    private boolean enabled;
+
+    @Column(name = "reset_token")
+    private String resetToken;
+
     @OneToMany
     @JoinTable(name = "saved_user_nets")
     private List<SavedNets> savedNetsList;

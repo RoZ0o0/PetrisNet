@@ -17,6 +17,10 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
     User findByEmail(String email);
 
+    User findByVerificationCode(String verificationCode);
+
+    User findByResetToken(String resetToken);
+
     static Specification<User> search(String search) {
         return (r, q, b) -> {
             Predicate predicate = b.or(

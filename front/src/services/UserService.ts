@@ -88,6 +88,18 @@ export default class UserServices {
       }
     })).data;
   }
+
+  public static async verify(code: string) {
+    return (await axios.post<boolean>('http://localhost:8081/api/users/verify?code=' + code)).data;
+  }
+
+  public static async resetMail(email: string) {
+    await (await axios.post<void>('http://localhost:8081/api/users/resetMail?email=' + email)).data;
+  }
+
+  public static async resetPassword(code: string, password: string) {
+    return (await axios.post<boolean>('http://localhost:8081/api/users/reset?code=' + code + '&password=' + password)).data;
+  }
 }
 
 export interface IUser {
