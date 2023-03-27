@@ -27,9 +27,9 @@ spring.mail.password=
 ```
 ## Stawianie projektu
 Za pomocą MySQL tworzymy bazę danych o nazwie "petri".  
-Z poziomu PetriNetApp/front wykonujemy polecenia: 
+Z poziomu **PetriNetApp/front** wykonujemy polecenia: 
 ```powershell
 yarn
 yarn serve
 ```
-Z poziomu PetriNetApp/springboot-backend uruchamiamy serwer za pomocą aplikacji np. IntelliJ IDEA.
+Z poziomu **PetriNetApp/springboot-backend** uruchamiamy serwer za pomocą aplikacji np. IntelliJ IDEA.
