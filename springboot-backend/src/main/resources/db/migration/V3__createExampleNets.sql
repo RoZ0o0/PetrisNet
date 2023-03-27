@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXIST example_nets
+CREATE TABLE IF NOT EXISTS example_nets
 (
     id          int(11)         not null AUTO_INCREMENT,
     net_name    varchar(255)    not null,
