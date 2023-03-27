@@ -32,4 +32,4 @@ Z poziomu **PetriNetApp/front** wykonujemy polecenia:
 yarn
 yarn serve
 ```
-Z poziomu **PetriNetApp/springboot-backend** uruchamiamy serwer za pomocą aplikacji np. IntelliJ IDEA.
+Z poziomu **PetriNetApp/springboot-backend** uruchamiamy serwer za pomocą środowiska np. IntelliJ IDEA.
