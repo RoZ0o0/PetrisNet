@@ -129,6 +129,9 @@ public record UserService(UserRepository userRepository, UserMapper userMapper,
         entity = optionalUser.get();
 
         newEntity.setPassword(entity.getPassword());
+        newEntity.setEnabled(entity.isEnabled());
+        newEntity.setResetToken(entity.getResetToken());
+        newEntity.setVerificationCode(entity.getVerificationCode());
 
         userMapper.mapToEntity(entity, newEntity);
         userRepository.save(entity);
@@ -158,6 +161,9 @@ public record UserService(UserRepository userRepository, UserMapper userMapper,
         }
 
         newEntity.setRole(entity.getRole());
+        newEntity.setEnabled(entity.isEnabled());
+        newEntity.setResetToken(entity.getResetToken());
+        newEntity.setVerificationCode(entity.getVerificationCode());
 
         userMapper.mapToEntity(entity, newEntity);
         userRepository.save(entity);
